@@ -1,1 +1,821 @@
-Hello, World!
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenith | Study Together</title>
+    <meta name="description" content="A Zenith clone for focused study sessions with friends and groups. Track your time, stay motivated with a leaderboard, and achieve your goals together.">
+    <meta name="keywords" content="zenith, study with me, study group, pomodoro, focus timer, study tracker, real-time study">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #101014;
+            --card-bg-color: rgba(22, 22, 26, 0.7);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-primary: #f0f0f5;
+            --text-secondary: #a0a0a5;
+            --accent-color: #8b5cf6;
+            --accent-color-dark: #7c3aed;
+            --accent-glow: 0 0 25px rgba(139, 92, 246, 0.3);
+            --font-family: 'Inter', sans-serif;
+            --font-display: 'Space Grotesk', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%231a1a1e' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            color: var(--text-primary);
+            backdrop-filter: blur(10px);
+        }
+
+        .card {
+            background-color: var(--card-bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease-in-out;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        
+        .card:hover {
+            border-color: rgba(139, 92, 246, 0.5);
+            transform: translateY(-4px);
+        }
+
+        .btn {
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            font-weight: 600;
+            border-radius: 8px;
+        }
+        .btn:hover {
+             transform: translateY(-2px);
+             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .btn-primary {
+            background-image: linear-gradient(to right, #8b5cf6, #7c3aed);
+            color: white;
+        }
+        .btn-primary:hover {
+             box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+        }
+
+        .btn-danger {
+            background-image: linear-gradient(to right, #ef4444, #dc2626);
+            color: white;
+        }
+        .btn-danger:hover {
+             box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+
+
+        .form-input {
+            background-color: #16161a;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            border-radius: 8px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 20%, transparent);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .modal-overlay:not(.hidden) {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-overlay > .card {
+            transform: scale(0.95);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            border-radius: 20px;
+        }
+        .modal-overlay:not(.hidden) > .card {
+            transform: scale(1);
+            opacity: 1;
+        }
+        
+        .timer-digits, .display-font {
+            font-family: var(--font-display);
+        }
+        
+        .leaderboard-item {
+            border: 1px solid transparent;
+        }
+
+        .leaderboard-item.studying {
+            border-color: rgba(139, 92, 246, 0.3);
+            background: linear-gradient(90deg, rgba(139, 92, 246, 0.1), transparent);
+        }
+        
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        .studying-glow {
+            animation: pulse 2s infinite ease-in-out;
+            color: var(--accent-color) !important;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                text-shadow: 0 0 5px var(--accent-color);
+                opacity: 1;
+            }
+            50% {
+                text-shadow: 0 0 15px var(--accent-color);
+                opacity: 0.8;
+            }
+        }
+
+    </style>
+</head>
+<body class="antialiased">
+    <div class="container mx-auto px-4 py-6">
+        <header class="flex justify-between items-center mb-8">
+            <div class="flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" class="text-[var(--accent-color)]"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.75 6.75a2 2 0 0 1 2-2h10.5a2 2 0 0 1 2 2v10.5a2 2 0 0 1-2 2H6.75a2 2 0 0 1-2-2V6.75Z"></path><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 4.75v14.5m8-14.5v14.5M4.75 8h14.5m-14.5 8h14.5"></path></svg>
+                <h1 class="text-3xl sm:text-4xl font-bold display-font tracking-tighter">Zenith</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                 <span id="sync-status" class="text-xs text-secondary opacity-0"></span>
+                <div id="auth-container"></div>
+            </div>
+        </header>
+
+        <main id="app-container" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Column: Timer & Groups -->
+                <div class="lg:col-span-1 space-y-8">
+                    <div class="card text-center">
+                        <h2 class="text-lg font-semibold mb-2 text-secondary display-font">Total Study Time</h2>
+                        <div id="total-study-time" class="text-5xl font-bold timer-digits">00:00:00</div>
+                        <div class="mt-8">
+                             <input type="text" id="subject-input" placeholder="What are you studying?" class="form-input w-full p-3 rounded-md text-base text-center mb-4">
+                             <div id="stopwatch-time" class="text-8xl font-bold timer-digits my-4">00:00:00</div>
+                            <button id="toggle-stopwatch-btn" class="btn btn-primary w-full py-4 rounded-lg font-semibold text-lg tracking-wider">
+                                START STUDYING
+                            </button>
+                            <p class="text-xs text-secondary italic mt-4">Be honest with your time. You're only cheating yourself.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-semibold display-font">My Groups</h2>
+                            <button id="create-group-btn" class="text-sm btn btn-primary px-4 py-2">Create</button>
+                        </div>
+                        <div id="group-list" class="space-y-3 max-h-60 overflow-y-auto no-scrollbar">
+                           <!-- Group items will be injected here -->
+                        </div>
+                         <div id="join-group-container" class="mt-4 pt-4 border-t border-[var(--border-color)]">
+                            <form id="join-group-form" class="flex gap-2">
+                                <input type="text" id="join-group-id-input" placeholder="Enter Group ID to Join" class="form-input flex-grow p-2 rounded-md text-sm" required>
+                                <button type="submit" class="btn btn-primary px-4 py-2 text-sm">Join</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Leaderboard -->
+                <div class="lg:col-span-2 card">
+                    <h2 class="text-3xl font-bold mb-2 display-font" id="leaderboard-title">Select a Group</h2>
+                    <p id="leaderboard-id-display" class="text-sm text-secondary mb-6"></p>
+                    <div id="leaderboard-list" class="space-y-2">
+                        <!-- Leaderboard items will be injected here -->
+                         <div id="leaderboard-placeholder" class="text-center py-10">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-secondary mb-2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                             <p class="text-secondary">Join or select a group to see the leaderboard.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <div id="loading-container" class="text-center py-20">
+             <p class="text-secondary">Please sign in to start studying.</p>
+        </div>
+    </div>
+
+    <!-- Create Group Modal -->
+    <div id="create-group-modal" class="modal-overlay hidden items-center justify-center">
+        <div class="card w-11/12 max-w-md">
+            <h2 class="text-xl font-semibold mb-4">Create a New Study Group</h2>
+            <form id="create-group-form">
+                <label for="new-group-name" class="block text-sm font-medium text-secondary mb-1">Group Name</label>
+                <input type="text" id="new-group-name" class="form-input rounded-md p-2 w-full mb-4" required>
+                <div class="flex justify-end gap-3">
+                    <button type="button" class="modal-cancel-btn btn bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4">Cancel</button>
+                    <button type="submit" class="btn btn-primary font-bold py-2 px-4">Create Group</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Toast Notification -->
+    <div id="toast-notification" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-4 py-2 rounded-lg shadow-lg opacity-0 transition-all duration-300 pointer-events-none">
+        Copied to clipboard!
+    </div>
+
+
+    <script>
+    // --- Firebase Configuration ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyAO9ya8gHtVbMfxcnAAJrz6FdYWvIRqgBY",
+        authDomain: "studydashboard-2a3eb.firebaseapp.com",
+        projectId: "studydashboard-2a3eb",
+        storageBucket: "studydashboard-2a3eb.firebasestorage.app",
+        messagingSenderId: "79210973277",
+        appId: "1:79210973277:web:cc0a5fa86729fd6d3f65b4",
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    
+    let currentUser = null;
+    let localStopwatchStartTime = 0;
+    let localStopwatchAccumulated = 0;
+    let unsubscribeGroupListener = null;
+    let unsubscribeLeaderboardListener = null;
+    let timerWorker = null;
+    let currentGroupId = null;
+    let groupRenderId = 0;
+    let leaderboardMembers = new Map();
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        const D = {
+            authContainer: document.getElementById('auth-container'),
+            appContainer: document.getElementById('app-container'),
+            loadingContainer: document.getElementById('loading-container'),
+            syncStatus: document.getElementById('sync-status'),
+            totalStudyTimeEl: document.getElementById('total-study-time'),
+            stopwatchTimeEl: document.getElementById('stopwatch-time'),
+            subjectInput: document.getElementById('subject-input'),
+            toggleStopwatchBtn: document.getElementById('toggle-stopwatch-btn'),
+            createGroupBtn: document.getElementById('create-group-btn'),
+            createGroupModal: document.getElementById('create-group-modal'),
+            createGroupForm: document.getElementById('create-group-form'),
+            joinGroupForm: document.getElementById('join-group-form'),
+            groupListEl: document.getElementById('group-list'),
+            leaderboardTitleEl: document.getElementById('leaderboard-title'),
+            leaderboardIdEl: document.getElementById('leaderboard-id-display'),
+            leaderboardListEl: document.getElementById('leaderboard-list'),
+            leaderboardPlaceholder: document.getElementById('leaderboard-placeholder'),
+        };
+
+        // --- WEB WORKER FOR TIMER ---
+        const workerCode = `
+            let interval = null;
+            self.onmessage = function(e) {
+                const { command, startTime, accumulatedTime } = e.data;
+                if (command === 'start') {
+                    if (interval) clearInterval(interval);
+                    interval = setInterval(() => {
+                        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                        self.postMessage({ type: 'tick', time: accumulatedTime + elapsed });
+                    }, 1000);
+                } else if (command === 'stop') {
+                    clearInterval(interval);
+                    interval = null;
+                }
+            };
+        `;
+        const blob = new Blob([workerCode], { type: 'application/javascript' });
+        timerWorker = new Worker(URL.createObjectURL(blob));
+
+        timerWorker.onmessage = function(e) {
+            if (e.data.type === 'tick') {
+                D.stopwatchTimeEl.textContent = formatSeconds(e.data.time);
+            }
+        };
+
+        // --- AUTHENTICATION ---
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUser = user;
+                D.loadingContainer.classList.add('hidden');
+                D.appContainer.classList.remove('hidden');
+                updateAuthUI();
+                initializeAppForUser();
+            } else {
+                currentUser = null;
+                D.appContainer.classList.add('hidden');
+                D.loadingContainer.classList.remove('hidden');
+                updateAuthUI();
+                if (unsubscribeGroupListener) unsubscribeGroupListener();
+                if (unsubscribeLeaderboardListener) unsubscribeLeaderboardListener();
+            }
+        });
+
+        const signIn = () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).catch(error => console.error("Auth Error:", error));
+        };
+
+        const signOut = () => {
+            if(localStopwatchStartTime > 0) toggleStopwatch(true); // Force stop timer on sign out
+            auth.signOut();
+        };
+
+        function updateAuthUI() {
+            if (currentUser) {
+                D.authContainer.innerHTML = `
+                    <div class="relative">
+                        <button id="user-menu-button" title="User Menu" class="flex items-center justify-center w-10 h-10 rounded-full transition-colors hover:bg-white/10">
+                            <img src="${currentUser.photoURL}" alt="${currentUser.displayName}" class="w-8 h-8 rounded-full pointer-events-none" />
+                        </button>
+                        <div id="user-menu-dropdown" class="card absolute right-0 mt-2 w-48 p-2 hidden z-50">
+                            <button id="sign-out-btn" class="w-full text-left flex items-center gap-2 p-2 rounded-md hover:bg-white/10 transition-colors">Sign Out</button>
+                        </div>
+                    </div>`;
+                D.authContainer.querySelector('#user-menu-button').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    D.authContainer.querySelector('#user-menu-dropdown').classList.toggle('hidden');
+                });
+                D.authContainer.querySelector('#sign-out-btn').addEventListener('click', signOut);
+            } else {
+                D.authContainer.innerHTML = `<button id="sign-in-btn" class="btn btn-primary font-semibold px-4 py-2 text-sm">Sign In</button>`;
+                D.authContainer.querySelector('#sign-in-btn').addEventListener('click', signIn);
+            }
+        }
+        
+        document.addEventListener('click', () => {
+            const dropdown = document.getElementById('user-menu-dropdown');
+            if (dropdown && !dropdown.classList.contains('hidden')) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        // --- CORE APP LOGIC ---
+        async function initializeAppForUser() {
+            const userRef = db.collection('zenith_users').doc(currentUser.uid);
+            const userDoc = await userRef.get();
+            const userData = userDoc.exists ? userDoc.data() : {};
+
+            syncLocalStopwatch(userData);
+            loadTotalStudyTime(userData);
+            listenForUserGroups();
+            
+            if (userData.lastOpenedGroup) {
+                const lastGroupId = userData.lastOpenedGroup;
+                const groupDoc = await db.collection('zenith_groups').doc(lastGroupId).get();
+                if (groupDoc.exists && groupDoc.data().members.includes(currentUser.uid)) {
+                    displayLeaderboard(lastGroupId);
+                }
+            }
+        }
+
+        function syncLocalStopwatch(userData) {
+            const stopwatchData = userData.stopwatch;
+            if (stopwatchData) {
+                const { startTime, accumulatedTime, currentSubject } = stopwatchData;
+                
+                if (startTime) {
+                    localStopwatchAccumulated = accumulatedTime;
+                    localStopwatchStartTime = startTime.toMillis();
+                    
+                    startStopwatchWorker();
+                    D.toggleStopwatchBtn.textContent = 'STOP STUDYING';
+                    D.toggleStopwatchBtn.classList.remove('btn-primary');
+                    D.toggleStopwatchBtn.classList.add('btn', 'btn-danger');
+                    D.subjectInput.value = currentSubject || '';
+                } else {
+                     localStopwatchAccumulated = accumulatedTime;
+                     localStopwatchStartTime = 0;
+                     D.stopwatchTimeEl.textContent = formatSeconds(accumulatedTime);
+                }
+            } else {
+                D.stopwatchTimeEl.textContent = formatSeconds(0);
+            }
+        }
+        
+        function loadTotalStudyTime(userData) {
+             const totalTime = userData.totalStudyTime || 0;
+             D.totalStudyTimeEl.textContent = formatSeconds(totalTime);
+        }
+
+        function startStopwatchWorker() {
+            timerWorker.postMessage({
+                command: 'start',
+                startTime: localStopwatchStartTime,
+                accumulatedTime: localStopwatchAccumulated
+            });
+        }
+
+        async function updateAllMemberDocs(isStudying, subject = null) {
+            const userDoc = await db.collection('zenith_users').doc(currentUser.uid).get();
+            if (!userDoc.exists || !userDoc.data().groups) return;
+
+            const batch = db.batch();
+            const groups = userDoc.data().groups;
+
+            const memberData = {
+                name: currentUser.displayName,
+                photoURL: currentUser.photoURL,
+                isStudying: isStudying,
+                currentSubject: subject,
+                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            groups.forEach(groupId => {
+                const memberRef = db.collection('zenith_groups').doc(groupId).collection('members').doc(currentUser.uid);
+                batch.set(memberRef, memberData, { merge: true });
+            });
+            await batch.commit();
+        }
+
+        async function toggleStopwatch(forceStop = false) {
+             const userRef = db.collection('zenith_users').doc(currentUser.uid);
+             const isRunning = localStopwatchStartTime > 0;
+
+             if (isRunning || forceStop) {
+                timerWorker.postMessage({ command: 'stop' });
+                 
+                const elapsedSeconds = Math.floor(Math.max(0, Date.now() - localStopwatchStartTime) / 1000);
+                const finalAccumulated = localStopwatchAccumulated + elapsedSeconds;
+
+                const batch = db.batch();
+                batch.set(userRef, {
+                    stopwatch: {
+                        startTime: null,
+                        accumulatedTime: finalAccumulated,
+                        currentSubject: null
+                    },
+                    totalStudyTime: firebase.firestore.FieldValue.increment(elapsedSeconds),
+                    isStudying: false,
+                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+
+                await batch.commit();
+                await updateAllMemberDocs(false);
+
+                localStopwatchAccumulated = finalAccumulated;
+                localStopwatchStartTime = 0;
+
+                D.toggleStopwatchBtn.textContent = 'START STUDYING';
+                D.toggleStopwatchBtn.classList.add('btn-primary');
+                D.toggleStopwatchBtn.classList.remove('btn-danger');
+                
+                loadTotalStudyTime((await userRef.get()).data());
+                
+             } else {
+                localStopwatchStartTime = Date.now();
+                startStopwatchWorker();
+                
+                D.toggleStopwatchBtn.textContent = 'STOP STUDYING';
+                D.toggleStopwatchBtn.classList.remove('btn-primary');
+                D.toggleStopwatchBtn.classList.add('btn', 'btn-danger');
+                new Tone.Synth().toDestination().triggerAttackRelease("C4", "0.2");
+                
+                const subject = D.subjectInput.value.trim() || 'General Study';
+
+                 await userRef.set({
+                    stopwatch: {
+                         startTime: firebase.firestore.FieldValue.serverTimestamp(),
+                         accumulatedTime: localStopwatchAccumulated,
+                         currentSubject: subject
+                     },
+                     isStudying: true,
+                     name: currentUser.displayName,
+                     photoURL: currentUser.photoURL,
+                 }, { merge: true });
+
+                 await updateAllMemberDocs(true, subject);
+             }
+        }
+        
+        D.toggleStopwatchBtn.addEventListener('click', () => toggleStopwatch());
+
+        // --- GROUP MANAGEMENT ---
+        D.createGroupBtn.addEventListener('click', () => D.createGroupModal.classList.remove('hidden'));
+        D.createGroupModal.addEventListener('click', (e) => {
+            if(e.target === D.createGroupModal || e.target.classList.contains('modal-cancel-btn')) {
+                D.createGroupModal.classList.add('hidden');
+            }
+        });
+        
+        D.createGroupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const groupName = document.getElementById('new-group-name').value.trim();
+            if (!groupName) return;
+            
+            const batch = db.batch();
+            const groupRef = db.collection('zenith_groups').doc();
+
+            batch.set(groupRef, {
+                name: groupName,
+                ownerId: currentUser.uid,
+                members: [currentUser.uid],
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            });
+
+            const userRef = db.collection('zenith_users').doc(currentUser.uid);
+            batch.set(userRef, { groups: firebase.firestore.FieldValue.arrayUnion(groupRef.id) }, { merge: true });
+
+            const memberRef = groupRef.collection('members').doc(currentUser.uid);
+             batch.set(memberRef, {
+                name: currentUser.displayName,
+                photoURL: currentUser.photoURL,
+                isStudying: localStopwatchStartTime > 0,
+                currentSubject: localStopwatchStartTime > 0 ? D.subjectInput.value.trim() || 'General Study' : null,
+                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            await batch.commit();
+            
+            D.createGroupForm.reset();
+            D.createGroupModal.classList.add('hidden');
+        });
+        
+        D.joinGroupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const groupId = document.getElementById('join-group-id-input').value.trim();
+            if(!groupId) return;
+            
+            const groupRef = db.collection('zenith_groups').doc(groupId);
+            const userRef = db.collection('zenith_users').doc(currentUser.uid);
+
+            const groupDoc = await groupRef.get();
+            if (!groupDoc.exists) {
+                alert("Group not found!");
+                return;
+            }
+            
+            const batch = db.batch();
+            batch.update(groupRef, { members: firebase.firestore.FieldValue.arrayUnion(currentUser.uid) });
+            batch.set(userRef, { groups: firebase.firestore.FieldValue.arrayUnion(groupId) }, { merge: true });
+
+            const memberRef = groupRef.collection('members').doc(currentUser.uid);
+            batch.set(memberRef, {
+                name: currentUser.displayName,
+                photoURL: currentUser.photoURL,
+                isStudying: localStopwatchStartTime > 0,
+                currentSubject: localStopwatchStartTime > 0 ? D.subjectInput.value.trim() || 'General Study' : null,
+                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            await batch.commit();
+
+            document.getElementById('join-group-id-input').value = '';
+        });
+
+        function listenForUserGroups() {
+            if (unsubscribeGroupListener) unsubscribeGroupListener();
+            
+            unsubscribeGroupListener = db.collection('zenith_users').doc(currentUser.uid)
+                .onSnapshot(async (doc) => {
+                    if (doc.metadata.hasPendingWrites) {
+                        return;
+                    }
+                    groupRenderId++;
+                    const currentRenderId = groupRenderId;
+
+                    if (doc.exists && doc.data().groups && doc.data().groups.length > 0) {
+                        const groupIds = [...new Set(doc.data().groups)];
+                        
+                        const groupChunks = [];
+                        for (let i = 0; i < groupIds.length; i += 10) {
+                            groupChunks.push(groupIds.slice(i, i + 10));
+                        }
+                        
+                        const groupPromises = groupChunks.map(chunk => 
+                            db.collection('zenith_groups').where(firebase.firestore.FieldPath.documentId(), 'in', chunk).get()
+                        );
+                        const querySnapshots = await Promise.all(groupPromises);
+
+                        if(currentRenderId !== groupRenderId) return;
+                        
+                        D.groupListEl.innerHTML = '';
+                        querySnapshots.forEach(snapshot => {
+                            snapshot.forEach(groupDoc => {
+                                if (!groupDoc.exists) return;
+                                const group = groupDoc.data();
+                                const groupEl = document.createElement('div');
+                                groupEl.className = 'flex justify-between items-center p-3 rounded-lg bg-black/20 cursor-pointer hover:bg-black/40 transition-colors border border-transparent hover:border-[var(--border-color)]';
+                                groupEl.dataset.groupId = groupDoc.id;
+                                groupEl.innerHTML = `
+                                    <span class="font-semibold">${group.name}</span>
+                                    <button data-group-id="${groupDoc.id}" class="leave-group-btn text-xs text-red-500 hover:text-red-400">Leave</button>`;
+                                D.groupListEl.appendChild(groupEl);
+                            });
+                        });
+
+                    } else {
+                         if(currentRenderId === groupRenderId) D.groupListEl.innerHTML = `<p class="text-sm text-secondary px-2">You are not in any groups yet.</p>`;
+                    }
+                });
+        }
+        
+        D.groupListEl.addEventListener('click', e => {
+            const groupEl = e.target.closest('[data-group-id]');
+            if (!groupEl) return;
+            
+            const groupId = groupEl.dataset.groupId;
+
+            if (e.target.classList.contains('leave-group-btn')) {
+                if(confirm("Are you sure you want to leave this group?")) {
+                    leaveGroup(groupId);
+                }
+            } else {
+                displayLeaderboard(groupId);
+            }
+        });
+
+        async function leaveGroup(groupId) {
+             const batch = db.batch();
+             const groupRef = db.collection('zenith_groups').doc(groupId);
+             const userRef = db.collection('zenith_users').doc(currentUser.uid);
+             const memberRef = groupRef.collection('members').doc(currentUser.uid);
+
+             batch.update(groupRef, { members: firebase.firestore.FieldValue.arrayRemove(currentUser.uid) });
+             batch.update(userRef, { groups: firebase.firestore.FieldValue.arrayRemove(groupId) });
+             batch.delete(memberRef);
+             
+             await batch.commit();
+             
+             const groupElementToRemove = D.groupListEl.querySelector(`[data-group-id="${groupId}"]`);
+             if (groupElementToRemove) {
+                 groupElementToRemove.remove();
+             }
+
+             if (D.groupListEl.children.length === 0) {
+                 D.groupListEl.innerHTML = `<p class="text-sm text-secondary px-2">You are not in any groups yet.</p>`;
+             }
+             
+             if(currentGroupId === groupId){
+                D.leaderboardListEl.innerHTML = '';
+                D.leaderboardTitleEl.textContent = 'Select a Group';
+                D.leaderboardIdEl.textContent = '';
+                D.leaderboardPlaceholder.classList.remove('hidden');
+                currentGroupId = null;
+             }
+        }
+        
+        // --- LEADERBOARD ---
+        async function displayLeaderboard(groupId) {
+            currentGroupId = groupId;
+            db.collection('zenith_users').doc(currentUser.uid).set({ lastOpenedGroup: groupId }, { merge: true });
+
+            D.leaderboardPlaceholder.classList.add('hidden');
+            const groupDoc = await db.collection('zenith_groups').doc(groupId).get();
+            if(!groupDoc.exists) return;
+            
+            const groupData = groupDoc.data();
+            D.leaderboardTitleEl.textContent = groupData.name;
+            D.leaderboardIdEl.innerHTML = `ID: <span class="font-mono bg-black/20 px-2 py-1 rounded">${groupId}</span> <button id="copy-group-id-btn" title="Copy Group ID" class="ml-2 text-secondary hover:text-primary p-1 rounded-md hover:bg-white/10 transition-colors">[copy]</button>`;
+            
+            D.leaderboardIdEl.querySelector('#copy-group-id-btn').addEventListener('click', () => {
+                navigator.clipboard.writeText(groupId).then(() => {
+                    showToast('Group ID copied to clipboard!');
+                }).catch(err => console.error('Failed to copy text: ', err));
+            });
+            
+            leaderboardMembers.clear();
+            const memberIds = groupData.members;
+            if (memberIds.length > 0) {
+                 const usersSnapshot = await db.collection('zenith_users').where(firebase.firestore.FieldPath.documentId(), 'in', memberIds).get();
+                 usersSnapshot.forEach(doc => {
+                     const member = leaderboardMembers.get(doc.id) || {};
+                     member.totalStudyTime = doc.data().totalStudyTime || 0;
+                     leaderboardMembers.set(doc.id, member);
+                 });
+            }
+
+            if (unsubscribeLeaderboardListener) unsubscribeLeaderboardListener();
+            
+            unsubscribeLeaderboardListener = db.collection('zenith_groups').doc(groupId).collection('members')
+                .onSnapshot(snapshot => {
+                    snapshot.docChanges().forEach(change => {
+                        const docData = change.doc.data();
+                        const docId = change.doc.id;
+                        if (change.type === 'removed') {
+                            leaderboardMembers.delete(docId);
+                        } else {
+                            const member = leaderboardMembers.get(docId) || {};
+                             leaderboardMembers.set(docId, { ...member, ...docData });
+                        }
+                    });
+                    renderLeaderboard();
+                });
+        }
+        
+        function renderLeaderboard() {
+            const membersArray = Array.from(leaderboardMembers.values());
+            membersArray.sort((a,b) => (b.totalStudyTime || 0) - (a.totalStudyTime || 0));
+
+            D.leaderboardListEl.innerHTML = '';
+            membersArray.forEach((member, index) => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'leaderboard-item flex items-center justify-between p-3 rounded-lg transition-colors';
+                
+                let statusHTML = '';
+                if (member.isStudying) {
+                    itemEl.classList.add('studying');
+                    const subject = member.currentSubject ? `(${member.currentSubject})` : '';
+                    statusHTML = `<span class="text-xs font-semibold studying-glow">Studying now... ${subject}</span>`;
+                } else if (member.lastSeen) {
+                    statusHTML = `<span class="text-xs text-secondary">Last seen: ${formatTimeAgo(member.lastSeen.toDate())}</span>`;
+                } else {
+                    statusHTML = `<span class="text-xs text-secondary">Offline</span>`;
+                }
+                
+                itemEl.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <span class="font-bold text-xl text-secondary w-8 text-center">${index + 1}</span>
+                        <img src="${member.photoURL}" class="w-12 h-12 rounded-full" alt="${member.name}">
+                        <div>
+                            <div class="flex items-center">
+                              <p class="font-semibold text-lg">${member.name}</p>
+                            </div>
+                            ${statusHTML}
+                        </div>
+                    </div>
+                    <div class="font-bold text-xl timer-digits">${formatSeconds(member.totalStudyTime || 0)}</div>
+                `;
+                D.leaderboardListEl.appendChild(itemEl);
+            });
+        }
+
+        // --- UTILITY ---
+        function formatSeconds(s) {
+            if (isNaN(s)) s = 0;
+            const h = Math.floor(s / 3600).toString().padStart(2, '0');
+            const m = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
+            const sec = Math.floor(s % 60).toString().padStart(2, '0');
+            return `${h}:${m}:${sec}`;
+        }
+        
+        function formatTimeAgo(date) {
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+            let interval = seconds / 31536000;
+            if (interval > 1) return Math.floor(interval) + "y ago";
+            interval = seconds / 2592000;
+            if (interval > 1) return Math.floor(interval) + "mo ago";
+            interval = seconds / 86400;
+            if (interval > 1) return Math.floor(interval) + "d ago";
+            interval = seconds / 3600;
+            if (interval > 1) return Math.floor(interval) + "h ago";
+            interval = seconds / 60;
+            if (interval > 1) return Math.floor(interval) + "m ago";
+            return "Just now";
+        }
+        
+        function showToast(message) {
+            const toast = document.getElementById('toast-notification');
+            if(!toast) return;
+            toast.textContent = message;
+            toast.classList.remove('opacity-0');
+            toast.classList.add('bottom-5');
+            toast.classList.remove('bottom-[-100px]');
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                toast.classList.add('bottom-[-100px]');
+                toast.classList.remove('bottom-5');
+            }, 2000);
+        }
+
+    });
+    </script>
+</body>
+</html>
+
