@@ -1,116 +1,198 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zenith | Study Together</title>
-    <meta name="description" content="A Zenith clone for focused study sessions with friends and groups. Track your time, stay motivated with a leaderboard, and achieve your goals together.">
-    <meta name="keywords" content="zenith, study with me, study group, pomodoro, focus timer, study tracker, real-time study">
-
+    <title>Zenith | SvalTech</title>
+    <meta name="description" content="A group study timer (Zenith) using Firebase for real-time tracking.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 
+      Using the same Firebase SDK versions as your StudyLocus app for consistency.
+      This ensures full compatibility with the existing auth session.
+    -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
 
     <style>
         :root {
-            --bg-color: #101014;
-            --card-bg-color: rgba(22, 22, 26, 0.7);
-            --border-color: rgba(255, 255, 255, 0.1);
-            --text-primary: #f0f0f5;
-            --text-secondary: #a0a0a5;
-            --accent-color: #8b5cf6;
-            --accent-color-dark: #7c3aed;
-            --accent-glow: 0 0 25px rgba(139, 92, 246, 0.3);
+            --bg-color: #0d1117;
+            --card-bg-color: rgba(22, 27, 34, 0.4);
+            --border-color: #30363d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --accent-color: #58a6ff;
+            --accent-color-dim: rgba(88, 166, 255, 0.2);
+            --accent-glow: 0 0 15px rgba(88, 166, 255, 0.3);
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             --font-family: 'Inter', sans-serif;
-            --font-display: 'Space Grotesk', sans-serif;
+            --status-online: #28a745;
+            --status-offline: #8b949e;
+            --status-studying: #58a6ff;
         }
 
         body {
             font-family: var(--font-family);
             background-color: var(--bg-color);
-            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%231a1a1e' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
             color: var(--text-primary);
-            backdrop-filter: blur(10px);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, .5);
         }
 
         .card {
             background-color: var(--card-bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 1.5rem;
-            transition: all 0.3s ease-in-out;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            border: 1px solid color-mix(in srgb, var(--accent-color) 40%, var(--border-color));
+            border-radius: 24px;
+            padding: 1.25rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: var(--card-shadow);
         }
-        
-        .card:hover {
-            border-color: rgba(139, 92, 246, 0.5);
-            transform: translateY(-4px);
-        }
-
-        .btn {
-            transition: all 0.2s ease-in-out;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            font-weight: 600;
-            border-radius: 8px;
-        }
-        .btn:hover {
-             transform: translateY(-2px);
-             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-
-        .btn-primary {
-            background-image: linear-gradient(to right, #8b5cf6, #7c3aed);
-            color: white;
-        }
-        .btn-primary:hover {
-             box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
-        }
-
-        .btn-danger {
-            background-image: linear-gradient(to right, #ef4444, #dc2626);
-            color: white;
-        }
-        .btn-danger:hover {
-             box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
-        }
-
 
         .form-input {
-            background-color: #16161a;
+            background-color: rgba(0, 0, 0, .2);
             border: 1px solid var(--border-color);
+            transition: border-color .2s, box-shadow .2s;
+            border-radius: 12px;
             color: var(--text-primary);
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-            border-radius: 8px;
         }
 
         .form-input:focus {
-            outline: none;
+            outline: 0;
             border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 20%, transparent);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 40%, transparent);
+        }
+
+        select.form-input {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right .5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem
+        }
+
+        select.form-input option {
+            background: var(--card-bg-color);
+            color: var(--text-primary);
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, .2);
+            border: 1px solid transparent;
+            transition: .2s ease-in-out;
+            border-radius: 12px;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, .3), var(--accent-glow);
+        }
+
+        .btn-primary:disabled {
+            background-color: var(--text-secondary);
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background-color: var(--card-bg-color);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            transition: .2s ease-in-out;
+            border-radius: 12px;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        .btn-danger {
+            background-color: #da3633;
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background-color: #b22222;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Zenith-Specific Styles */
+        .member-card.is-studying {
+            background-color: var(--accent-color-dim);
+            border-left-color: var(--status-studying);
+        }
+
+        .member-card {
+            border-left: 4px solid var(--status-offline);
+        }
+
+        .member-card.is-me {
+            border-left-color: var(--status-online);
+        }
+
+        .member-card.is-me.is-studying {
+            border-left-color: var(--status-studying);
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: pulse-offline 2s infinite;
+        }
+
+        .status-dot.studying {
+            background-color: var(--status-studying);
+            animation: pulse-studying 1.5s infinite;
+        }
+
+        .status-dot.idle {
+            background-color: var(--status-online);
+            animation: none;
+        }
+
+        .status-dot.offline {
+            background-color: var(--status-offline);
+            animation: none;
+        }
+
+        @keyframes pulse-studying {
+            0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--status-studying) 70%, transparent); }
+            50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--status-studying) 0%, transparent); }
         }
 
         .modal-overlay {
             position: fixed;
-            top: 0;
             left: 0;
+            top: 0;
             right: 0;
             bottom: 0;
-            background-color: rgba(0,0,0,0.6);
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
+            background-color: rgba(0, 0, 0, .5);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 50;
             opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: opacity .3s;
             pointer-events: none;
         }
 
@@ -118,704 +200,903 @@
             opacity: 1;
             pointer-events: auto;
         }
-        .modal-overlay > .card {
-            transform: scale(0.95);
+
+        .modal-overlay>.card {
+            transform: scale(.95);
             opacity: 0;
-            transition: transform 0.3s ease, opacity 0.3s ease;
-            border-radius: 20px;
+            transition: transform .3s, opacity .3s;
         }
-        .modal-overlay:not(.hidden) > .card {
+
+        .modal-overlay:not(.hidden)>.card {
             transform: scale(1);
             opacity: 1;
         }
-        
-        .timer-digits, .display-font {
-            font-family: var(--font-display);
-        }
-        
-        .leaderboard-item {
-            border: 1px solid transparent;
-        }
-
-        .leaderboard-item.studying {
-            border-color: rgba(139, 92, 246, 0.3);
-            background: linear-gradient(90deg, rgba(139, 92, 246, 0.1), transparent);
-        }
-        
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        
-        .studying-glow {
-            animation: pulse 2s infinite ease-in-out;
-            color: var(--accent-color) !important;
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                text-shadow: 0 0 5px var(--accent-color);
-                opacity: 1;
-            }
-            50% {
-                text-shadow: 0 0 15px var(--accent-color);
-                opacity: 0.8;
-            }
-        }
-
     </style>
 </head>
+
 <body class="antialiased">
-    <div class="container mx-auto px-4 py-6">
-        <header class="flex justify-between items-center mb-8">
-            <div class="flex items-center gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" class="text-[var(--accent-color)]"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.75 6.75a2 2 0 0 1 2-2h10.5a2 2 0 0 1 2 2v10.5a2 2 0 0 1-2 2H6.75a2 2 0 0 1-2-2V6.75Z"></path><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 4.75v14.5m8-14.5v14.5M4.75 8h14.5m-14.5 8h14.5"></path></svg>
-                <h1 class="text-3xl sm:text-4xl font-bold display-font tracking-tighter">Zenith</h1>
-            </div>
-            <div class="flex items-center gap-4">
-                 <span id="sync-status" class="text-xs text-secondary opacity-0"></span>
+
+    <div class="container mx-auto px-2 sm:px-4 py-6 max-w-5xl">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl sm:text-4xl font-bold">Zenith</h1>
+            <div class="flex items-center gap-2 sm:gap-4">
+                <span id="sync-status" class="text-xs text-secondary opacity-0 transition-opacity"></span>
+                <!-- Auth Container (Copied from StudyLocus) -->
                 <div id="auth-container"></div>
             </div>
         </header>
 
-        <main id="app-container" class="hidden">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Left Column: Timer & Groups -->
-                <div class="lg:col-span-1 space-y-8">
-                    <div class="card text-center">
-                        <h2 class="text-lg font-semibold mb-2 text-secondary display-font">Total Study Time</h2>
-                        <div id="total-study-time" class="text-5xl font-bold timer-digits">00:00:00</div>
-                        <div class="mt-8">
-                             <input type="text" id="subject-input" placeholder="What are you studying?" class="form-input w-full p-3 rounded-md text-base text-center mb-4">
-                             <div id="stopwatch-time" class="text-8xl font-bold timer-digits my-4">00:00:00</div>
-                            <button id="toggle-stopwatch-btn" class="btn btn-primary w-full py-4 rounded-lg font-semibold text-lg tracking-wider">
-                                START STUDYING
-                            </button>
-                            <p class="text-xs text-secondary italic mt-4">Be honest with your time. You're only cheating yourself.</p>
-                        </div>
-                    </div>
-                    
+        <!-- Loading State -->
+        <div id="loading-view" class="text-center py-10">
+            <p class="text-lg text-secondary">Loading...</p>
+        </div>
+
+        <!-- Login View -->
+        <div id="login-view" class="hidden text-center py-10 card max-w-md mx-auto">
+            <h2 class="text-2xl font-semibold mb-4">Welcome to Group Study</h2>
+            <p class="text-secondary mb-6">Please sign in with your StudyLocus account to continue.</p>
+            <button id="sign-in-btn-main"
+                class="btn-primary inline-flex items-center gap-3 px-6 py-3 font-bold text-lg">
+                <svg class="w-6 h-6" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M47.532 24.552c0-1.566-.14-3.084-.404-4.548H24.5v8.58h12.944c-.566 2.76-2.213 5.108-4.72 6.708v5.524h7.112c4.162-3.832 6.596-9.42 6.596-16.264z"
+                        fill="#4285F4" />
+                    <path
+                        d="M24.5 48c6.48 0 11.944-2.14 15.928-5.788l-7.112-5.524c-2.14 1.44-4.884 2.292-7.816 2.292-6.004 0-11.084-4.04-12.9-9.492H4.42v5.7c3.48 6.912 10.32 11.532 18.08 11.532l2 .28z"
+                        fill="#34A853" />
+                    <path
+                        d="M11.6 28.98c-.34-.996-.54-2.052-.54-3.144s.2-2.148.54-3.144V16.992H4.42C2.852 20.04 2 23.436 2 27.024c0 3.588.852 6.984 2.42 10.032l7.18-5.7v-.376z"
+                        fill="#FBBC05" />
+                    <path
+                        d="M24.5 9.8c3.516 0 6.66 1.212 9.128 3.54l6.32-6.32C36.44.88 30.98 0 24.5 0 16.74 0 9.9 4.62 6.42 11.532l7.18 5.7c1.816-5.452 6.896-9.432 12.9-9.432z"
+                        fill="#EA4335" />
+                </svg>
+                <span>Sign In with Google</span>
+            </button>
+        </div>
+
+        <!-- Main App View (Groups + Timer) -->
+        <main id="app-view" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                <!-- Left Column: Group Management & Controls -->
+                <div class="lg:col-span-1 space-y-6">
+
+                    <!-- My Groups -->
                     <div class="card">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-2xl font-semibold display-font">My Groups</h2>
-                            <button id="create-group-btn" class="text-sm btn btn-primary px-4 py-2">Create</button>
+                        <h2 class="text-xl font-semibold mb-4">My Groups</h2>
+                        <div id="my-groups-list" class="space-y-2 mb-4 max-h-48 overflow-y-auto no-scrollbar">
+                            <!-- Groups will be listed here -->
                         </div>
-                        <div id="group-list" class="space-y-3 max-h-60 overflow-y-auto no-scrollbar">
-                           <!-- Group items will be injected here -->
+                        <!-- ADDED: Group ID Display -->
+                        <div id="current-group-id-container" class="hidden space-y-2 mb-4">
+                            <label class="block text-xs font-medium text-secondary">Current Group ID (Share this!)</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="current-group-id-display"
+                                    class="form-input text-sm p-2 w-full bg-gray-800/50" readonly>
+                                <button id="copy-group-id-btn" class="btn-secondary px-3 py-1" title="Copy ID">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
-                         <div id="join-group-container" class="mt-4 pt-4 border-t border-[var(--border-color)]">
-                            <form id="join-group-form" class="flex gap-2">
-                                <input type="text" id="join-group-id-input" placeholder="Enter Group ID to Join" class="form-input flex-grow p-2 rounded-md text-sm" required>
-                                <button type="submit" class="btn btn-primary px-4 py-2 text-sm">Join</button>
-                            </form>
+                        <button id="manage-groups-btn" class="btn-secondary w-full py-2">Create / Join Group</button>
+                    </div>
+
+                    <!-- Study Controls -->
+                    <div id="study-controls-card" class="card sticky top-6 hidden">
+                        <h2 class="text-xl font-semibold mb-4">Study Timer</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="subject-select" class="block text-sm font-medium text-secondary mb-1">
+                                    Subject
+                                </label>
+                                <select id="subject-select" class="form-input rounded-md p-2 w-full">
+                                    <option>Physics</option>
+                                    <option>Chemistry</option>
+                                    <option>Maths</option>
+                                    <option>Biology</option>
+                                    <option>Other</option>
+                                </select>
+                            </div>
+                            <button id="start-study-btn" class="btn-primary w-full py-3 text-lg font-bold">Start
+                                Studying</button>
+                            <button id="stop-study-btn"
+                                class="btn-danger hidden w-full py-3 text-lg font-bold">Stop Studying</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Right Column: Leaderboard -->
-                <div class="lg:col-span-2 card">
-                    <h2 class="text-3xl font-bold mb-2 display-font" id="leaderboard-title">Select a Group</h2>
-                    <p id="leaderboard-id-display" class="text-sm text-secondary mb-6"></p>
-                    <div id="leaderboard-list" class="space-y-2">
-                        <!-- Leaderboard items will be injected here -->
-                         <div id="leaderboard-placeholder" class="text-center py-10">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-secondary mb-2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                             <p class="text-secondary">Join or select a group to see the leaderboard.</p>
+                <!-- Right Column: Group View -->
+                <div class="lg:col-span-2">
+                    <div id="group-view-card" class="card hidden">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 id="group-name-title" class="text-2xl font-semibold">Select a Group</h2>
+                            <button id="leave-group-btn"
+                                class="btn-secondary text-xs px-3 py-1 text-red-400 border-red-400/50 hover:bg-red-400/10 hover:text-red-300">Leave
+                                Group</button>
+                        </div>
+                        <div id="member-list-container" class="space-y-3">
+                            <p id="group-placeholder" class="text-secondary text-center py-8">
+                                Select a group from "My Groups" to see members.
+                            </p>
+                            <!-- Member cards will be injected here -->
                         </div>
                     </div>
                 </div>
             </div>
         </main>
-        
-        <div id="loading-container" class="text-center py-20">
-             <p class="text-secondary">Please sign in to start studying.</p>
-        </div>
     </div>
 
-    <!-- Create Group Modal -->
-    <div id="create-group-modal" class="modal-overlay hidden items-center justify-center">
+    <!-- Group Management Modal -->
+    <div id="group-modal" class="modal-overlay hidden">
         <div class="card w-11/12 max-w-md">
-            <h2 class="text-xl font-semibold mb-4">Create a New Study Group</h2>
-            <form id="create-group-form">
-                <label for="new-group-name" class="block text-sm font-medium text-secondary mb-1">Group Name</label>
-                <input type="text" id="new-group-name" class="form-input rounded-md p-2 w-full mb-4" required>
-                <div class="flex justify-end gap-3">
-                    <button type="button" class="modal-cancel-btn btn bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4">Cancel</button>
-                    <button type="submit" class="btn btn-primary font-bold py-2 px-4">Create Group</button>
+            <h2 class="text-xl font-semibold mb-6">Manage Groups</h2>
+
+            <!-- Create Group -->
+            <form id="create-group-form" class="space-y-3 mb-6 pb-6 border-b border-gray-700">
+                <h3 class="text-lg font-semibold">Create a New Group</h3>
+                <div>
+                    <label for="new-group-name" class="sr-only">New Group Name</label>
+                    <input type="text" id="new-group-name" placeholder="New Group Name"
+                        class="form-input rounded-md p-2 w-full" required>
                 </div>
+                <button type="submit" class="btn-primary w-full py-2">Create Group</button>
             </form>
+
+            <!-- Join Group -->
+            <form id="join-group-form" class="space-y-3">
+                <h3 class="text-lg font-semibold">Join an Existing Group</h3>
+                <div>
+                    <label for="join-group-id" class="sr-only">Group ID</label>
+                    <input type="text" id="join-group-id" placeholder="Enter Group ID"
+                        class="form-input rounded-md p-2 w-full" required>
+                </div>
+                <button type="submit" class="btn-secondary w-full py-2">Join Group</button>
+            </form>
+
+            <button id="close-group-modal-btn"
+                class="absolute top-3 right-3 text-secondary hover:text-primary transition-colors p-1 rounded-full"
+                aria-label="Close modal">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
         </div>
-    </div>
-    
-    <!-- Toast Notification -->
-    <div id="toast-notification" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-4 py-2 rounded-lg shadow-lg opacity-0 transition-all duration-300 pointer-events-none">
-        Copied to clipboard!
     </div>
 
 
     <script>
-    // --- Firebase Configuration ---
-    const firebaseConfig = {
-        apiKey: "AIzaSyAO9ya8gHtVbMfxcnAAJrz6FdYWvIRqgBY",
-        authDomain: "studydashboard-2a3eb.firebaseapp.com",
-        projectId: "studydashboard-2a3eb",
-        storageBucket: "studydashboard-2a3eb.firebasestorage.app",
-        messagingSenderId: "79210973277",
-        appId: "1:79210973277:web:cc0a5fa86729fd6d3f65b4",
-    };
+        document.addEventListener("DOMContentLoaded", () => {
+            // --- Firebase Configuration (Copied from StudyLocus) ---
+            const firebaseConfig = {
+                apiKey: "AIzaSyAO9ya8gHtVbMfxcnAAJrz6FdYWvIRqgBY",
+                authDomain: "studydashboard-2a3eb.firebaseapp.com",
+                projectId: "studydashboard-2a3eb",
+                storageBucket: "studydashboard-2a3eb.firebasestorage.app",
+                messagingSenderId: "79210973277",
+                appId: "1:79210973277:web:cc0a5fa86729fd6d3f65b4",
+                measurementId: "G-TE7Z0SR8L1",
+            };
 
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    
-    let currentUser = null;
-    let localStopwatchStartTime = 0;
-    let localStopwatchAccumulated = 0;
-    let unsubscribeGroupListener = null;
-    let unsubscribeLeaderboardListener = null;
-    let timerWorker = null;
-    let currentGroupId = null;
-    let groupRenderId = 0;
-    let leaderboardMembers = new Map();
-    
-    document.addEventListener('DOMContentLoaded', () => {
-        const D = {
-            authContainer: document.getElementById('auth-container'),
-            appContainer: document.getElementById('app-container'),
-            loadingContainer: document.getElementById('loading-container'),
-            syncStatus: document.getElementById('sync-status'),
-            totalStudyTimeEl: document.getElementById('total-study-time'),
-            stopwatchTimeEl: document.getElementById('stopwatch-time'),
-            subjectInput: document.getElementById('subject-input'),
-            toggleStopwatchBtn: document.getElementById('toggle-stopwatch-btn'),
-            createGroupBtn: document.getElementById('create-group-btn'),
-            createGroupModal: document.getElementById('create-group-modal'),
-            createGroupForm: document.getElementById('create-group-form'),
-            joinGroupForm: document.getElementById('join-group-form'),
-            groupListEl: document.getElementById('group-list'),
-            leaderboardTitleEl: document.getElementById('leaderboard-title'),
-            leaderboardIdEl: document.getElementById('leaderboard-id-display'),
-            leaderboardListEl: document.getElementById('leaderboard-list'),
-            leaderboardPlaceholder: document.getElementById('leaderboard-placeholder'),
-        };
+            // --- Initialize Firebase ---
+            firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth();
+            const db = firebase.firestore();
+            const fieldValue = firebase.firestore.FieldValue;
 
-        // --- WEB WORKER FOR TIMER ---
-        const workerCode = `
-            let interval = null;
-            self.onmessage = function(e) {
-                const { command, startTime, accumulatedTime } = e.data;
-                if (command === 'start') {
-                    if (interval) clearInterval(interval);
-                    interval = setInterval(() => {
-                        const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                        self.postMessage({ type: 'tick', time: accumulatedTime + elapsed });
-                    }, 1000);
-                } else if (command === 'stop') {
-                    clearInterval(interval);
-                    interval = null;
+            // --- DOM Elements ---
+            const dom = {
+                authContainer: document.getElementById("auth-container"),
+                syncStatus: document.getElementById("sync-status"),
+                loadingView: document.getElementById("loading-view"),
+                loginView: document.getElementById("login-view"),
+                appView: document.getElementById("app-view"),
+                signInBtnMain: document.getElementById("sign-in-btn-main"),
+                myGroupsList: document.getElementById("my-groups-list"),
+                manageGroupsBtn: document.getElementById("manage-groups-btn"),
+                studyControlsCard: document.getElementById("study-controls-card"),
+                subjectSelect: document.getElementById("subject-select"),
+                startStudyBtn: document.getElementById("start-study-btn"),
+                stopStudyBtn: document.getElementById("stop-study-btn"),
+                groupViewCard: document.getElementById("group-view-card"),
+                groupNameTitle: document.getElementById("group-name-title"),
+                leaveGroupBtn: document.getElementById("leave-group-btn"),
+                memberListContainer: document.getElementById("member-list-container"),
+                groupPlaceholder: document.getElementById("group-placeholder"),
+                groupModal: document.getElementById("group-modal"),
+                createGroupForm: document.getElementById("create-group-form"),
+                joinGroupForm: document.getElementById("join-group-form"),
+                closeGroupModalBtn: document.getElementById("close-group-modal-btn"),
+                // ADDED: Group ID elements
+                currentGroupIdContainer: document.getElementById("current-group-id-container"),
+                currentGroupIdDisplay: document.getElementById("current-group-id-display"),
+                copyGroupIdBtn: document.getElementById("copy-group-id-btn"),
+            };
+
+            // --- App State ---
+            let currentUser = null;
+            let currentGroupId = null;
+            let myGroups = new Map();
+            let studyState = {
+                isRunning: false,
+                subject: "Physics",
+                startTime: null,
+                heartbeatIntervalId: null,
+            };
+            let groupListenerUnsubscribe = null;
+            let myGroupsListenerUnsubscribe = null;
+            let memberDataCache = new Map(); // Caches member profile data
+            let clientTimerIntervalId = null; // For updating client-side timers
+
+            // --- Utility Functions ---
+
+            /**
+             * Gets today's date as a 'YYYY-MM-DD' string.
+             * This is crucial for resetting daily totals.
+             */
+            const getTodayString = () => {
+                return new Date().toISOString().slice(0, 10);
+            };
+
+            /**
+             * Formats total seconds into a HH:MM:SS string.
+             */
+            const formatTimeHHMMSS = (totalSeconds) => {
+                const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, "0");
+                const minutes = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, "0");
+                const seconds = Math.floor(totalSeconds % 60).toString().padStart(2, "0");
+                return `${hours}:${minutes}:${seconds}`;
+            };
+
+            /**
+             * Formats total seconds into a readable string (e.g., "1h 30m").
+             */
+            const formatTimeReadable = (totalSeconds) => {
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                if (hours > 0) return `${hours}h ${minutes}m`;
+                if (minutes > 0) return `${minutes}m`;
+                return `${Math.floor(totalSeconds % 60)}s`;
+            };
+
+            /**
+             * Shows a sync status message.
+             */
+            const showSyncStatus = (message, isError = false) => {
+                dom.syncStatus.textContent = message;
+                dom.syncStatus.style.color = isError ? "#f87171" : "var(--text-secondary)";
+                dom.syncStatus.style.opacity = 1;
+                if (!isError) {
+                    setTimeout(() => { dom.syncStatus.style.opacity = 0; }, 2000);
                 }
             };
-        `;
-        const blob = new Blob([workerCode], { type: 'application/javascript' });
-        timerWorker = new Worker(URL.createObjectURL(blob));
 
-        timerWorker.onmessage = function(e) {
-            if (e.data.type === 'tick') {
-                D.stopwatchTimeEl.textContent = formatSeconds(e.data.time);
-            }
-        };
+            // --- Authentication (Copied from StudyLocus) ---
 
-        // --- AUTHENTICATION ---
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                currentUser = user;
-                D.loadingContainer.classList.add('hidden');
-                D.appContainer.classList.remove('hidden');
-                updateAuthUI();
-                initializeAppForUser();
-            } else {
-                currentUser = null;
-                D.appContainer.classList.add('hidden');
-                D.loadingContainer.classList.remove('hidden');
-                updateAuthUI();
-                if (unsubscribeGroupListener) unsubscribeGroupListener();
-                if (unsubscribeLeaderboardListener) unsubscribeLeaderboardListener();
-            }
-        });
-
-        const signIn = () => {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(error => console.error("Auth Error:", error));
-        };
-
-        const signOut = () => {
-            if(localStopwatchStartTime > 0) toggleStopwatch(true); // Force stop timer on sign out
-            auth.signOut();
-        };
-
-        function updateAuthUI() {
-            if (currentUser) {
-                D.authContainer.innerHTML = `
-                    <div class="relative">
-                        <button id="user-menu-button" title="User Menu" class="flex items-center justify-center w-10 h-10 rounded-full transition-colors hover:bg-white/10">
-                            <img src="${currentUser.photoURL}" alt="${currentUser.displayName}" class="w-8 h-8 rounded-full pointer-events-none" />
-                        </button>
-                        <div id="user-menu-dropdown" class="card absolute right-0 mt-2 w-48 p-2 hidden z-50">
-                            <button id="sign-out-btn" class="w-full text-left flex items-center gap-2 p-2 rounded-md hover:bg-white/10 transition-colors">Sign Out</button>
-                        </div>
-                    </div>`;
-                D.authContainer.querySelector('#user-menu-button').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    D.authContainer.querySelector('#user-menu-dropdown').classList.toggle('hidden');
-                });
-                D.authContainer.querySelector('#sign-out-btn').addEventListener('click', signOut);
-            } else {
-                D.authContainer.innerHTML = `<button id="sign-in-btn" class="btn btn-primary font-semibold px-4 py-2 text-sm">Sign In</button>`;
-                D.authContainer.querySelector('#sign-in-btn').addEventListener('click', signIn);
-            }
-        }
-        
-        document.addEventListener('click', () => {
-            const dropdown = document.getElementById('user-menu-dropdown');
-            if (dropdown && !dropdown.classList.contains('hidden')) {
-                dropdown.classList.add('hidden');
-            }
-        });
-
-        // --- CORE APP LOGIC ---
-        async function initializeAppForUser() {
-            const userRef = db.collection('zenith_users').doc(currentUser.uid);
-            const userDoc = await userRef.get();
-            const userData = userDoc.exists ? userDoc.data() : {};
-
-            syncLocalStopwatch(userData);
-            loadTotalStudyTime(userData);
-            listenForUserGroups();
-            
-            if (userData.lastOpenedGroup) {
-                const lastGroupId = userData.lastOpenedGroup;
-                const groupDoc = await db.collection('zenith_groups').doc(lastGroupId).get();
-                if (groupDoc.exists && groupDoc.data().members.includes(currentUser.uid)) {
-                    displayLeaderboard(lastGroupId);
-                }
-            }
-        }
-
-        function syncLocalStopwatch(userData) {
-            const stopwatchData = userData.stopwatch;
-            if (stopwatchData) {
-                const { startTime, accumulatedTime, currentSubject } = stopwatchData;
-                
-                if (startTime) {
-                    localStopwatchAccumulated = accumulatedTime;
-                    localStopwatchStartTime = startTime.toMillis();
-                    
-                    startStopwatchWorker();
-                    D.toggleStopwatchBtn.textContent = 'STOP STUDYING';
-                    D.toggleStopwatchBtn.classList.remove('btn-primary');
-                    D.toggleStopwatchBtn.classList.add('btn', 'btn-danger');
-                    D.subjectInput.value = currentSubject || '';
+            auth.onAuthStateChanged((user) => {
+                dom.loadingView.classList.add("hidden");
+                if (user) {
+                    currentUser = user;
+                    dom.appView.classList.remove("hidden");
+                    dom.loginView.classList.add("hidden");
+                    updateAuthUI(user);
+                    initUser(user);
                 } else {
-                     localStopwatchAccumulated = accumulatedTime;
-                     localStopwatchStartTime = 0;
-                     D.stopwatchTimeEl.textContent = formatSeconds(accumulatedTime);
+                    currentUser = null;
+                    dom.appView.classList.add("hidden");
+                    dom.loginView.classList.remove("hidden");
+                    updateAuthUI(null);
+                    // Detach all listeners if logged out
+                    if (groupListenerUnsubscribe) groupListenerUnsubscribe();
+                    if (myGroupsListenerUnsubscribe) myGroupsListenerUnsubscribe();
                 }
-            } else {
-                D.stopwatchTimeEl.textContent = formatSeconds(0);
-            }
-        }
-        
-        function loadTotalStudyTime(userData) {
-             const totalTime = userData.totalStudyTime || 0;
-             D.totalStudyTimeEl.textContent = formatSeconds(totalTime);
-        }
-
-        function startStopwatchWorker() {
-            timerWorker.postMessage({
-                command: 'start',
-                startTime: localStopwatchStartTime,
-                accumulatedTime: localStopwatchAccumulated
             });
-        }
 
-        async function updateAllMemberDocs(isStudying, subject = null) {
-            const userDoc = await db.collection('zenith_users').doc(currentUser.uid).get();
-            if (!userDoc.exists || !userDoc.data().groups) return;
-
-            const batch = db.batch();
-            const groups = userDoc.data().groups;
-
-            const memberData = {
-                name: currentUser.displayName,
-                photoURL: currentUser.photoURL,
-                isStudying: isStudying,
-                currentSubject: subject,
-                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            const signInWithGoogle = () => {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                auth.signInWithPopup(provider).catch((error) => {
+                    console.error("Authentication Error:", error);
+                    showSyncStatus("Sign-in failed", true);
+                });
             };
 
-            groups.forEach(groupId => {
-                const memberRef = db.collection('zenith_groups').doc(groupId).collection('members').doc(currentUser.uid);
-                batch.set(memberRef, memberData, { merge: true });
+            const signOutUser = () => {
+                auth.signOut();
+            };
+
+            const updateAuthUI = (user) => {
+                if (user) {
+                    dom.authContainer.innerHTML = `
+                        <div class="relative" id="user-menu-container">
+                            <button id="user-menu-button" title="User Menu" class="flex items-center justify-center w-10 h-10 rounded-full transition-colors hover:bg-white/20">
+                                <img src="${user.photoURL}" alt="${user.displayName}" class="w-8 h-8 rounded-full pointer-events-none" />
+                            </button>
+                            <div id="user-menu-dropdown" class="card absolute right-0 mt-2 w-48 p-2 hidden z-50" style="background-color: var(--bg-color);">
+                                <div class="px-2 py-1 mb-1 border-b" style="border-color: var(--border-color);">
+                                    <p class="text-sm font-semibold truncate" title="${user.displayName}">${user.displayName}</p>
+                                </div>
+                                <button id="sign-out-btn" class="w-full text-left flex items-center gap-2 p-2 rounded-lg hover:bg-white/10 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                                    <span>Sign Out</span>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    const userMenuButton = dom.authContainer.querySelector("#user-menu-button");
+                    const userMenuDropdown = dom.authContainer.querySelector("#user-menu-dropdown");
+                    const signOutBtn = dom.authContainer.querySelector("#sign-out-btn");
+
+                    userMenuButton.addEventListener("click", (event) => {
+                        event.stopPropagation(); // Prevent global click listener from firing
+                        userMenuDropdown.classList.toggle("hidden");
+                    });
+                    signOutBtn.addEventListener("click", signOutUser);
+
+                } else {
+                    dom.authContainer.innerHTML =
+                        '<button id="sign-in-btn" class="btn-secondary px-4 py-2 text-sm font-semibold">Sign In</button>';
+                    dom.authContainer.querySelector("#sign-in-btn").addEventListener("click", signInWithGoogle);
+                }
+            };
+
+            dom.signInBtnMain.addEventListener("click", signInWithGoogle);
+
+            // --- Core App Logic ---
+
+            /**
+             * Initializes the user on load.
+             * Checks for their profile in `zenith_users` and loads their groups.
+             */
+            const initUser = async (user) => {
+                const userDocRef = db.doc(`zenith_users/${user.uid}`);
+                const userDoc = await userDocRef.get();
+
+                let userData;
+                if (!userDoc.exists) {
+                    // Create a new user profile in the `zenith_users` collection
+                    // This is separate from the StudyLocus `users` collection
+                    userData = {
+                        uid: user.uid,
+                        displayName: user.displayName,
+                        photoURL: user.photoURL,
+                        currentGroupId: null,
+                    };
+                    await userDocRef.set(userData);
+                    showSyncStatus("Welcome! Profile created.");
+                } else {
+                    userData = userDoc.data();
+                    // Ensure profile is up-to-date
+                    if (userData.displayName !== user.displayName || userData.photoURL !== user.photoURL) {
+                        await userDocRef.update({
+                            displayName: user.displayName,
+                            photoURL: user.photoURL
+                        });
+                    }
+                }
+
+                currentGroupId = userData.currentGroupId;
+                // This listener will now handle logic for joining the currentGroupId
+                attachMyGroupsListener(user.uid);
+
+                if (!currentGroupId) {
+                    dom.groupPlaceholder.textContent = "Create or join a group to get started!";
+                }
+            };
+
+            /**
+             * Attaches a real-time listener to the user's list of groups.
+             */
+            const attachMyGroupsListener = (userId) => {
+                if (myGroupsListenerUnsubscribe) myGroupsListenerUnsubscribe();
+
+                myGroupsListenerUnsubscribe = db.collection(`zenith_users/${userId}/groups`)
+                    .onSnapshot((snapshot) => {
+                        myGroups.clear();
+                        snapshot.forEach((doc) => {
+                            myGroups.set(doc.id, doc.data());
+                        });
+                        renderMyGroups();
+
+                        // After loading groups, check if the currentGroupId is still valid
+                        if (currentGroupId && myGroups.has(currentGroupId)) {
+                            // Current group is valid, view it
+                            viewGroup(currentGroupId);
+                        } else if (currentGroupId && !myGroups.has(currentGroupId)) {
+                            console.warn("Current group not found in user's list. Clearing.");
+                            // This can happen if user was removed from group on another device
+                            if (groupListenerUnsubscribe) groupListenerUnsubscribe();
+                            dom.memberListContainer.innerHTML = "";
+                            dom.groupNameTitle.textContent = "Select a Group";
+                            dom.groupPlaceholder.textContent = "Your previous group was not found.";
+                            dom.groupPlaceholder.classList.remove("hidden");
+                            dom.studyControlsCard.classList.add("hidden");
+                            dom.leaveGroupBtn.classList.add("hidden");
+                            dom.currentGroupIdContainer.classList.add("hidden"); // Hide Group ID
+                            currentGroupId = null;
+                            db.doc(`zenith_users/${currentUser.uid}`).update({ currentGroupId: null });
+                        }
+
+                    }, (error) => {
+                        console.error("Error listening to groups:", error);
+                        showSyncStatus("Group load error", true);
+                    });
+            };
+
+            /**
+             * Renders the "My Groups" list in the UI.
+             */
+            const renderMyGroups = () => {
+                dom.myGroupsList.innerHTML = "";
+                if (myGroups.size === 0) {
+                    dom.myGroupsList.innerHTML = `<p class="text-sm text-secondary px-1">No groups yet.</p>`;
+                    return;
+                }
+
+                myGroups.forEach((groupData, groupId) => {
+                    const isSelected = (groupId === currentGroupId);
+                    const groupEl = document.createElement("button");
+                    groupEl.className = `w-full text-left px-3 py-2 rounded-lg transition-colors ${isSelected ? 'bg-accent-dim font-semibold' : 'hover:bg-gray-700/50'}`;
+                    groupEl.style.setProperty('--accent-dim', 'var(--accent-color-dim)');
+                    groupEl.textContent = groupData.groupName;
+                    groupEl.dataset.groupId = groupId;
+                    groupEl.addEventListener("click", () => viewGroup(groupId));
+                    dom.myGroupsList.appendChild(groupEl);
+                });
+            };
+
+            /**
+             * Handles creating a new group.
+             */
+            dom.createGroupForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const groupName = dom.createGroupForm.querySelector("#new-group-name").value.trim();
+                if (!groupName || !currentUser) return;
+
+                try {
+                    const newGroupRef = await db.collection("zenith_groups").add({
+                        name: groupName,
+                        ownerId: currentUser.uid,
+                        createdAt: fieldValue.serverTimestamp(),
+                    });
+                    
+                    await joinGroup(newGroupRef.id, groupName);
+                    dom.createGroupForm.reset();
+                    dom.groupModal.classList.add("hidden");
+                } catch (error) {
+                    console.error("Error creating group:", error);
+                    showSyncStatus("Failed to create group", true);
+                }
             });
-            await batch.commit();
-        }
 
-        async function toggleStopwatch(forceStop = false) {
-             const userRef = db.collection('zenith_users').doc(currentUser.uid);
-             const isRunning = localStopwatchStartTime > 0;
+            /**
+             * Handles joining an existing group by ID.
+             */
+            dom.joinGroupForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const groupId = dom.joinGroupForm.querySelector("#join-group-id").value.trim();
+                if (!groupId || !currentUser) return;
 
-             if (isRunning || forceStop) {
-                timerWorker.postMessage({ command: 'stop' });
-                 
-                const elapsedSeconds = Math.floor(Math.max(0, Date.now() - localStopwatchStartTime) / 1000);
-                const finalAccumulated = localStopwatchAccumulated + elapsedSeconds;
-
-                const batch = db.batch();
-                batch.set(userRef, {
-                    stopwatch: {
-                        startTime: null,
-                        accumulatedTime: finalAccumulated,
-                        currentSubject: null
-                    },
-                    totalStudyTime: firebase.firestore.FieldValue.increment(elapsedSeconds),
-                    isStudying: false,
-                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-
-                await batch.commit();
-                await updateAllMemberDocs(false);
-
-                localStopwatchAccumulated = finalAccumulated;
-                localStopwatchStartTime = 0;
-
-                D.toggleStopwatchBtn.textContent = 'START STUDYING';
-                D.toggleStopwatchBtn.classList.add('btn-primary');
-                D.toggleStopwatchBtn.classList.remove('btn-danger');
-                
-                loadTotalStudyTime((await userRef.get()).data());
-                
-             } else {
-                localStopwatchStartTime = Date.now();
-                startStopwatchWorker();
-                
-                D.toggleStopwatchBtn.textContent = 'STOP STUDYING';
-                D.toggleStopwatchBtn.classList.remove('btn-primary');
-                D.toggleStopwatchBtn.classList.add('btn', 'btn-danger');
-                new Tone.Synth().toDestination().triggerAttackRelease("C4", "0.2");
-                
-                const subject = D.subjectInput.value.trim() || 'General Study';
-
-                 await userRef.set({
-                    stopwatch: {
-                         startTime: firebase.firestore.FieldValue.serverTimestamp(),
-                         accumulatedTime: localStopwatchAccumulated,
-                         currentSubject: subject
-                     },
-                     isStudying: true,
-                     name: currentUser.displayName,
-                     photoURL: currentUser.photoURL,
-                 }, { merge: true });
-
-                 await updateAllMemberDocs(true, subject);
-             }
-        }
-        
-        D.toggleStopwatchBtn.addEventListener('click', () => toggleStopwatch());
-
-        // --- GROUP MANAGEMENT ---
-        D.createGroupBtn.addEventListener('click', () => D.createGroupModal.classList.remove('hidden'));
-        D.createGroupModal.addEventListener('click', (e) => {
-            if(e.target === D.createGroupModal || e.target.classList.contains('modal-cancel-btn')) {
-                D.createGroupModal.classList.add('hidden');
-            }
-        });
-        
-        D.createGroupForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const groupName = document.getElementById('new-group-name').value.trim();
-            if (!groupName) return;
-            
-            const batch = db.batch();
-            const groupRef = db.collection('zenith_groups').doc();
-
-            batch.set(groupRef, {
-                name: groupName,
-                ownerId: currentUser.uid,
-                members: [currentUser.uid],
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            });
-
-            const userRef = db.collection('zenith_users').doc(currentUser.uid);
-            batch.set(userRef, { groups: firebase.firestore.FieldValue.arrayUnion(groupRef.id) }, { merge: true });
-
-            const memberRef = groupRef.collection('members').doc(currentUser.uid);
-             batch.set(memberRef, {
-                name: currentUser.displayName,
-                photoURL: currentUser.photoURL,
-                isStudying: localStopwatchStartTime > 0,
-                currentSubject: localStopwatchStartTime > 0 ? D.subjectInput.value.trim() || 'General Study' : null,
-                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            
-            await batch.commit();
-            
-            D.createGroupForm.reset();
-            D.createGroupModal.classList.add('hidden');
-        });
-        
-        D.joinGroupForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const groupId = document.getElementById('join-group-id-input').value.trim();
-            if(!groupId) return;
-            
-            const groupRef = db.collection('zenith_groups').doc(groupId);
-            const userRef = db.collection('zenith_users').doc(currentUser.uid);
-
-            const groupDoc = await groupRef.get();
-            if (!groupDoc.exists) {
-                alert("Group not found!");
-                return;
-            }
-            
-            const batch = db.batch();
-            batch.update(groupRef, { members: firebase.firestore.FieldValue.arrayUnion(currentUser.uid) });
-            batch.set(userRef, { groups: firebase.firestore.FieldValue.arrayUnion(groupId) }, { merge: true });
-
-            const memberRef = groupRef.collection('members').doc(currentUser.uid);
-            batch.set(memberRef, {
-                name: currentUser.displayName,
-                photoURL: currentUser.photoURL,
-                isStudying: localStopwatchStartTime > 0,
-                currentSubject: localStopwatchStartTime > 0 ? D.subjectInput.value.trim() || 'General Study' : null,
-                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            await batch.commit();
-
-            document.getElementById('join-group-id-input').value = '';
-        });
-
-        function listenForUserGroups() {
-            if (unsubscribeGroupListener) unsubscribeGroupListener();
-            
-            unsubscribeGroupListener = db.collection('zenith_users').doc(currentUser.uid)
-                .onSnapshot(async (doc) => {
-                    if (doc.metadata.hasPendingWrites) {
+                try {
+                    const groupDoc = await db.doc(`zenith_groups/${groupId}`).get();
+                    if (!groupDoc.exists) {
+                        showSyncStatus("Group not found", true);
                         return;
                     }
-                    groupRenderId++;
-                    const currentRenderId = groupRenderId;
 
-                    if (doc.exists && doc.data().groups && doc.data().groups.length > 0) {
-                        const groupIds = [...new Set(doc.data().groups)];
-                        
-                        const groupChunks = [];
-                        for (let i = 0; i < groupIds.length; i += 10) {
-                            groupChunks.push(groupIds.slice(i, i + 10));
-                        }
-                        
-                        const groupPromises = groupChunks.map(chunk => 
-                            db.collection('zenith_groups').where(firebase.firestore.FieldPath.documentId(), 'in', chunk).get()
-                        );
-                        const querySnapshots = await Promise.all(groupPromises);
+                    await joinGroup(groupId, groupDoc.data().name);
+                    dom.joinGroupForm.reset();
+                    dom.groupModal.classList.add("hidden");
+                } catch (error) {
+                    console.error("Error joining group:", error);
+                    showSyncStatus("Failed to join group", true);
+                }
+            });
 
-                        if(currentRenderId !== groupRenderId) return;
-                        
-                        D.groupListEl.innerHTML = '';
-                        querySnapshots.forEach(snapshot => {
-                            snapshot.forEach(groupDoc => {
-                                if (!groupDoc.exists) return;
-                                const group = groupDoc.data();
-                                const groupEl = document.createElement('div');
-                                groupEl.className = 'flex justify-between items-center p-3 rounded-lg bg-black/20 cursor-pointer hover:bg-black/40 transition-colors border border-transparent hover:border-[var(--border-color)]';
-                                groupEl.dataset.groupId = groupDoc.id;
-                                groupEl.innerHTML = `
-                                    <span class="font-semibold">${group.name}</span>
-                                    <button data-group-id="${groupDoc.id}" class="leave-group-btn text-xs text-red-500 hover:text-red-400">Leave</button>`;
-                                D.groupListEl.appendChild(groupEl);
-                            });
-                        });
+            /**
+             * Adds the user to a group's subcollections (2-way write).
+             */
+            const joinGroup = async (groupId, groupName) => {
+                if (!currentUser) return;
 
+                const joinedAt = fieldValue.serverTimestamp();
+                const todayString = getTodayString();
+                
+                // 1. Add user to the group's `members` subcollection
+                // We denormalize displayName and photoURL here to avoid N+1 reads
+                const memberRef = db.doc(`zenith_groups/${groupId}/members/${currentUser.uid}`);
+                await memberRef.set({
+                    joinedAt: joinedAt,
+                    displayName: currentUser.displayName,
+                    photoURL: currentUser.photoURL,
+                    isStudying: false,
+                    subject: null,
+                    startTime: null,
+                    lastHeartbeat: null,
+                    todayString: todayString,
+                    dailyTotal: 0
+                }, { merge: true });
+
+                // 2. Add group to the user's `groups` subcollection
+                const userGroupRef = db.doc(`zenith_users/${currentUser.uid}/groups/${groupId}`);
+                await userGroupRef.set({
+                    groupName: groupName,
+                    joinedAt: joinedAt
+                });
+
+                // 3. Set as current group
+                await db.doc(`zenith_users/${currentUser.uid}`).update({
+                    currentGroupId: groupId
+                });
+
+                // await viewGroup(groupId); // This will be called by the group listener
+                showSyncStatus(`Joined group: ${groupName}`);
+            };
+
+            /**
+             * Handles leaving the current group.
+             */
+            dom.leaveGroupBtn.addEventListener("click", async () => {
+                if (!currentUser || !currentGroupId) return;
+                
+                if (!confirm(`Are you sure you want to leave "${myGroups.get(currentGroupId).groupName}"?`)) {
+                    return;
+                }
+
+                // Stop studying if active
+                if (studyState.isRunning) {
+                    await stopStudy();
+                }
+
+                const oldGroupId = currentGroupId;
+                currentGroupId = null; // Unset immediately
+
+                try {
+                    // 1. Delete member doc from group
+                    await db.doc(`zenith_groups/${oldGroupId}/members/${currentUser.uid}`).delete();
+
+                    // 2. Delete group from user's list
+                    await db.doc(`zenith_users/${currentUser.uid}/groups/${oldGroupId}`).delete();
+                    
+                    // 3. Unset current group in profile
+                    await db.doc(`zenith_users/${currentUser.uid}`).update({
+                        currentGroupId: null
+                    });
+
+                    // 4. Clean up UI
+                    if (groupListenerUnsubscribe) groupListenerUnsubscribe();
+                    dom.memberListContainer.innerHTML = "";
+                    dom.groupNameTitle.textContent = "Select a Group";
+                    dom.groupPlaceholder.textContent = "Select a group from 'My Groups'.";
+                    dom.groupPlaceholder.classList.remove("hidden");
+                    dom.studyControlsCard.classList.add("hidden");
+                    dom.leaveGroupBtn.classList.add("hidden");
+                    dom.groupViewCard.classList.add("hidden");
+                    dom.currentGroupIdContainer.classList.add("hidden"); // Hide Group ID
+                    dom.currentGroupIdDisplay.value = "";
+
+
+                    showSyncStatus("Left group");
+
+                } catch (error) {
+                    console.error("Error leaving group: ", error);
+                    showSyncStatus("Failed to leave group", true);
+                    currentGroupId = oldGroupId; // Restore group ID if fail
+                }
+            });
+
+            /**
+             * Switches the main view to a specific group and attaches the listener.
+             */
+            const viewGroup = async (groupId) => {
+                // R/W Efficiency: Don't do anything if we're already viewing this group
+                if (currentGroupId === groupId && !dom.groupViewCard.classList.contains("hidden")) {
+                    return; 
+                }
+
+                if (!myGroups.has(groupId)) {
+                    console.warn(`Attempted to view group ${groupId}, but user is not a member.`);
+                     if (currentGroupId === groupId) {
+                         currentGroupId = null;
+                         await db.doc(`zenith_users/${currentUser.uid}`).update({ currentGroupId: null });
+                     }
+                    return;
+                }
+                
+                if (studyState.isRunning) {
+                    await stopStudy();
+                }
+
+                // R/W Efficiency: Only write to DB if the group ID is actually changing
+                if (currentGroupId !== groupId) {
+                    currentGroupId = groupId;
+                    // Update current group in user's profile
+                    await db.doc(`zenith_users/${currentUser.uid}`).update({ currentGroupId: groupId });
+                }
+                
+                const groupData = myGroups.get(groupId);
+                dom.groupNameTitle.textContent = groupData.groupName;
+                dom.groupPlaceholder.classList.add("hidden");
+                dom.studyControlsCard.classList.remove("hidden");
+                dom.leaveGroupBtn.classList.remove("hidden");
+                dom.groupViewCard.classList.remove("hidden");
+                
+                // ADDED: Show and set Group ID
+                dom.currentGroupIdDisplay.value = groupId;
+                dom.currentGroupIdContainer.classList.remove("hidden");
+
+
+                // Update "My Groups" list to show selection
+                renderMyGroups();
+
+                // Detach old listener
+                if (groupListenerUnsubscribe) groupListenerUnsubscribe();
+
+                // Attach new listener
+                // This is the SINGLE listener for the entire group's real-time state
+                groupListenerUnsubscribe = db.collection(`zenith_groups/${currentGroupId}/members`)
+                    .onSnapshot((snapshot) => {
+                        const members = [];
+                        snapshot.forEach(doc => members.push({ id: doc.id, ...doc.data() }));
+                        renderGroupMembers(members);
+                    }, (error) => {
+                        console.error("Error listening to group members:", error);
+                        showSyncStatus("Group connection error", true);
+                    });
+                
+                // Start the client-side timer renderer
+                if (clientTimerIntervalId) clearInterval(clientTimerIntervalId);
+                clientTimerIntervalId = setInterval(updateClientTimers, 1000);
+            };
+
+            /**
+             * Renders the list of group members from the snapshot data.
+             */
+            const renderGroupMembers = (members) => {
+                dom.memberListContainer.innerHTML = "";
+                
+                // Sort: You first, then studying, then by name
+                members.sort((a, b) => {
+                    if (a.id === currentUser.uid) return -1;
+                    if (b.id === currentUser.uid) return 1;
+                    if (a.isStudying && !b.isStudying) return -1;
+                    if (!a.isStudying && b.isStudying) return 1;
+                    return a.displayName.localeCompare(b.displayName);
+                });
+
+                const todayString = getTodayString();
+
+                members.forEach(member => {
+                    const memberEl = document.createElement("div");
+                    const isMe = member.id === currentUser.uid;
+                    const lastHeartbeat = member.lastHeartbeat ? member.lastHeartbeat.toDate().getTime() : 0;
+                    const isStale = (Date.now() - lastHeartbeat) > 30000; // 30 sec tolerance
+                    const isStudying = member.isStudying && !isStale;
+
+                    let statusClass = "offline";
+                    let statusText = "Offline";
+
+                    if (isStudying) {
+                        statusClass = "studying";
+                        statusText = `Studying: ${member.subject}`;
+                    } else if (!member.isStudying && !isStale && lastHeartbeat > 0) { // recently stopped
+                        statusClass = "idle";
+                        statusText = "Idle";
+                    } else if (isMe && !member.isStudying) { // I am idle
+                         statusClass = "idle";
+                        statusText = "Idle";
+                    }
+
+                    // Reset daily total if it's a new day
+                    const displayTotal = (member.todayString === todayString) ? member.dailyTotal : 0;
+
+                    memberEl.className = `member-card flex items-center gap-4 p-4 rounded-xl ${isMe ? 'is-me' : ''} ${isStudying ? 'is-studying' : ''}`;
+                    memberEl.id = `member-${member.id}`;
+                    memberEl.innerHTML = `
+                        <img src="${member.photoURL}" alt="" class="w-12 h-12 rounded-full flex-shrink-0">
+                        <div class="flex-grow overflow-hidden">
+                            <div class="flex items-center gap-2">
+                                <span class="status-dot ${statusClass}"></span>
+                                <span class="font-semibold truncate">${member.displayName} ${isMe ? '(You)' : ''}</span>
+                            </div>
+                            <p class="text-sm text-secondary truncate" data-status-text="true">${statusText}</p>
+                        </div>
+                        <div class="flex-shrink-0 text-right">
+                            <div class="text-xl font-semibold tabular-nums" data-client-timer="true" data-start-time="${isStudying ? member.startTime.toDate().getTime() : '0'}">
+                                ${isStudying ? '...' : formatTimeHHMMSS(0)}
+                            </div>
+                            <div class="text-xs text-secondary">Today: ${formatTimeReadable(displayTotal)}</div>
+                        </div>
+                    `;
+                    dom.memberListContainer.appendChild(memberEl);
+                });
+                
+                // Trigger one immediate update of client timers
+                updateClientTimers();
+            };
+            
+            /**
+             * Updates all running timers in the UI every second.
+             * This runs on the client and does NOT cause database reads/writes.
+             */
+            const updateClientTimers = () => {
+                document.querySelectorAll('[data-client-timer="true"]').forEach(el => {
+                    const startTime = parseInt(el.dataset.startTime, 10);
+                    if (startTime > 0) {
+                        // FIX: Use Math.max to prevent negative time from clock skew
+                        const elapsedMs = Date.now() - startTime;
+                        const elapsedSeconds = Math.floor(Math.max(0, elapsedMs / 1000));
+                        el.textContent = formatTimeHHMMSS(elapsedSeconds);
                     } else {
-                         if(currentRenderId === groupRenderId) D.groupListEl.innerHTML = `<p class="text-sm text-secondary px-2">You are not in any groups yet.</p>`;
+                        el.textContent = formatTimeHHMMSS(0);
                     }
                 });
-        }
-        
-        D.groupListEl.addEventListener('click', e => {
-            const groupEl = e.target.closest('[data-group-id]');
-            if (!groupEl) return;
-            
-            const groupId = groupEl.dataset.groupId;
+            };
 
-            if (e.target.classList.contains('leave-group-btn')) {
-                if(confirm("Are you sure you want to leave this group?")) {
-                    leaveGroup(groupId);
-                }
-            } else {
-                displayLeaderboard(groupId);
-            }
-        });
+            /**
+             * Starts the study timer for the current user.
+             */
+            const startStudy = async () => {
+                if (studyState.isRunning || !currentUser || !currentGroupId) return;
 
-        async function leaveGroup(groupId) {
-             const batch = db.batch();
-             const groupRef = db.collection('zenith_groups').doc(groupId);
-             const userRef = db.collection('zenith_users').doc(currentUser.uid);
-             const memberRef = groupRef.collection('members').doc(currentUser.uid);
+                const subject = dom.subjectSelect.value;
+                const todayString = getTodayString();
+                const now = fieldValue.serverTimestamp();
+                const nowLocal = Date.now();
 
-             batch.update(groupRef, { members: firebase.firestore.FieldValue.arrayRemove(currentUser.uid) });
-             batch.update(userRef, { groups: firebase.firestore.FieldValue.arrayRemove(groupId) });
-             batch.delete(memberRef);
-             
-             await batch.commit();
-             
-             const groupElementToRemove = D.groupListEl.querySelector(`[data-group-id="${groupId}"]`);
-             if (groupElementToRemove) {
-                 groupElementToRemove.remove();
-             }
+                studyState = {
+                    isRunning: true,
+                    subject: subject,
+                    startTime: nowLocal,
+                    heartbeatIntervalId: setInterval(runHeartbeat, 29000) // R/W Efficiency: 29 sec heartbeat
+                };
 
-             if (D.groupListEl.children.length === 0) {
-                 D.groupListEl.innerHTML = `<p class="text-sm text-secondary px-2">You are not in any groups yet.</p>`;
-             }
-             
-             if(currentGroupId === groupId){
-                D.leaderboardListEl.innerHTML = '';
-                D.leaderboardTitleEl.textContent = 'Select a Group';
-                D.leaderboardIdEl.textContent = '';
-                D.leaderboardPlaceholder.classList.remove('hidden');
-                currentGroupId = null;
-             }
-        }
-        
-        // --- LEADERBOARD ---
-        async function displayLeaderboard(groupId) {
-            currentGroupId = groupId;
-            db.collection('zenith_users').doc(currentUser.uid).set({ lastOpenedGroup: groupId }, { merge: true });
+                try {
+                    const memberDocRef = db.doc(`zenith_groups/${currentGroupId}/members/${currentUser.uid}`);
+                    const memberDoc = await memberDocRef.get();
+                    const memberData = memberDoc.data();
 
-            D.leaderboardPlaceholder.classList.add('hidden');
-            const groupDoc = await db.collection('zenith_groups').doc(groupId).get();
-            if(!groupDoc.exists) return;
-            
-            const groupData = groupDoc.data();
-            D.leaderboardTitleEl.textContent = groupData.name;
-            D.leaderboardIdEl.innerHTML = `ID: <span class="font-mono bg-black/20 px-2 py-1 rounded">${groupId}</span> <button id="copy-group-id-btn" title="Copy Group ID" class="ml-2 text-secondary hover:text-primary p-1 rounded-md hover:bg-white/10 transition-colors">[copy]</button>`;
-            
-            D.leaderboardIdEl.querySelector('#copy-group-id-btn').addEventListener('click', () => {
-                navigator.clipboard.writeText(groupId).then(() => {
-                    showToast('Group ID copied to clipboard!');
-                }).catch(err => console.error('Failed to copy text: ', err));
-            });
-            
-            leaderboardMembers.clear();
-            const memberIds = groupData.members;
-            if (memberIds.length > 0) {
-                 const usersSnapshot = await db.collection('zenith_users').where(firebase.firestore.FieldPath.documentId(), 'in', memberIds).get();
-                 usersSnapshot.forEach(doc => {
-                     const member = leaderboardMembers.get(doc.id) || {};
-                     member.totalStudyTime = doc.data().totalStudyTime || 0;
-                     leaderboardMembers.set(doc.id, member);
-                 });
-            }
-
-            if (unsubscribeLeaderboardListener) unsubscribeLeaderboardListener();
-            
-            unsubscribeLeaderboardListener = db.collection('zenith_groups').doc(groupId).collection('members')
-                .onSnapshot(snapshot => {
-                    snapshot.docChanges().forEach(change => {
-                        const docData = change.doc.data();
-                        const docId = change.doc.id;
-                        if (change.type === 'removed') {
-                            leaderboardMembers.delete(docId);
-                        } else {
-                            const member = leaderboardMembers.get(docId) || {};
-                             leaderboardMembers.set(docId, { ...member, ...docData });
-                        }
+                    // Check if we need to reset the daily total
+                    const currentTotal = (memberData.todayString === todayString) ? memberData.dailyTotal : 0;
+                    
+                    // This is the 1 write to start studying
+                    await memberDocRef.update({
+                        isStudying: true,
+                        subject: subject,
+                        startTime: now,
+                        lastHeartbeat: now,
+                        todayString: todayString,
+                        dailyTotal: currentTotal // This resets to 0 if it's a new day
                     });
-                    renderLeaderboard();
-                });
-        }
-        
-        function renderLeaderboard() {
-            const membersArray = Array.from(leaderboardMembers.values());
-            membersArray.sort((a,b) => (b.totalStudyTime || 0) - (a.totalStudyTime || 0));
 
-            D.leaderboardListEl.innerHTML = '';
-            membersArray.forEach((member, index) => {
-                const itemEl = document.createElement('div');
-                itemEl.className = 'leaderboard-item flex items-center justify-between p-3 rounded-lg transition-colors';
-                
-                let statusHTML = '';
-                if (member.isStudying) {
-                    itemEl.classList.add('studying');
-                    const subject = member.currentSubject ? `(${member.currentSubject})` : '';
-                    statusHTML = `<span class="text-xs font-semibold studying-glow">Studying now... ${subject}</span>`;
-                } else if (member.lastSeen) {
-                    statusHTML = `<span class="text-xs text-secondary">Last seen: ${formatTimeAgo(member.lastSeen.toDate())}</span>`;
-                } else {
-                    statusHTML = `<span class="text-xs text-secondary">Offline</span>`;
+                    dom.startStudyBtn.classList.add("hidden");
+                    dom.stopStudyBtn.classList.remove("hidden");
+                    dom.subjectSelect.disabled = true;
+
+                } catch (error) {
+                    console.error("Error starting study session:", error);
+                    showSyncStatus("Failed to start timer", true);
+                    // Rollback client state
+                    clearInterval(studyState.heartbeatIntervalId);
+                    studyState.isRunning = false;
+                }
+            };
+            
+            /**
+             * Sends a heartbeat update to Firestore to show we are still active.
+             */
+            const runHeartbeat = async () => {
+                if (!studyState.isRunning || !currentUser || !currentGroupId) {
+                    clearInterval(studyState.heartbeatIntervalId);
+                    return;
                 }
                 
-                itemEl.innerHTML = `
-                    <div class="flex items-center gap-4">
-                        <span class="font-bold text-xl text-secondary w-8 text-center">${index + 1}</span>
-                        <img src="${member.photoURL}" class="w-12 h-12 rounded-full" alt="${member.name}">
-                        <div>
-                            <div class="flex items-center">
-                              <p class="font-semibold text-lg">${member.name}</p>
-                            </div>
-                            ${statusHTML}
-                        </div>
-                    </div>
-                    <div class="font-bold text-xl timer-digits">${formatSeconds(member.totalStudyTime || 0)}</div>
-                `;
-                D.leaderboardListEl.appendChild(itemEl);
+                try {
+                    // This is the 1 write every 15 seconds
+                    await db.doc(`zenith_groups/${currentGroupId}/members/${currentUser.uid}`).update({
+                        lastHeartbeat: fieldValue.serverTimestamp()
+                    });
+                } catch (error) {
+                    console.error("Heartbeat failed:", error);
+                    // Don't show an error, just log it. It will retry.
+                }
+            };
+
+            /**
+             * Stops the study timer for the current user.
+             */
+            const stopStudy = async () => {
+                if (!studyState.isRunning || !currentUser || !currentGroupId) return;
+
+                clearInterval(studyState.heartbeatIntervalId);
+                const sessionDuration = Math.round((Date.now() - studyState.startTime) / 1000);
+
+                studyState = {
+                    isRunning: false,
+                    subject: null,
+                    startTime: null,
+                    heartbeatIntervalId: null,
+                };
+
+                try {
+                    // This is the 1 write to stop studying
+                    await db.doc(`zenith_groups/${currentGroupId}/members/${currentUser.uid}`).update({
+                        isStudying: false,
+                        subject: null,
+                        startTime: null,
+                        lastHeartbeat: fieldValue.serverTimestamp(), // Update heartbeat one last time to show "Idle"
+                        dailyTotal: fieldValue.increment(sessionDuration)
+                    });
+
+                    dom.startStudyBtn.classList.remove("hidden");
+                    dom.stopStudyBtn.classList.add("hidden");
+                    dom.subjectSelect.disabled = false;
+
+                } catch (error) {
+                    console.error("Error stopping study session:", error);
+                    showSyncStatus("Failed to stop timer", true);
+                    // Client state is already rolled back, but UI is now out of sync.
+                    // A page refresh might be needed if this fails.
+                }
+            };
+
+
+            // --- Modal Event Listeners ---
+            dom.manageGroupsBtn.addEventListener("click", () => dom.groupModal.classList.remove("hidden"));
+            dom.closeGroupModalBtn.addEventListener("click", () => dom.groupModal.classList.add("hidden"));
+            dom.groupModal.addEventListener("click", (e) => {
+                if (e.target === dom.groupModal) {
+                    dom.groupModal.classList.add("hidden");
+                }
             });
-        }
 
-        // --- UTILITY ---
-        function formatSeconds(s) {
-            if (isNaN(s)) s = 0;
-            const h = Math.floor(s / 3600).toString().padStart(2, '0');
-            const m = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
-            const sec = Math.floor(s % 60).toString().padStart(2, '0');
-            return `${h}:${m}:${sec}`;
-        }
-        
-        function formatTimeAgo(date) {
-            const now = new Date();
-            const seconds = Math.floor((now - date) / 1000);
-            let interval = seconds / 31536000;
-            if (interval > 1) return Math.floor(interval) + "y ago";
-            interval = seconds / 2592000;
-            if (interval > 1) return Math.floor(interval) + "mo ago";
-            interval = seconds / 86400;
-            if (interval > 1) return Math.floor(interval) + "d ago";
-            interval = seconds / 3600;
-            if (interval > 1) return Math.floor(interval) + "h ago";
-            interval = seconds / 60;
-            if (interval > 1) return Math.floor(interval) + "m ago";
-            return "Just now";
-        }
-        
-        function showToast(message) {
-            const toast = document.getElementById('toast-notification');
-            if(!toast) return;
-            toast.textContent = message;
-            toast.classList.remove('opacity-0');
-            toast.classList.add('bottom-5');
-            toast.classList.remove('bottom-[-100px]');
-            setTimeout(() => {
-                toast.classList.add('opacity-0');
-                toast.classList.add('bottom-[-100px]');
-                toast.classList.remove('bottom-5');
-            }, 2000);
-        }
+            // --- Study Controls Event Listeners ---
+            dom.startStudyBtn.addEventListener("click", startStudy);
+            dom.stopStudyBtn.addEventListener("click", stopStudy);
 
-    });
+            // ADDED: Copy Group ID Button
+            dom.copyGroupIdBtn.addEventListener("click", () => {
+                const input = dom.currentGroupIdDisplay;
+                input.select();
+                input.setSelectionRange(0, 99999); // For mobile
+                try {
+                    document.execCommand('copy'); // Use execCommand for iFrame compatibility
+                    showSyncStatus("Copied!");
+                } catch (err) {
+                    console.error('Failed to copy text: ', err);
+                    showSyncStatus("Copy failed", true);
+                }
+                // Deselect
+                window.getSelection().removeAllRanges();
+            });
+            
+            // Handle page unload
+            window.addEventListener("beforeunload", () => {
+                if(studyState.isRunning) {
+                    // This is a "best effort" stop. It's not guaranteed to run.
+                    // The heartbeat/stale check is the real failsafe.
+                    stopStudy();
+                }
+            });
+
+            // ADDED: Global click listener to close user menu
+            document.addEventListener("click", (event) => {
+                const userMenuDropdown = document.getElementById("user-menu-dropdown");
+                
+                // If the dropdown exists and the click is not on the button
+                if (userMenuDropdown && !event.target.closest("#user-menu-button")) {
+                    userMenuDropdown.classList.add("hidden");
+                }
+            });
+
+        });
     </script>
 </body>
 </html>
-
