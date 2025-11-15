@@ -2,7 +2,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zenith | SvalTech</title>
-    <meta name="description" content="A group study timer (Zenith) using Firebase for real-time tracking.">
+    <meta name="description" content="A group study timer web app.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -383,9 +383,15 @@
                                     </svg>
                                 </button>
                             </div>
-                            <button id="leave-group-btn"
-                                class="btn-secondary text-xs px-3 py-1 text-red-400 border-red-400/50 hover:bg-red-400/10 hover:text-red-300 flex-shrink-0">Leave
-                                Group</button>
+                            <!-- MODIFIED: Wrapper for Leave/Delete buttons -->
+                            <div class="flex-shrink-0 flex gap-2">
+                                <button id="leave-group-btn"
+                                    class="btn-secondary text-xs px-3 py-1 text-red-400 border-red-400/50 hover:bg-red-400/10 hover:text-red-300">Leave
+                                    Group</button>
+                                <!-- ADDED: Delete Group Button -->
+                                <button id="delete-group-btn"
+                                    class="hidden btn-danger text-xs px-3 py-1 font-semibold">Delete Group</button>
+                            </div>
                         </div>
                         <div id="member-list-container" class="space-y-3">
                             <p id="group-placeholder" class="text-secondary text-center py-8">
@@ -540,6 +546,7 @@
                 groupViewCard: document.getElementById("group-view-card"),
                 groupNameTitle: document.getElementById("group-name-title"),
                 leaveGroupBtn: document.getElementById("leave-group-btn"),
+                deleteGroupBtn: document.getElementById("delete-group-btn"), // ADDED
                 memberListContainer: document.getElementById("member-list-container"),
                 groupPlaceholder: document.getElementById("group-placeholder"),
                 groupModal: document.getElementById("group-modal"),
@@ -849,6 +856,7 @@
                             dom.studyControlsCard.classList.add("hidden");
                             dom.leaveGroupBtn.classList.add("hidden");
                             dom.shareGroupBtn.classList.add("hidden");
+                            dom.deleteGroupBtn.classList.add("hidden"); // ADDED
                             currentGroupId = null;
                             db.doc(`zenith_users/${currentUser.uid}`).update({ currentGroupId: null });
                         }
@@ -1099,6 +1107,7 @@
                     dom.leaveGroupBtn.classList.add("hidden");
                     dom.groupViewCard.classList.add("hidden");
                     dom.shareGroupBtn.classList.add("hidden");
+                    dom.deleteGroupBtn.classList.add("hidden"); // ADDED
 
 
                     showSyncStatus("Left group");
@@ -1146,6 +1155,70 @@
                 }
             };
             
+            // --- ADDED: New Delete Group Function ---
+            /**
+             * Handles PERMANENTLY deleting the current group.
+             * This will delete all member data and user references.
+             */
+            const handleDeleteGroup = async () => {
+                if (!currentUser || !currentGroupId || !myGroups.has(currentGroupId)) return;
+
+                // 1. Double Confirmation
+                const groupName = myGroups.get(currentGroupId).groupName;
+                if (!confirm(`Are you sure you want to PERMANENTLY DELETE the group "${groupName}"?`)) {
+                    return;
+                }
+                const promptCheck = prompt(`This will delete the group for ALL members. This action is permanent and cannot be undone.\n\nType the group name "${groupName}" to confirm.`);
+                
+                if (promptCheck !== groupName) {
+                    showSyncStatus("Deletion cancelled or name mismatch.", true);
+                    return;
+                }
+
+                const groupIdToDelete = currentGroupId;
+                showSyncStatus(`Deleting "${groupName}"...`);
+                dom.deleteGroupBtn.disabled = true;
+                dom.leaveGroupBtn.disabled = true;
+
+                try {
+                    // 1. Get all members to find out who to notify
+                    const membersSnapshot = await db.collection(`zenith_groups/${groupIdToDelete}/members`).get();
+                    const memberIds = membersSnapshot.docs.map(doc => doc.id);
+
+                    // 2. Start a batch write
+                    const batch = db.batch();
+
+                    // 3. Delete all member docs
+                    membersSnapshot.forEach(doc => batch.delete(doc.ref));
+
+                    // 4. Delete the group from each member's personal list
+                    // (This works because of the "kick member" security rule)
+                    memberIds.forEach(userId => {
+                        const userGroupRef = db.doc(`zenith_users/${userId}/groups/${groupIdToDelete}`);
+                        batch.delete(userGroupRef);
+                    });
+
+                    // 5. Delete the main group doc
+                    const groupRef = db.doc(`zenith_groups/${groupIdToDelete}`);
+                    batch.delete(groupRef);
+
+                    // 6. Commit the batch
+                    // This is a single, atomic operation.
+                    await batch.commit();
+
+                    // 7. UI will automatically reset. The myGroupsListener will fire
+                    // because the group was deleted from the owner's list.
+                    showSyncStatus("Group deleted successfully.");
+                    // Note: No manual UI cleanup is needed here.
+
+                } catch (error) {
+                    console.error("Error deleting group:", error);
+                    showSyncStatus("Error deleting group. See console.", true);
+                    dom.deleteGroupBtn.disabled = false;
+                    dom.leaveGroupBtn.disabled = false;
+                }
+            };
+
             // Delegated click listener for member removal
             dom.memberListContainer.addEventListener("click", (e) => {
                 const removeBtn = e.target.closest('[data-remove-btn="true"]');
@@ -1192,6 +1265,11 @@
                 dom.leaveGroupBtn.classList.remove("hidden");
                 dom.groupViewCard.classList.remove("hidden");
                 dom.shareGroupBtn.classList.remove("hidden");
+
+                // --- ADDED: Show/Hide Delete Button ---
+                const isOwner = groupData.ownerId === currentUser.uid;
+                dom.deleteGroupBtn.classList.toggle("hidden", !isOwner);
+                // ---
                 
                 renderMyGroups();
 
@@ -1764,6 +1842,9 @@
             // Analytics tab listeners
             dom.analyticsWeekBtn.addEventListener("click", () => renderAnalytics('week'));
             dom.analyticsMonthBtn.addEventListener("click", () => renderAnalytics('month'));
+            
+            // --- ADDED: Delete Group Listener ---
+            dom.deleteGroupBtn.addEventListener("click", handleDeleteGroup);
             
             // Handle page unload
             window.addEventListener("beforeunload", () => {
