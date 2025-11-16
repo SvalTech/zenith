@@ -766,7 +766,6 @@
             };
 
             // --- App State ---
-            const instanceId = `zenith_instance_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
             let currentUser = null;
             let currentUserProfile = null; // ADDED: Holds the Firestore user profile
             let currentGroupId = null;
@@ -1080,7 +1079,7 @@
                     history.replaceState(null, '', window.location.pathname);
                 }
             }
-            let userProfileListenerUnsubscribe = null;
+
             // --- Core App Logic ---
             const initUser = async (user) => {
                 const userDocRef = db.doc(`zenith_users/${user.uid}`);
@@ -1100,50 +1099,6 @@
 
                 currentUserProfile = userData; // ADDED: Set the global profile
                 updateAuthUI(user, currentUserProfile); // ADDED: Call Auth UI here
-
-                if (userProfileListenerUnsubscribe) userProfileListenerUnsubscribe(); // Clean up old one
-                userProfileListenerUnsubscribe = userDocRef.onSnapshot((doc) => {
-                    if (!doc.exists) return;
-                    const profileData = doc.data();
-                    currentUserProfile = profileData; // This replaces your one-time fetch
-
-                    // Update Auth UI in real-time in case name changes elsewhere
-                    updateAuthUI(currentUser, currentUserProfile);
-
-                    // --- Session Hijacking Check ---
-                    const activeId = profileData.activeInstanceId;
-                    if (activeId && activeId !== instanceId && studyState.isRunning) {
-                        // Another device has taken over!
-                        console.warn("Session taken over by another instance. Stopping locally.");
-                        
-                        // Clear interval without logging
-                        clearInterval(studyState.heartbeatIntervalId);
-                        studyState.isRunning = false;
-
-                        // Update UI
-                        dom.startStudyBtn.classList.remove("hidden");
-                        dom.stopStudyBtn.classList.add("hidden");
-                        dom.subjectSelect.disabled = false;
-                        dom.statusInput.disabled = false;
-                        dom.statusInput.value = "";
-                        
-                        // Show a non-intrusive message
-                        showSyncStatus("Session started on another device.", true);
-                    } else if (!activeId && studyState.isRunning && !dom.stopStudyBtn.disabled) {
-                        // This can happen if the stopStudy() fails, or is triggered by a
-                        // cloud function. This ensures the local UI is reset.
-                        console.warn("Session was remotely stopped. Resetting UI.");
-                        
-                        clearInterval(studyState.heartbeatIntervalId);
-                        studyState.isRunning = false;
-
-                        dom.startStudyBtn.classList.remove("hidden");
-                        dom.stopStudyBtn.classList.add("hidden");
-                        dom.subjectSelect.disabled = false;
-                        dom.statusInput.disabled = false;
-                    }
-                });
-
 
                 currentGroupId = userData.currentGroupId || null;
                 attachMyGroupsListener(user.uid);
@@ -1364,7 +1319,6 @@
                     dom.shareGroupBtn.classList.add("hidden");
                     dom.deleteGroupBtn.classList.add("hidden");
                     showSyncStatus("Left group");
-                    loadPublicGroupsPreview();
                 } catch (error) {
                     console.error("Error leaving group: ", error);
                     showSyncStatus("Failed to leave group", true);
@@ -1434,7 +1388,6 @@
                     batch.delete(groupRef);
                     await batch.commit();
                     showSyncStatus("Group deleted successfully.");
-                    loadPublicGroupsPreview();
                 } catch (error) {
                     console.error("Error deleting group:", error);
                     showSyncStatus("Error deleting group. See console.", true);
@@ -1623,20 +1576,6 @@
 
             const startStudy = async () => {
                 if (studyState.isRunning || !currentUser || !currentGroupId) return;
-                const userDocRef = db.doc(`zenith_users/${currentUser.uid}`); // Get user doc ref
-                try {
-                    const userDoc = await userDocRef.get();
-                    const existingInstanceId = userDoc.data().activeInstanceId;
-
-                    if (existingInstanceId && existingInstanceId !== instanceId) {
-                        showAlert("You are already studying on another device.", "Session Active");
-                        return; // Don't start!
-                    }
-                } catch (error) {
-                    console.error("Error checking for active session:", error);
-                    showSyncStatus("Failed to check session, please try again.", true);
-                    return;
-                }
                 const subject = dom.subjectSelect.value;
                 const status = dom.statusInput.value.trim();
                 const todayString = getTodayString();
@@ -1654,9 +1593,7 @@
                     const memberDoc = await memberDocRef.get();
                     const memberData = memberDoc.data();
                     const currentTotal = (memberData.todayString === todayString) ? memberData.dailyTotal : 0;
-                    const batch = db.batch();
-                    // 1. Update the member doc (as before)
-                    batch.update(memberDocRef, {
+                    await memberDocRef.update({
                         isStudying: true,
                         subject: subject,
                         status: studyState.status,
@@ -1665,13 +1602,6 @@
                         todayString: todayString,
                         dailyTotal: currentTotal
                     });
-
-                    // 2. NEW: Claim the session in the user doc
-                    batch.update(userDocRef, {
-                        activeInstanceId: instanceId
-                    });
-
-                    await batch.commit(); // Commit both updates
                     dom.startStudyBtn.classList.add("hidden");
                     dom.stopStudyBtn.classList.remove("hidden");
                     dom.subjectSelect.disabled = true;
@@ -1733,9 +1663,7 @@
                     status: null,
                 };
                 try {
-                    const batch = db.batch();
-                    // 1. Update the member doc (as before)
-                    batch.update(db.doc(`zenith_groups/${localCurrentGroupId}/members/${currentUser.uid}`), {
+                    await db.doc(`zenith_groups/${localCurrentGroupId}/members/${currentUser.uid}`).update({
                         isStudying: false,
                         subject: null,
                         status: null,
@@ -1743,22 +1671,13 @@
                         lastHeartbeat: fieldValue.serverTimestamp(),
                         dailyTotal: fieldValue.increment(sessionDuration)
                     });
-
-                    // 2. Log the study session (as before)
                     const logRef = db.collection(`zenith_users/${currentUser.uid}/study_logs`);
-                    batch.set(logRef.doc(), { // Use set on a new doc ref
+                    await logRef.add({
                         duration: sessionDuration,
                         subject: localStudyState.subject,
                         groupId: localCurrentGroupId,
                         timestamp: fieldValue.serverTimestamp()
                     });
-
-                    // 3. NEW: Release the session lock
-                    batch.update(db.doc(`zenith_users/${currentUser.uid}`), {
-                        activeInstanceId: null
-                    });
-
-                    await batch.commit(); // Commit all three updates
                     dom.startStudyBtn.classList.remove("hidden");
                     dom.stopStudyBtn.classList.add("hidden");
                     dom.subjectSelect.disabled = false;
