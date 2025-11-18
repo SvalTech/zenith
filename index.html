@@ -343,8 +343,8 @@
     <!-- Login View -->
     <div id="login-view" class="hidden fixed inset-0 flex items-center justify-center z-40 bg-gray-950">
         <div class="text-center p-8 card max-w-md mx-auto">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-100">Welcome to Zenith</h2>
-            <p id="login-message" class="text-gray-400 mb-6">Please sign in with your StudyLocus account to continue.</p>
+            <h2 class="text-2xl font-semibold mb-4 text-gray-100">Welcome to Zenith, the ultimate Study Together app!</h2>
+            <p id="login-message" class="text-gray-400 mb-6">Please sign in with your Google account.</p>
             <button id="sign-in-btn-main"
                     class="btn btn-primary w-full text-lg">
                 <svg class="w-6 h-6" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1913,7 +1913,7 @@
                 dom.statusInput.value = "";
 
                 if (sessionDuration < 10) {
-                    showAlert("Session too short, not logged.");
+                    showAlert("Session too short, not logged. Minimum: 10 seconds");
                     try {
                         const batch = db.batch();
                         // 1. Update member doc
