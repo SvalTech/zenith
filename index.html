@@ -1072,7 +1072,7 @@
             const now = new Date(); 
             const target = new Date(state.settings.targetDate); 
             const diff = target - now; 
-            const days = Math.ceil(diff / (1000 * 60 * 60 * 24)); 
+            const days = Math.ceil(diff / (1000 * 60 * 60 * 24)) - 1; 
             const el = document.getElementById('days-left'); 
             el.innerText = days > 0 ? days : 0; 
             if(days <= 0) el.classList.add('text-rose-600'); else el.classList.remove('text-rose-600'); 
