@@ -322,7 +322,7 @@
                 <div>
                     <div class="flex justify-between items-center mb-2">
                          <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">Subject</label>
-                         <button type="button" onclick="openCustomSubjectModal()" class="text-[10px] font-bold text-indigo-500 hover:text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1 rounded-md transition-colors">+ Custom</button>
+                         <button type="button" onclick="openCustomSubjectModal()" class="text-[10px] font-bold text-indigo-500 hover:text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1 rounded-md transition-colors">+ Manage Subjects</button>
                     </div>
                     <div id="subject-selector" class="grid grid-cols-2 gap-2"></div>
                 </div>
@@ -564,11 +564,19 @@
     <!-- Custom Subject Modal -->
     <div id="custom-subject-modal" class="fixed inset-0 z-[120] flex items-center justify-center modal-backdrop hidden opacity-0 transition-opacity duration-200 px-4">
         <div class="bg-white dark:bg-slate-800 rounded-[2rem] shadow-2xl p-6 w-full max-w-sm transform scale-95 transition-transform duration-200 border border-slate-200 dark:border-slate-700">
-            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Add Custom Subject</h3>
-            <input type="text" id="custom-subject-input" placeholder="Subject Name (e.g. English)" class="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-base focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none dark:text-white mb-4 appearance-none">
-            <div class="flex gap-3 justify-end">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Manage Subjects</h3>
+            
+            <input type="text" id="custom-subject-input" placeholder="New Subject Name (e.g. History)" class="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-base focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none dark:text-white mb-3 appearance-none">
+            
+            <div class="flex gap-3 justify-end mb-6">
                 <button onclick="closeCustomSubjectModal()" class="px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700/50 font-medium text-sm transition-colors">Cancel</button>
-                <button onclick="confirmAddSubject()" class="px-6 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-lg shadow-indigo-500/20 transition-all">Add Subject</button>
+                <button onclick="confirmAddSubject()" class="px-6 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-lg shadow-indigo-500/20 transition-all">Add</button>
+            </div>
+
+            <div class="border-t border-slate-100 dark:border-slate-700 pt-4">
+                <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Your Custom Subjects</label>
+                <div id="custom-subjects-list" class="space-y-2 max-h-[150px] overflow-y-auto custom-scrollbar pr-1">
+                    </div>
             </div>
         </div>
     </div>
@@ -1544,6 +1552,88 @@
              document.getElementById('custom-subject-modal').classList.remove('hidden');
              setTimeout(() => document.getElementById('custom-subject-modal').classList.remove('opacity-0'), 10);
              document.getElementById('custom-subject-input').focus();
+             
+             // NEW: Render the list of existing custom subjects
+             renderCustomSubjectsList();
+        }
+
+        // NEW: Function to render the list
+        function renderCustomSubjectsList() {
+            const list = document.getElementById('custom-subjects-list');
+            const subjects = state.settings.customSubjects || [];
+            
+            list.innerHTML = '';
+
+            if(subjects.length === 0) {
+                list.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-2">No custom subjects added.</p>`;
+                return;
+            }
+
+            subjects.forEach(sub => {
+                const el = document.createElement('div');
+                el.className = "flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-700/30 rounded-lg group";
+                el.innerHTML = `
+                    <span class="text-sm font-medium text-slate-700 dark:text-slate-300 pl-1">${sub}</span>
+                    <button onclick="deleteCustomSubject('${sub}')" class="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-md transition-colors" title="Remove Subject">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                `;
+                list.appendChild(el);
+            });
+            lucide.createIcons();
+        }
+
+        // NEW: Function to delete a custom subject
+        window.deleteCustomSubject = async (sub) => {
+            if(!currentUser) return;
+            
+            // UI Feedback (Optimistic update)
+            const newSubjects = state.settings.customSubjects.filter(s => s !== sub);
+            state.settings.customSubjects = newSubjects;
+            
+            // Re-render the list in modal and the main selector
+            renderCustomSubjectsList();
+            updateSubjectSelectors();
+
+            try {
+                // Update Firestore
+                await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'config'), { 
+                    customSubjects: arrayRemove(sub) 
+                });
+                showToast("Subject removed");
+            } catch(e) {
+                console.error("Error removing subject:", e);
+                showToast("Error removing subject");
+            }
+        }
+
+        // Updated confirmAddSubject (Logic remains mostly same, just adds list re-render)
+        window.confirmAddSubject = async () => {
+            const sub = document.getElementById('custom-subject-input').value.trim();
+            if(sub) {
+                if(!state.settings.customSubjects.includes(sub)) {
+                    // Update Local State immediately
+                    if (!state.settings.customSubjects) state.settings.customSubjects = [];
+                    state.settings.customSubjects.push(sub);
+                    
+                    // Update UI immediately
+                    renderCustomSubjectsList();
+                    updateSubjectSelectors();
+
+                    // Update Firestore
+                    try {
+                        await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'config'), { customSubjects: arrayUnion(sub) });
+                        showToast(`${sub} added!`);
+                        document.getElementById('custom-subject-input').value = ''; // Clear input
+                    } catch(e) {
+                        console.error(e);
+                    }
+                } else {
+                    showToast("Subject already exists");
+                }
+            }
+            // Optional: Don't close modal immediately so they can add more, or close it:
+            // closeCustomSubjectModal(); 
         }
 
         window.closeCustomSubjectModal = () => {
