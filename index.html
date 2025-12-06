@@ -2,15 +2,18 @@
 <html lang="en" class="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="A production-ready exam tracker for JEE & NEET aspirants. Track tasks, mocks, and progress.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="description" content="An exam tracker for JEE & NEET aspirants. Track tasks, mocks, and progress.">
     <meta name="theme-color" content="#4f46e5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <!-- Emoji Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📅</text></svg>">
     <title>Zenith - sval.tech</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -25,16 +28,31 @@
                     animation: {
                         'float': 'float 6s ease-in-out infinite',
                         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'bounce-slight': 'bounceSlight 1s infinite',
                     },
                     keyframes: {
                         float: {
                             '0%, 100%': { transform: 'translateY(0)' },
                             '50%': { transform: 'translateY(-10px)' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(100%)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        bounceSlight: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-3px)' },
                         }
                     },
                     boxShadow: {
-                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
-                        'glow': '0 0 15px rgba(99, 102, 241, 0.3)',
+                        'soft': '0 4px 30px rgba(0, 0, 0, 0.05)',
+                        'glow': '0 0 20px rgba(99, 102, 241, 0.4)',
+                        'glow-sm': '0 0 10px rgba(99, 102, 241, 0.3)',
+                        'up': '0 -4px 20px rgba(0,0,0,0.1)',
+                    },
+                    screens: {
+                        'xs': '380px',
                     }
                 }
             }
@@ -46,6 +64,7 @@
         body {
             font-family: 'Inter', sans-serif;
             -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none; /* Prevent rubber banding on body */
         }
         
         /* Background Image Layer */
@@ -62,17 +81,31 @@
         /* Glassmorphism utilities */
         .glass {
             background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
         }
         .dark .glass {
             background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        .dark .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
         }
 
         /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .dark ::-webkit-scrollbar-thumb { background: #475569; }
@@ -80,33 +113,48 @@
 
         .task-checkbox:checked + div {
             text-decoration: line-through;
-            opacity: 0.5;
+            opacity: 0.6;
         }
 
         .day-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .day-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); z-index: 10; }
+        @media (min-width: 768px) {
+            .day-card:hover { transform: translateY(-4px); z-index: 10; }
+        }
         
         /* Dragging Styles */
         .day-card.drag-over {
             transform: scale(1.02);
-            border-color: #6366f1; /* indigo-500 */
-            background-color: rgba(99, 102, 241, 0.1); /* indigo with opacity */
+            border-color: #6366f1 !important;
+            background-color: rgba(99, 102, 241, 0.1) !important;
         }
         .task-item.dragging {
             opacity: 0.5;
             cursor: grabbing;
         }
+        .task-item {
+            cursor: grab;
+        }
+        .task-item:active {
+            cursor: grabbing;
+        }
         
         .modal-backdrop {
-            background-color: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(8px);
+            background-color: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
         }
         
-        .sidebar-backdrop {
-            background-color: rgba(15, 23, 42, 0.5);
-            backdrop-filter: blur(4px);
+        /* Mobile Bottom Sheet Animation */
+        .mobile-sheet {
+            transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+            transform: translateY(100%);
+            border-radius: 2rem 2rem 0 0;
+        }
+        .mobile-sheet.open {
+            transform: translateY(0);
         }
 
+        /* Spinner */
         .spinner {
             border: 3px solid rgba(99, 102, 241, 0.3);
             border-radius: 50%;
@@ -127,66 +175,103 @@
         .fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Specific subject radio styling */
-        .radio-Physics:checked + div { background-color: #ffe4e6; color: #be123c; border-color: #fda4af; }
-        .dark .radio-Physics:checked + div { background-color: rgba(190, 18, 60, 0.2); color: #fda4af; border-color: #be123c; }
+        /* Subject Colors - More Pastel/Modern */
+        .radio-Physics:checked + div { background-color: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+        .dark .radio-Physics:checked + div { background-color: rgba(185, 28, 28, 0.2); color: #fca5a5; border-color: #7f1d1d; }
         
         .radio-Chemistry:checked + div { background-color: #fef3c7; color: #b45309; border-color: #fcd34d; }
-        .dark .radio-Chemistry:checked + div { background-color: rgba(180, 83, 9, 0.2); color: #fcd34d; border-color: #b45309; }
+        .dark .radio-Chemistry:checked + div { background-color: rgba(180, 83, 9, 0.2); color: #fcd34d; border-color: #78350f; }
         
         .radio-Maths:checked + div { background-color: #dbeafe; color: #1d4ed8; border-color: #93c5fd; }
-        .dark .radio-Maths:checked + div { background-color: rgba(29, 78, 216, 0.2); color: #93c5fd; border-color: #1d4ed8; }
+        .dark .radio-Maths:checked + div { background-color: rgba(29, 78, 216, 0.2); color: #93c5fd; border-color: #1e3a8a; }
         
-        .radio-Biology:checked + div { background-color: #d1fae5; color: #047857; border-color: #6ee7b7; }
-        .dark .radio-Biology:checked + div { background-color: rgba(4, 120, 87, 0.2); color: #6ee7b7; border-color: #047857; }
+        .radio-Biology:checked + div { background-color: #dcfce7; color: #15803d; border-color: #86efac; }
+        .dark .radio-Biology:checked + div { background-color: rgba(21, 128, 61, 0.2); color: #86efac; border-color: #14532d; }
 
         .radio-MockTest:checked + div { background-color: #f3e8ff; color: #7e22ce; border-color: #d8b4fe; }
-        .dark .radio-MockTest:checked + div { background-color: rgba(126, 34, 206, 0.2); color: #d8b4fe; border-color: #7e22ce; }
+        .dark .radio-MockTest:checked + div { background-color: rgba(126, 34, 206, 0.2); color: #d8b4fe; border-color: #581c87; }
 
-        /* Generic Style for Custom Subjects */
         .radio-Custom:checked + div { background-color: #ccfbf1; color: #0f766e; border-color: #5eead4; }
-        .dark .radio-Custom:checked + div { background-color: rgba(20, 184, 166, 0.2); color: #5eead4; border-color: #0f766e; }
+        .dark .radio-Custom:checked + div { background-color: rgba(20, 184, 166, 0.2); color: #5eead4; border-color: #134e4a; }
         
-        /* Disabled Button State */
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* Smooth inputs */
+        input, textarea, select { transition: all 0.2s; }
+        input:focus, textarea:focus, select:focus { transform: translateY(-1px); }
+
+        /* Mobile specific adjustments */
+        @media (max-width: 768px) {
+            .mobile-bottom-nav {
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+            .mobile-content-padding {
+                padding-bottom: calc(80px + env(safe-area-inset-bottom));
+            }
+            .no-scrollbar::-webkit-scrollbar {
+                display: none;
+            }
+            .no-scrollbar {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
         }
     </style>
 </head>
-<body class="h-screen flex overflow-hidden text-slate-800 bg-slate-50 dark:bg-slate-900 dark:text-slate-100 transition-colors duration-300 selection:bg-indigo-500 selection:text-white">
+<body class="h-screen flex flex-col md:flex-row overflow-hidden text-slate-800 bg-slate-50 dark:bg-slate-900 dark:text-slate-100 transition-colors duration-500 selection:bg-indigo-500 selection:text-white">
 
     <!-- Dynamic Background -->
     <div id="app-background"></div>
 
     <!-- Login Screen -->
     <div id="login-screen" class="fixed inset-0 z-[70] bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-6 hidden">
-        <div class="max-w-md w-full fade-in bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 relative overflow-hidden">
-             <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+        <div class="max-w-md w-full fade-in bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-2xl border border-slate-200 dark:border-slate-700 relative overflow-hidden">
+             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
              <div class="text-center mb-8 mt-2">
-                <h1 class="text-4xl font-black text-slate-900 dark:text-white tracking-tighter mb-2">Zenith</h1>
-                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">The ultimate workspace for JEE & NEET aspirants.</p>
-             </div>
-             <div class="grid grid-cols-2 gap-3 mb-8">
-                <div class="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-2xl text-center border border-slate-100 dark:border-slate-700">
-                    <div class="text-xs font-bold text-slate-700 dark:text-slate-200">Smart Planner</div>
-                </div>
-                <div class="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-2xl text-center border border-slate-100 dark:border-slate-700">
-                    <div class="text-xs font-bold text-slate-700 dark:text-slate-200">Analytics</div>
-                </div>
-                <div class="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-2xl text-center border border-slate-100 dark:border-slate-700">
-                    <div class="text-xs font-bold text-slate-700 dark:text-slate-200">Goals</div>
-                </div>
-                <div class="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-2xl text-center border border-slate-100 dark:border-slate-700">
-                    <div class="text-xs font-bold text-slate-700 dark:text-slate-200">Cloud Sync</div>
+                <div class="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">🎯</div>
+                <h1 class="text-4xl font-black text-slate-900 dark:text-white tracking-tighter mb-2 flex flex-col items-center">
+                    Zenith 
+                    <span class="text-sm font-medium text-slate-400 dark:text-slate-500 mt-1">by <a href="https://sval.tech" target="_blank" class="hover:text-indigo-500 underline decoration-indigo-500/30">sval.tech</a></span>
+                </h1>
+                <p class="text-slate-500 dark:text-slate-400 mb-6">Your aesthetic workspace for success.</p>
+                
+                <!-- Feature Grid -->
+                <div class="grid grid-cols-2 gap-3 mb-2 text-left">
+                    <div class="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-900/30">
+                        <div class="bg-white dark:bg-indigo-900/50 w-8 h-8 rounded-full flex items-center justify-center mb-2 shadow-sm">
+                            <span class="text-lg">📅</span>
+                        </div>
+                        <h3 class="font-bold text-slate-800 dark:text-slate-200 text-sm">Planner</h3>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-1">Track daily subject tasks.</p>
+                    </div>
+                    <div class="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-2xl border border-purple-100 dark:border-purple-900/30">
+                        <div class="bg-white dark:bg-purple-900/50 w-8 h-8 rounded-full flex items-center justify-center mb-2 shadow-sm">
+                            <span class="text-lg">🎯</span>
+                        </div>
+                        <h3 class="font-bold text-slate-800 dark:text-slate-200 text-sm">Targets</h3>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-1">Set big weekly goals.</p>
+                    </div>
+                    <div class="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl border border-emerald-100 dark:border-emerald-900/30">
+                        <div class="bg-white dark:bg-emerald-900/50 w-8 h-8 rounded-full flex items-center justify-center mb-2 shadow-sm">
+                            <span class="text-lg">📊</span>
+                        </div>
+                        <h3 class="font-bold text-slate-800 dark:text-slate-200 text-sm">Analytics</h3>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-1">Visualize your progress.</p>
+                    </div>
+                    <div class="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-100 dark:border-amber-900/30">
+                        <div class="bg-white dark:bg-amber-900/50 w-8 h-8 rounded-full flex items-center justify-center mb-2 shadow-sm">
+                            <span class="text-lg">⏳</span>
+                        </div>
+                        <h3 class="font-bold text-slate-800 dark:text-slate-200 text-sm">Focus</h3>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-1">Exam countdown & focus.</p>
+                    </div>
                 </div>
              </div>
              <button onclick="signInWithGoogle()" class="w-full flex items-center justify-center gap-3 bg-slate-900 dark:bg-white hover:opacity-90 text-white dark:text-slate-900 font-bold py-4 px-4 rounded-2xl transition-all shadow-xl shadow-slate-200 dark:shadow-none transform active:scale-95 group">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5" alt="Google">
-                <span>Sign in with Google</span>
+                <span>Start Your Journey</span>
             </button>
             <p id="login-status" class="text-center text-xs text-slate-400 mt-4 h-4"></p>
-            <div class="mt-6 text-center"><span class="text-[10px] uppercase tracking-widest text-slate-300 font-bold">Powered by <a href="https://sval.tech" target="_blank" class="hover:text-indigo-500 transition-colors">sval.tech</a></span></div>
         </div>
     </div>
 
@@ -194,429 +279,664 @@
     <div id="loading-overlay" class="fixed inset-0 z-[60] bg-white dark:bg-slate-900 flex items-center justify-center transition-opacity duration-500">
         <div class="flex flex-col items-center gap-4">
             <div class="spinner w-10 h-10 border-indigo-500"></div>
-            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 animate-pulse">Loading Account...</p>
+            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 animate-pulse">Setting up your space...</p>
         </div>
     </div>
 
-    <!-- Mobile Sidebar Backdrop -->
-    <div id="sidebar-backdrop" onclick="toggleSidebar(false)" class="fixed inset-0 sidebar-backdrop z-40 hidden md:hidden transition-opacity"></div>
-
-    <!-- Sidebar -->
-    <aside class="w-72 md:w-80 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border-r border-slate-200 dark:border-slate-700 flex flex-col shrink-0 z-50 shadow-2xl md:shadow-none fixed md:relative h-full transition-transform duration-300 -translate-x-full md:translate-x-0" id="sidebar">
+    <!-- Desktop Sidebar (Hidden on Mobile) -->
+    <aside class="hidden md:flex w-80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-r border-slate-200 dark:border-slate-800 flex-col shrink-0 z-[50] shadow-none relative h-full transition-transform duration-300" id="desktop-sidebar">
         <!-- Header -->
-        <div class="p-5 border-b border-slate-100 dark:border-slate-700 shrink-0">
-            <div class="flex items-center justify-between mb-5">
-                <h1 class="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2 tracking-tight">
-                    <div class="bg-indigo-600 text-white p-1 rounded-lg"><i data-lucide="target" class="w-5 h-5"></i></div>
-                    <span id="app-title">Tracker</span>
-                </h1>
-                <div class="flex gap-1">
-                    <button onclick="openSettings()" class="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors"><i data-lucide="settings" class="w-5 h-5"></i></button>
-                    <button onclick="toggleSidebar(false)" class="md:hidden p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+        <div class="p-6 shrink-0">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h1 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2 tracking-tight">
+                        <span class="text-indigo-600 dark:text-indigo-400">Zenith</span>
+                    </h1>
+                    <div class="text-xs font-medium text-slate-400 dark:text-slate-500 mt-0.5">by <a href="https://sval.tech" target="_blank" class="hover:text-indigo-500 transition-colors">sval.tech</a></div>
                 </div>
+                <button onclick="openSettings()" class="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors"><i data-lucide="settings" class="w-5 h-5"></i></button>
             </div>
-            <div class="bg-gradient-to-br from-indigo-50 to-white dark:from-slate-800 dark:to-slate-700/50 rounded-2xl p-4 border border-indigo-100 dark:border-slate-700 shadow-sm relative overflow-hidden group">
-                <div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity"><i data-lucide="hourglass" class="w-12 h-12 text-indigo-600 dark:text-indigo-400"></i></div>
-                <div class="text-indigo-900 dark:text-indigo-200 text-[10px] font-bold mb-1 uppercase tracking-wider">Time Remaining</div>
-                <div class="flex items-baseline gap-1"><span id="days-left" class="text-4xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight">--</span><span class="text-sm text-indigo-500 dark:text-indigo-300 font-semibold">Days</span></div>
-                <div id="target-date-display" class="text-[10px] text-indigo-400 dark:text-indigo-300 mt-2 font-mono bg-white/50 dark:bg-black/20 inline-block px-2 py-0.5 rounded backdrop-blur-sm">Target: --</div>
+
+            <!-- Countdown Card -->
+            <div id="desktop-countdown-card" class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-5 shadow-lg shadow-indigo-500/20 relative overflow-hidden group mb-6 text-white transition-all duration-300">
+                <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i data-lucide="hourglass" class="w-16 h-16 text-white"></i></div>
+                <div class="text-indigo-100 text-[10px] font-bold mb-1 uppercase tracking-wider">Time Remaining</div>
+                <div class="flex items-baseline gap-1 mb-1"><span id="days-left-desktop" class="text-5xl font-black tracking-tight">--</span><span class="text-sm font-medium opacity-80">Days</span></div>
+                <div id="target-date-display-desktop" class="text-[10px] text-white/80 font-mono bg-white/20 inline-block px-2 py-0.5 rounded backdrop-blur-sm">Target: --</div>
             </div>
-            <div class="flex gap-2 mt-5">
-                <button onclick="switchView('calendar'); toggleSidebar(false)" id="nav-calendar" class="flex-1 py-2.5 text-xs font-semibold rounded-xl bg-indigo-600 text-white transition-all shadow-lg shadow-indigo-200 dark:shadow-none flex items-center justify-center gap-2"><i data-lucide="calendar" class="w-4 h-4"></i> Planner</button>
-                <button onclick="switchView('stats'); toggleSidebar(false)" id="nav-stats" class="flex-1 py-2.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"><i data-lucide="bar-chart-2" class="w-4 h-4"></i> Stats</button>
+
+            <!-- Navigation Tabs -->
+            <nav class="flex p-1 bg-slate-100 dark:bg-slate-800/50 rounded-2xl mb-6">
+                <button onclick="switchView('calendar')" id="nav-desktop-calendar" class="flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-300"><i data-lucide="calendar" class="w-4 h-4"></i> Planner</button>
+                <button onclick="switchView('weekly')" id="nav-desktop-weekly" class="flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700"><i data-lucide="crosshair" class="w-4 h-4"></i> Targets</button>
+                <button onclick="switchView('stats')" id="nav-desktop-stats" class="flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700"><i data-lucide="bar-chart-2" class="w-4 h-4"></i> Stats</button>
+            </nav>
+        </div>
+
+        <!-- Add Task Form Container (Restored) -->
+        <div id="desktop-add-task-container" class="flex-1 overflow-y-auto px-6 pb-6 space-y-6 custom-scrollbar">
+            <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2"><i data-lucide="plus-square" class="w-3 h-3"></i> Quick Add Task</h2>
+            <form id="add-task-form" class="space-y-4">
+                <input type="date" id="task-date" class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none dark:text-white transition-all">
+                
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                         <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">Subject</label>
+                         <button type="button" onclick="openCustomSubjectModal()" class="text-[10px] font-bold text-indigo-500 hover:text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1 rounded-md transition-colors">+ Custom</button>
+                    </div>
+                    <div id="subject-selector" class="grid grid-cols-2 gap-2"></div>
+                </div>
+                
+                <!-- Dynamic Mock Fields -->
+                <div id="mock-fields-container" class="hidden animate-slide-up space-y-3 p-4 bg-purple-50 dark:bg-purple-900/10 rounded-2xl border border-purple-100 dark:border-purple-900/30">
+                    <div class="flex items-center gap-2 mb-1 text-purple-700 dark:text-purple-300">
+                        <i data-lucide="trophy" class="w-3.5 h-3.5"></i>
+                        <span class="text-xs font-bold">Score (Optional)</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] font-bold text-purple-600 dark:text-purple-400 mb-1 uppercase">Obtained</label>
+                            <input type="number" id="task-marks" placeholder="--" class="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm outline-none dark:text-white font-bold text-purple-600 focus:ring-2 focus:ring-purple-500 text-center">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-purple-600 dark:text-purple-400 mb-1 uppercase">Total</label>
+                            <input type="number" id="task-max-marks" placeholder="300" class="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm outline-none dark:text-white font-bold text-purple-600 focus:ring-2 focus:ring-purple-500 text-center">
+                        </div>
+                    </div>
+                </div>
+
+                <textarea id="task-input" rows="2" placeholder="What's the goal?" class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none dark:text-white resize-none transition-all"></textarea>
+                
+                <button id="btn-add-task" type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95 flex items-center justify-center gap-2 hover:translate-y-[-2px]">
+                    <i data-lucide="plus" class="w-5 h-5"></i> <span>Add to Plan</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+            <div class="flex items-center gap-3">
+                <div id="user-avatar-desktop" class="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-sm ring-2 ring-white dark:ring-slate-700 shadow-sm">U</div>
+                <div class="flex-1 min-w-0"><p id="user-name-desktop" class="text-xs font-bold text-slate-900 dark:text-white truncate">User</p><p id="user-email-desktop" class="text-[10px] text-slate-500 truncate">Syncing...</p></div>
+                <button onclick="handleSignOut()" class="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors" title="Sign Out"><i data-lucide="log-out" class="w-4 h-4"></i></button>
             </div>
         </div>
-        <!-- Content -->
-        <div class="flex-1 overflow-y-auto p-5 space-y-8">
-            <!-- Add Task Form -->
-            <section>
-                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2"><i data-lucide="plus-square" class="w-3 h-3"></i> Add Daily Task</h2>
-                <form id="add-task-form" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Date</label>
-                        <input type="date" id="task-date" min="2025-01-01" max="2030-12-31" class="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500/50 outline-none dark:text-white transition-colors cursor-pointer hover:border-indigo-300 dark:hover:border-slate-500">
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative bg-slate-50/50 dark:bg-slate-900/50 mobile-content-padding">
+        
+        <!-- Mobile Header -->
+        <div class="md:hidden glass border-b border-slate-200 dark:border-slate-800 p-4 flex justify-between items-center z-20 sticky top-0 shadow-sm">
+            <div>
+                <h1 class="font-black text-xl text-slate-800 dark:text-white flex items-center gap-2 tracking-tight">
+                    <span class="text-indigo-600 dark:text-indigo-400">Zenith</span>
+                </h1>
+                <div class="text-[10px] font-medium text-slate-400 dark:text-slate-500 -mt-0.5">by sval.tech</div>
+            </div>
+            <!-- Mobile Countdown Pill -->
+            <div id="mobile-countdown-pill" class="hidden px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center gap-1.5">
+                <i data-lucide="hourglass" class="w-3 h-3 text-indigo-600 dark:text-indigo-400"></i>
+                <span id="days-left-mobile" class="text-xs font-bold text-indigo-700 dark:text-indigo-300">-- days</span>
+            </div>
+            <button onclick="openSettings()" class="p-2 bg-white dark:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300 shadow-sm border border-slate-100 dark:border-slate-700 active:scale-95 transition-transform"><i data-lucide="settings" class="w-5 h-5"></i></button>
+        </div>
+
+        <!-- Calendar View -->
+        <div id="view-container-calendar" class="view-section flex-1 flex flex-col h-full overflow-hidden">
+            <div id="toolbar-calendar" class="px-4 md:px-6 py-4 md:py-6 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-3 md:gap-4">
+                    <div class="flex gap-1 bg-white dark:bg-slate-800 rounded-full p-1 border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <button onclick="changeMonth(-1)" class="p-2 md:p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors active:scale-95"><i data-lucide="chevron-left" class="w-5 h-5 md:w-4 md:h-4"></i></button>
+                        <button onclick="changeMonth(1)" class="p-2 md:p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors active:scale-95"><i data-lucide="chevron-right" class="w-5 h-5 md:w-4 md:h-4"></i></button>
                     </div>
+                    <h2 id="current-month-display" class="text-xl md:text-3xl font-black text-slate-800 dark:text-white tracking-tight">--</h2>
+                </div>
+                <button onclick="goToToday()" class="text-xs font-bold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-4 py-2 rounded-full hover:bg-indigo-100 transition-colors shadow-sm flex items-center gap-2 active:scale-95"><i data-lucide="calendar" class="w-3 h-3"></i> Today</button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto px-4 md:px-6 pb-24 md:pb-10 scroll-smooth custom-scrollbar no-scrollbar">
+                <div id="calendar-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 pb-20 md:pb-0"></div>
+            </div>
+        </div>
+
+        <!-- Weekly Goals View -->
+        <div id="view-container-weekly" class="view-section hidden flex-1 flex flex-col h-full overflow-hidden">
+             <div class="px-4 md:px-6 py-4 md:py-6 shrink-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <div class="flex justify-between items-center mb-2">
-                             <label class="block text-xs font-medium text-slate-500 dark:text-slate-400">Subject</label>
-                             <button type="button" onclick="promptAddSubject()" class="text-[10px] font-bold text-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-slate-700 px-2 py-0.5 rounded transition-colors">+ Custom</button>
+                        <h2 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">Weekly Targets <span class="hidden md:inline-flex text-xs font-medium px-2 py-1 bg-amber-100 text-amber-700 rounded-full">High Priority</span></h2>
+                        <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-1">Focus on big chapters rather than small tasks.</p>
+                    </div>
+                    <div class="flex items-center gap-3 bg-white dark:bg-slate-800 p-1.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 self-start md:self-auto">
+                        <button onclick="changeWeek(-1)" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors active:scale-95"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                        <div class="text-center min-w-[120px] md:min-w-[140px]">
+                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Week Of</div>
+                            <div id="weekly-date-range" class="text-sm font-bold text-slate-800 dark:text-white">--</div>
                         </div>
-                        <div id="subject-selector" class="grid grid-cols-2 gap-2"></div>
+                        <button onclick="changeWeek(1)" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors active:scale-95"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar no-scrollbar pb-24">
+                <div class="max-w-4xl mx-auto space-y-6 md:space-y-8">
+                    <!-- Progress Card -->
+                    <div class="glass-card p-5 md:p-6 rounded-3xl flex items-center justify-between relative overflow-hidden">
+                        <div class="relative z-10">
+                            <div class="text-xs md:text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Weekly Progress</div>
+                            <div id="weekly-progress-text" class="text-3xl md:text-4xl font-black text-indigo-600 dark:text-indigo-400">0%</div>
+                            <p class="text-xs text-slate-400 mt-2" id="weekly-count-text">0/0 Targets Completed</p>
+                        </div>
+                        <div class="w-20 h-20 md:w-24 md:h-24 relative">
+                            <svg class="w-full h-full transform -rotate-90"><circle cx="50%" cy="50%" r="40%" stroke="currentColor" stroke-width="8" fill="transparent" class="text-slate-100 dark:text-slate-700" /><circle id="weekly-ring" cx="50%" cy="50%" r="40%" stroke="currentColor" stroke-width="8" fill="transparent" stroke-dasharray="251.2" stroke-dashoffset="251.2" class="text-indigo-500 transition-all duration-1000 ease-out" stroke-linecap="round" /></svg>
+                        </div>
+                    </div>
+
+                    <!-- Input -->
+                    <div class="flex gap-2">
+                        <input type="text" id="target-input" placeholder="e.g. Electrostatics + 50 PYQs" class="flex-1 bg-white dark:bg-slate-800 border-none shadow-soft rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none dark:text-white appearance-none">
+                        <button onclick="addWeeklyTarget()" class="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 md:px-6 rounded-2xl font-bold shadow-lg active:scale-95 transition-transform flex items-center justify-center"><i data-lucide="plus" class="w-6 h-6 md:w-5 md:h-5"></i></button>
+                    </div>
+
+                    <!-- List -->
+                    <div id="weekly-list" class="space-y-3 pb-20"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats View -->
+        <div id="view-container-stats" class="view-section hidden flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar no-scrollbar">
+            <div class="max-w-5xl mx-auto pb-24">
+                <h2 class="text-2xl font-black text-slate-900 dark:text-white mb-6 tracking-tight">Analytics</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
+                    <div class="glass-card p-4 md:p-5 rounded-3xl"><div class="text-[10px] md:text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Tests Taken</div><div id="stats-total-tests" class="text-2xl md:text-3xl font-black text-slate-800 dark:text-white">0</div></div>
+                    <div class="glass-card p-4 md:p-5 rounded-3xl"><div class="text-[10px] md:text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Avg Score</div><div id="stats-avg-score" class="text-2xl md:text-3xl font-black text-indigo-600 dark:text-indigo-400">0</div></div>
+                    <div class="glass-card p-4 md:p-5 rounded-3xl"><div class="text-[10px] md:text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Best Score</div><div id="stats-max-score" class="text-2xl md:text-3xl font-black text-emerald-500">0</div></div>
+                    <div class="glass-card p-4 md:p-5 rounded-3xl"><div class="text-[10px] md:text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Recent Trend</div><div id="stats-last-5" class="text-2xl md:text-3xl font-black text-purple-500">0</div></div>
+                </div>
+                
+                <div class="glass-card p-4 md:p-8 rounded-[2rem] shadow-soft mb-8">
+                    <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-6">Mock Test History</h3>
+                    <div class="relative h-64 md:h-72 w-full"><canvas id="mockChart"></canvas></div>
+                </div>
+                
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Recent Logs</h3>
+                <div id="mock-history-list" class="space-y-3 pb-12"></div>
+            </div>
+        </div>
+
+        <!-- Floating Action Button (Mobile Only) -->
+        <button onclick="openAddTaskModal()" class="md:hidden fixed bottom-24 right-5 w-14 h-14 bg-indigo-600 rounded-full text-white shadow-xl shadow-indigo-600/30 flex items-center justify-center z-40 active:scale-90 transition-transform">
+            <i data-lucide="plus" class="w-8 h-8"></i>
+        </button>
+
+        <!-- Mobile Bottom Navigation -->
+        <div id="mobile-bottom-nav" class="md:hidden fixed bottom-0 left-0 w-full glass border-t border-slate-200 dark:border-slate-800 z-50 mobile-bottom-nav">
+            <div class="flex justify-around items-center h-16 px-2">
+                <button onclick="switchView('calendar')" id="nav-mobile-calendar" class="flex flex-col items-center justify-center w-full h-full gap-1 text-indigo-600 dark:text-indigo-400">
+                    <i data-lucide="calendar" class="w-5 h-5"></i>
+                    <span class="text-[10px] font-bold">Planner</span>
+                </button>
+                <button onclick="switchView('weekly')" id="nav-mobile-weekly" class="flex flex-col items-center justify-center w-full h-full gap-1 text-slate-400 dark:text-slate-500">
+                    <i data-lucide="crosshair" class="w-5 h-5"></i>
+                    <span class="text-[10px] font-bold">Targets</span>
+                </button>
+                <button onclick="switchView('stats')" id="nav-mobile-stats" class="flex flex-col items-center justify-center w-full h-full gap-1 text-slate-400 dark:text-slate-500">
+                    <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
+                    <span class="text-[10px] font-bold">Stats</span>
+                </button>
+            </div>
+        </div>
+        
+    </main>
+
+    <!-- Modals -->
+
+    <!-- Add Task Modal (Bottom Sheet on Mobile, Centered on Desktop) -->
+    <div id="add-task-modal" class="fixed inset-0 z-[100] flex items-end md:items-center justify-center modal-backdrop hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-slate-900 w-full md:w-[480px] md:rounded-[2rem] mobile-sheet md:transform md:scale-95 transition-transform duration-300 shadow-2xl h-[85vh] md:h-auto border-t md:border border-slate-200 dark:border-slate-800 flex flex-col">
+            <div class="p-6 md:p-8 flex-1 overflow-y-auto">
+                <div class="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-6 md:hidden"></div>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2"><i data-lucide="plus-square" class="w-5 h-5 text-indigo-500"></i> Add New Task</h2>
+                    <button onclick="closeAddTaskModal()" class="p-2 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-400 hover:text-rose-500 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+
+                <form id="add-task-form-mobile" class="space-y-4">
+                    <input type="date" id="task-date-mobile" class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-4 text-base focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none dark:text-white transition-all appearance-none">
+                    
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Subject</label>
+                             <button type="button" onclick="openCustomSubjectModal()" class="text-[10px] font-bold text-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1 rounded-md border border-indigo-100 dark:border-indigo-900/50">+ Custom</button>
+                        </div>
+                        <div id="subject-selector-mobile" class="grid grid-cols-2 gap-3"></div>
                     </div>
                     
-                    <!-- Dynamic Fields for Mock Test -->
-                    <div id="mock-fields-container" class="hidden animate-in fade-in slide-in-from-top-2 duration-300 space-y-3 p-4 bg-purple-50 dark:bg-purple-900/10 rounded-2xl border border-purple-100 dark:border-purple-900/30">
+                    <!-- Dynamic Mock Fields -->
+                    <div id="mock-fields-container-mobile" class="hidden animate-slide-up space-y-3 p-4 bg-purple-50 dark:bg-purple-900/10 rounded-2xl border border-purple-100 dark:border-purple-900/30">
                         <div class="flex items-center gap-2 mb-1 text-purple-700 dark:text-purple-300">
-                            <i data-lucide="trophy" class="w-3.5 h-3.5"></i>
-                            <span class="text-xs font-bold">Scorecard (OPTIONAL)</span>
+                            <i data-lucide="trophy" class="w-4 h-4"></i>
+                            <span class="text-xs font-bold">Score (Optional)</span>
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-[10px] font-bold text-purple-600 dark:text-purple-400 mb-1 uppercase">Obtained</label>
-                                <input type="number" id="task-marks" placeholder="--" class="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm outline-none dark:text-white font-bold text-purple-600 focus:ring-2 focus:ring-purple-500 text-center">
+                                <input type="number" id="task-marks-mobile" placeholder="--" class="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-600 rounded-xl px-3 py-3 text-base outline-none dark:text-white font-bold text-purple-600 focus:ring-2 focus:ring-purple-500 text-center appearance-none">
                             </div>
                             <div>
                                 <label class="block text-[10px] font-bold text-purple-600 dark:text-purple-400 mb-1 uppercase">Total</label>
-                                <input type="number" id="task-max-marks" placeholder="300" class="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm outline-none dark:text-white font-bold text-purple-600 focus:ring-2 focus:ring-purple-500 text-center">
+                                <input type="number" id="task-max-marks-mobile" placeholder="300" class="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-600 rounded-xl px-3 py-3 text-base outline-none dark:text-white font-bold text-purple-600 focus:ring-2 focus:ring-purple-500 text-center appearance-none">
                             </div>
                         </div>
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Description / Learning</label>
-                        <textarea id="task-input" rows="3" placeholder="Topic name, PYQs, or Test learnings..." class="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/50 outline-none dark:text-white resize-none transition-colors hover:border-indigo-300 dark:hover:border-slate-500"></textarea>
-                    </div>
-                    <button id="btn-add-task" type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95 flex items-center justify-center gap-2 hover:translate-y-[-1px]">
-                        <i data-lucide="plus-circle" class="w-4 h-4"></i> <span>Add to Schedule</span>
+                    <textarea id="task-input-mobile" rows="3" placeholder="What's the goal?" class="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-base focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none dark:text-white resize-none transition-all appearance-none"></textarea>
+                    
+                    <button id="btn-add-task-mobile" type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95 flex items-center justify-center gap-2 text-lg mt-4">
+                        <i data-lucide="plus" class="w-6 h-6"></i> <span>Add to Plan</span>
                     </button>
+                    <div class="h-10 md:hidden"></div> <!-- Spacer for mobile bottom nav -->
                 </form>
-            </section>
-            <!-- Stats -->
-            <section class="border-t border-slate-100 dark:border-slate-700 pt-6">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2"><i data-lucide="pie-chart" class="w-3 h-3"></i> Stats Overview</h3>
-                <div id="stats-container" class="space-y-3"></div>
-            </section>
-        </div>
-        <!-- Footer -->
-        <div class="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur-sm">
-            <div class="flex items-center gap-3">
-                <div id="user-avatar" class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-sm ring-2 ring-white dark:ring-slate-700 shadow-sm">U</div>
-                <div class="flex-1 min-w-0"><p id="user-name" class="text-xs font-bold text-slate-900 dark:text-white truncate">User</p><p id="user-email" class="text-[10px] text-slate-500 truncate">Syncing...</p></div>
-                <button onclick="handleSignOut()" class="p-2 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg" title="Sign Out"><i data-lucide="log-out" class="w-4 h-4"></i></button>
-            </div>
-            <div class="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 text-center"><p class="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Powered by <a href="https://sval.tech" target="_blank" class="text-indigo-500 font-bold hover:underline">sval.tech</a></p></div>
-        </div>
-    </aside>
-
-    <!-- Main -->
-    <main class="flex-1 flex flex-col h-full overflow-hidden relative bg-white/50 dark:bg-slate-900/50">
-        <div class="md:hidden glass border-b border-slate-200 dark:border-slate-700 p-4 flex justify-between items-center z-10 sticky top-0 shadow-sm">
-            <h1 class="font-bold text-slate-800 dark:text-white flex items-center gap-2"><i data-lucide="target" class="w-5 h-5 text-indigo-600"></i> Tracker</h1>
-            <button onclick="toggleSidebar(true)" class="p-2 bg-white dark:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 active:bg-slate-100 shadow-sm border border-slate-100 dark:border-slate-600"><i data-lucide="menu" class="w-5 h-5"></i></button>
-        </div>
-        <div id="toolbar-calendar" class="glass border-b border-slate-200 dark:border-slate-700 px-4 md:px-6 py-4 flex items-center justify-between shrink-0 sticky top-0 md:relative z-10">
-            <div class="flex items-center gap-2 md:gap-4 w-full md:w-auto justify-between md:justify-start">
-                <button id="btn-prev-month" onclick="changeMonth(-1)" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-500 dark:text-slate-400 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
-                <h2 id="current-month-display" class="text-xl font-bold text-slate-800 dark:text-white min-w-[140px] text-center tracking-tight">--</h2>
-                <button id="btn-next-month" onclick="changeMonth(1)" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-500 dark:text-slate-400 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
-            </div>
-            <button onclick="goToToday()" class="hidden md:block ml-2 text-xs font-semibold bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 px-4 py-2 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors shadow-sm">Jump to Today</button>
-        </div>
-        <!-- Calendar Grid -->
-        <div id="view-calendar" class="flex-1 overflow-y-auto p-3 md:p-6 scroll-smooth">
-            <div id="calendar-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-5 pb-24 md:pb-20"></div>
-            <button onclick="goToToday()" class="md:hidden fixed bottom-14 right-6 z-40 bg-indigo-600 text-white p-4 rounded-full shadow-xl shadow-indigo-600/40 active:scale-95 transition-transform"><i data-lucide="calendar" class="w-6 h-6"></i></button>
-        </div>
-        <!-- Stats -->
-        <div id="view-stats" class="hidden flex-1 overflow-y-auto p-4 md:p-6 glass m-4 rounded-3xl border-slate-200 dark:border-slate-700 shadow-soft">
-            <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6 tracking-tight">Mock Test Analysis</h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div class="bg-white/60 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm backdrop-blur-sm"><div class="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Tests Taken</div><div id="stats-total-tests" class="text-3xl font-black text-indigo-600 dark:text-indigo-400 mt-2">0</div></div>
-                <div class="bg-white/60 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm backdrop-blur-sm"><div class="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Avg Score</div><div id="stats-avg-score" class="text-3xl font-black text-indigo-600 dark:text-indigo-400 mt-2">0</div></div>
-                <div class="bg-white/60 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm backdrop-blur-sm"><div class="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Best Score</div><div id="stats-max-score" class="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-2">0</div></div>
-                <div class="bg-white/60 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm backdrop-blur-sm"><div class="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Last 5 Avg</div><div id="stats-last-5" class="text-3xl font-black text-purple-600 dark:text-purple-400 mt-2">0</div></div>
-            </div>
-            <div class="bg-white/60 dark:bg-slate-800/60 p-5 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm mb-8"><h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-6">Performance Trend (Marks)</h3><div class="relative h-72 w-full"><canvas id="mockChart"></canvas></div></div>
-            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Recent Mocks</h3>
-            <div id="mock-history-list" class="space-y-3 pb-12"></div>
-        </div>
-
-        <!-- Desktop Suggestion Banner (Mobile Only) -->
-        <div id="desktop-banner" class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/90 dark:bg-slate-800/90 backdrop-blur-md text-white p-3 z-[60] flex items-center justify-between border-t border-white/10 safe-area-bottom">
-            <div class="flex items-center gap-3 text-xs font-medium pl-2">
-                <div class="p-1.5 bg-indigo-500/20 rounded-full"><i data-lucide="monitor" class="w-4 h-4 text-indigo-400"></i></div>
-                <span>For the best experience, use Desktop.</span>
-            </div>
-            <button onclick="document.getElementById('desktop-banner').remove()" class="p-2 hover:bg-white/10 rounded-full transition-colors"><i data-lucide="x" class="w-4 h-4"></i></button>
-        </div>
-    </main>
-
-    <!-- Expanded Day View -->
-    <div id="day-view-modal" class="fixed inset-0 z-[100] flex items-center justify-center modal-backdrop hidden opacity-0 transition-opacity duration-300 px-4">
-        <div id="day-view-card" class="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-md transform scale-95 transition-transform duration-300 overflow-hidden border border-slate-200 dark:border-slate-700 relative">
-            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
-            <div class="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="p-6 md:p-8 relative z-10">
-                <div class="flex justify-between items-start mb-8">
-                    <div><h2 id="day-view-date" class="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">--</h2><p class="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Daily Focus</p></div>
-                    <button onclick="closeDayView()" class="p-2 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors z-20 cursor-pointer"><i data-lucide="x" class="w-6 h-6"></i></button>
-                </div>
-                <div class="flex items-center gap-6 mb-8 bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-800">
-                    <div class="relative w-16 h-16 shrink-0"><svg class="w-full h-full transform -rotate-90"><circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="6" fill="transparent" class="text-slate-200 dark:text-slate-700" /><circle id="day-view-ring" cx="32" cy="32" r="28" stroke="currentColor" stroke-width="6" fill="transparent" stroke-dasharray="175.9" stroke-dashoffset="175.9" class="text-indigo-500 transition-all duration-1000 ease-out" stroke-linecap="round" /></svg><div class="absolute inset-0 flex items-center justify-center text-xs font-bold text-slate-700 dark:text-slate-200" id="day-view-percent">0%</div></div>
-                    <div><div class="text-sm font-bold text-slate-900 dark:text-white">Progress Overview</div><div class="text-xs text-slate-500 dark:text-slate-400 mt-1" id="day-view-stats">0/0 Tasks Completed</div></div>
-                </div>
-                <div id="day-view-tasks" class="space-y-3 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar"></div>
-                <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex justify-between items-end">
-                    <div class="flex items-center gap-2"><div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white"><i data-lucide="target" class="w-5 h-5"></i></div><div><div class="text-xs font-bold text-slate-900 dark:text-white">Zenith</div><div class="text-[10px] text-slate-400">by <a href="https://sval.tech" target="_blank" class="text-indigo-500 font-bold hover:underline">sval.tech</a></div></div></div>
-                    <div class="text--[10px] text-slate-400 italic">"Consistency is key."</div>
-                </div>
             </div>
         </div>
     </div>
 
-    <!-- Edit Task Modal -->
-    <div id="task-modal" class="fixed inset-0 z-[80] flex items-center justify-center modal-backdrop hidden opacity-0 transition-opacity duration-200 px-4">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 w-full max-w-md transform scale-95 transition-transform duration-200 border border-slate-200 dark:border-slate-700" id="task-modal-content">
-            <div class="flex justify-between items-start mb-4"><h3 class="text-lg font-bold text-slate-900 dark:text-white" id="modal-title">Task Details</h3><button onclick="closeTaskModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button></div>
-            <div class="space-y-4">
-                <div id="modal-subject-badge" class="inline-block"></div>
-                <div><label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Description / Notes</label><textarea id="modal-desc" rows="4" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white resize-none"></textarea></div>
-                
-                <!-- Mock Test Edit Fields -->
-                <div id="modal-marks-container" class="hidden bg-purple-50 dark:bg-purple-900/10 p-3 rounded-xl border border-purple-100 dark:border-purple-900/30">
-                    <div class="grid grid-cols-2 gap-3">
-                         <div>
-                            <label class="block text-xs font-medium text-purple-700 dark:text-purple-300 mb-1">Marks Obtained</label>
-                            <input type="number" id="modal-marks" class="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm outline-none dark:text-white font-bold text-purple-600">
-                         </div>
-                         <div>
-                            <label class="block text-xs font-medium text-purple-700 dark:text-purple-300 mb-1">Max Marks</label>
-                            <input type="number" id="modal-max-marks" class="w-full bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm outline-none dark:text-white font-bold text-purple-600">
-                         </div>
-                    </div>
+    <!-- Day View Modal -->
+    <div id="day-view-modal" class="fixed inset-0 z-[110] flex items-end md:items-center justify-center modal-backdrop hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-slate-900 w-full md:w-[450px] md:rounded-[2rem] mobile-sheet md:transform md:scale-95 transition-transform duration-300 shadow-2xl h-[75vh] md:h-auto border-t md:border border-slate-200 dark:border-slate-800 flex flex-col">
+            <div class="p-6 md:p-8 flex flex-col h-full">
+                <div class="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-4 md:hidden"></div>
+                <div class="flex justify-between items-start mb-6">
+                    <div><h2 id="day-view-date" class="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">--</h2><p class="text-sm text-slate-500 font-medium">Your daily focus</p></div>
+                    <button onclick="closeDayView()" class="p-2 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-400 hover:text-rose-500 transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
                 </div>
+                <div id="day-view-tasks" class="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-10"></div>
+                <button onclick="addTaskFromDayView()" class="w-full py-4 mt-4 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-bold rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform border border-indigo-100 dark:border-indigo-900/50">
+                    <i data-lucide="plus" class="w-5 h-5"></i> Add Task for this Day
+                </button>
+                <div class="h-6 md:hidden"></div>
+            </div>
+        </div>
+    </div>
 
-                <div class="flex gap-3 pt-2"><button onclick="saveTaskDetails()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-95">Save Changes</button></div>
+    <!-- Custom Subject Modal -->
+    <div id="custom-subject-modal" class="fixed inset-0 z-[120] flex items-center justify-center modal-backdrop hidden opacity-0 transition-opacity duration-200 px-4">
+        <div class="bg-white dark:bg-slate-800 rounded-[2rem] shadow-2xl p-6 w-full max-w-sm transform scale-95 transition-transform duration-200 border border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Add Custom Subject</h3>
+            <input type="text" id="custom-subject-input" placeholder="Subject Name (e.g. English)" class="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-base focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none dark:text-white mb-4 appearance-none">
+            <div class="flex gap-3 justify-end">
+                <button onclick="closeCustomSubjectModal()" class="px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700/50 font-medium text-sm transition-colors">Cancel</button>
+                <button onclick="confirmAddSubject()" class="px-6 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-lg shadow-indigo-500/20 transition-all">Add Subject</button>
             </div>
         </div>
     </div>
 
     <!-- Settings Modal -->
-    <div id="settings-modal" class="fixed inset-0 z-[90] flex items-center justify-center modal-backdrop hidden opacity-0 transition-opacity duration-200 px-4">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 w-full max-w-md transform scale-95 transition-transform duration-200 border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto" id="settings-modal-content">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-lg font-bold text-slate-900 dark:text-white">App Settings</h3>
-                <button onclick="closeSettings()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i data-lucide="x" class="w-6 h-6"></i></button>
+    <div id="settings-modal" class="fixed inset-0 z-[110] flex items-end md:items-center justify-center modal-backdrop hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white dark:bg-slate-800 w-full md:w-[480px] md:rounded-[2rem] mobile-sheet md:transform md:scale-95 transition-transform duration-200 border-t md:border border-slate-200 dark:border-slate-700 h-[85vh] flex flex-col">
+            <!-- Modal Header -->
+            <div class="p-6 pb-2 shrink-0 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white">Settings</h3>
+                <button onclick="closeSettings()" class="text-slate-400 hover:text-slate-600 p-2"><i data-lucide="x" class="w-6 h-6"></i></button>
             </div>
-            <div class="space-y-6">
-                <!-- Theme & Background -->
+            
+            <!-- Modal Body (Scrollable) -->
+            <div class="p-6 pt-2 space-y-6 flex-1 overflow-y-auto custom-scrollbar">
+                
+                <div class="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-2xl flex items-center justify-between border border-transparent dark:border-slate-700">
+                    <span class="font-medium text-slate-700 dark:text-slate-200">Dark Mode</span>
+                    <button id="theme-toggle" onclick="toggleTheme()" class="relative w-12 h-7 bg-slate-200 dark:bg-slate-600 rounded-full transition-all duration-300"><div id="theme-knob" class="absolute left-1 top-1 w-5 h-5 bg-white rounded-full transition-transform shadow-sm"></div></button>
+                </div>
+                
+                <!-- Toggle for Countdown -->
+                <div class="p-4 bg-slate-50 dark:bg-slate-700/30 rounded-2xl flex items-center justify-between border border-transparent dark:border-slate-700">
+                    <span class="font-medium text-slate-700 dark:text-slate-200">Show Countdown</span>
+                    <button id="countdown-toggle" onclick="toggleCountdownSetting()" class="relative w-12 h-7 bg-slate-200 dark:bg-slate-600 rounded-full transition-all duration-300"><div id="countdown-knob" class="absolute left-1 top-1 w-5 h-5 bg-white rounded-full transition-transform shadow-sm"></div></button>
+                </div>
+
                 <div>
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <div class="text-sm font-medium text-slate-900 dark:text-white">Dark Mode</div>
-                            <div class="text-xs text-slate-500 dark:text-slate-400">Easy on the eyes</div>
-                        </div>
-                        <button id="theme-toggle" onclick="toggleTheme()" class="relative w-12 h-7 bg-slate-200 dark:bg-slate-600 rounded-full transition-colors focus:outline-none cursor-pointer">
-                            <div id="theme-knob" class="absolute left-1 top-1 w-5 h-5 bg-white rounded-full transition-transform transform translate-x-0 dark:translate-x-5 shadow-sm"></div>
-                        </button>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Background</label>
+                    <div class="flex gap-2 mb-3 overflow-x-auto pb-2 scrollbar-hide no-scrollbar -mx-2 px-2">
+                        <button onclick="setPresetBg('')" class="shrink-0 px-4 py-3 rounded-xl bg-slate-100 text-xs font-bold text-slate-600 border border-transparent hover:border-indigo-500 transition-all">None</button>
+                        <button onclick="setPresetBg('https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?auto=format&fit=crop&w=1920&q=80')" class="shrink-0 px-4 py-3 rounded-xl bg-indigo-50 text-xs font-bold text-indigo-700 border border-transparent hover:border-indigo-500 transition-all">Minimal</button>
+                        <button onclick="setPresetBg('https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1920&q=80')" class="shrink-0 px-4 py-3 rounded-xl bg-slate-800 text-xs font-bold text-white border border-transparent hover:border-indigo-500 transition-all">Space</button>
+                        <button onclick="setPresetBg('https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&w=1920&q=80')" class="shrink-0 px-4 py-3 rounded-xl bg-emerald-100 text-xs font-bold text-emerald-800 border border-transparent hover:border-emerald-500 transition-all">Nature</button>
+                        <button onclick="setPresetBg('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1920&q=80')" class="shrink-0 px-4 py-3 rounded-xl bg-fuchsia-100 text-xs font-bold text-fuchsia-800 border border-transparent hover:border-fuchsia-500 transition-all">Cyber</button>
+                        <button onclick="setPresetBg('https://images.unsplash.com/photo-1472120435266-53107fd0c44a?auto=format&fit=crop&w=1920&q=80')" class="shrink-0 px-4 py-3 rounded-xl bg-amber-100 text-xs font-bold text-amber-800 border border-transparent hover:border-amber-500 transition-all">Sunset</button>
+                        <button onclick="setPresetBg('https://images.unsplash.com/photo-1541701494587-cb58502866ab?auto=format&fit=crop&w=1920&q=80')" class="shrink-0 px-4 py-3 rounded-xl bg-sky-100 text-xs font-bold text-sky-800 border border-transparent hover:border-sky-500 transition-all">Abstract</button>
                     </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">Background Image</label>
-                        <div class="flex gap-2 mb-2 overflow-x-auto pb-2 scrollbar-hide">
-                            <button onclick="setPresetBg('')" class="shrink-0 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-xs font-medium bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:border-indigo-500 transition-colors">None</button>
-                            <button onclick="setPresetBg('https://images.unsplash.com/photo-1483794344563-d27a8d18014e?auto=format&fit=crop&w=1920&q=80')" class="shrink-0 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-xs font-medium bg-slate-100 text-slate-600 hover:border-indigo-500 transition-colors">Clean</button>
-                            <button onclick="setPresetBg('https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1920&q=80')" class="shrink-0 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-xs font-medium bg-slate-800 text-white hover:border-indigo-500 transition-colors">Dark Stars</button>
-                            <button onclick="setPresetBg('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1920&q=80')" class="shrink-0 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-xs font-medium bg-emerald-100 text-emerald-800 hover:border-indigo-500 transition-colors">Nature</button>
-                        </div>
-                        <input type="text" id="settings-bg-url" placeholder="Paste custom Image URL..." class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-xs outline-none text-slate-900 dark:text-white placeholder-slate-400 focus:border-indigo-500 transition-colors">
-                    </div>
+                    <input type="text" id="settings-bg-url" oninput="markSettingsDirty()" placeholder="Custom Image URL..." class="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none dark:text-white appearance-none">
                 </div>
                 <hr class="border-slate-100 dark:border-slate-700">
-                <!-- Exam Config -->
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Select Exam</label>
-                    <div class="grid grid-cols-2 gap-2 mb-4">
-                        <button onclick="setExamType('JEE Main')" id="btn-jee" class="exam-btn px-3 py-2.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-600 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300">JEE Main</button>
-                        <button onclick="setExamType('JEE Advanced')" id="btn-jeeadv" class="exam-btn px-3 py-2.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-600 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300">JEE Advanced</button>
-                        <button onclick="setExamType('NEET')" id="btn-neet" class="exam-btn px-3 py-2.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-600 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300">NEET</button>
-                        <button onclick="setExamType('Custom')" id="btn-custom" class="exam-btn px-3 py-2.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-600 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300">Custom</button>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Exam Target</label>
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        <button onclick="setExamType('JEE Main')" id="btn-jee" class="p-3 rounded-xl text-xs font-bold border hover:bg-indigo-50 transition-colors">JEE Main</button>
+                        <button onclick="setExamType('NEET')" id="btn-neet" class="p-3 rounded-xl text-xs font-bold border hover:bg-indigo-50 transition-colors">NEET</button>
+                        <button onclick="setExamType('JEE Advanced')" id="btn-jeeadv" class="p-3 rounded-xl text-xs font-bold border hover:bg-indigo-50 transition-colors">JEE Adv</button>
+                        <button onclick="setExamType('Custom')" id="btn-custom" class="p-3 rounded-xl text-xs font-bold border hover:bg-indigo-50 transition-colors">Custom</button>
                     </div>
-                    <div id="jee-session-container" class="mb-4 hidden bg-indigo-50 dark:bg-slate-700/50 p-3 rounded-xl border border-indigo-100 dark:border-slate-600">
-                        <label class="block text-xs font-medium text-indigo-900 dark:text-indigo-200 mb-2">Target Session</label>
+                    
+                    <!-- JEE Main Sessions Container -->
+                    <div id="jee-session-container" class="hidden mb-3 bg-indigo-50 dark:bg-indigo-900/10 p-3 rounded-xl border border-indigo-100 dark:border-indigo-900/30 animate-slide-up">
+                        <label class="block text-[10px] font-bold text-indigo-700 dark:text-indigo-300 uppercase mb-2">Target Session</label>
                         <div class="flex gap-2">
-                             <button onclick="setSession('Jan')" id="btn-session-jan" class="flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors">Jan (21st)</button>
-                             <button onclick="setSession('Apr')" id="btn-session-apr" class="flex-1 py-2 rounded-lg text-xs font-semibold border transition-colors">April</button>
+                            <button onclick="setSession('Jan')" id="btn-session-jan" class="flex-1 py-2 rounded-lg text-xs font-bold border transition-colors">Jan (21st)</button>
+                            <button onclick="setSession('Apr')" id="btn-session-apr" class="flex-1 py-2 rounded-lg text-xs font-bold border transition-colors">April</button>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Target Year</label>
-                            <select id="settings-year" onchange="updateTargetDateConfig()" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2.5 text-sm outline-none text-slate-900 dark:text-white appearance-none cursor-pointer focus:border-indigo-500 transition-colors">
-                                <option value="2026">2026</option>
-                                <option value="2027">2027</option>
-                                <option value="2028">2028</option>
-                            </select>
-                        </div>
-                        <div id="custom-date-container" class="hidden">
-                             <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Exam Date</label>
-                             <input type="date" id="settings-custom-date" min="2025-01-01" max="2030-12-31" onchange="updateTargetDateConfig()" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2.5 text-sm outline-none text-slate-900 dark:text-white focus:border-indigo-500 transition-colors">
-                        </div>
-                    </div>
+
+                    <select id="settings-year" onchange="updateTargetDateConfig(); markSettingsDirty()" class="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none dark:text-white appearance-none">
+                        <option value="2026">2026</option>
+                        <option value="2027">2027</option>
+                        <option value="2028">2028</option>
+                    </select>
                 </div>
-                <button onclick="saveSettings()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-xl shadow-lg shadow-indigo-500/30 transition-all active:scale-95">Save Changes</button>
+                
+                <hr class="border-slate-100 dark:border-slate-700">
+                <button onclick="handleSignOut()" class="w-full py-4 text-rose-500 font-bold bg-rose-50 dark:bg-rose-900/20 rounded-2xl flex items-center justify-center gap-2 border border-rose-100 dark:border-rose-900/50 active:scale-95 transition-transform"><i data-lucide="log-out" class="w-5 h-5"></i> Sign Out</button>
+                <div class="h-10 md:hidden"></div>
+            </div>
+
+            <!-- Sticky Footer for Save Action -->
+            <div class="p-6 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0 mb-safe">
+                <div id="unsaved-changes-indicator" class="hidden flex items-center gap-2 mb-3 text-amber-500 dark:text-amber-400 text-xs font-bold justify-center animate-bounce-slight">
+                    <i data-lucide="alert-circle" class="w-3 h-3"></i> Unsaved Changes
+                </div>
+                <button id="save-settings-btn" onclick="saveSettings()" class="w-full bg-slate-900 dark:bg-slate-700 text-white dark:text-slate-200 font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95">Save Changes</button>
             </div>
         </div>
     </div>
 
     <!-- Confirm Modal -->
-    <div id="confirm-modal" class="fixed inset-0 z-[90] flex items-center justify-center modal-backdrop hidden opacity-0 transition-opacity duration-200 px-4">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm transform scale-95 transition-transform duration-200 border border-slate-200 dark:border-slate-700">
-            <div class="flex items-center gap-3 mb-4 text-rose-600"><div class="bg-rose-100 dark:bg-rose-900/30 p-2 rounded-full"><i data-lucide="alert-triangle" class="w-6 h-6"></i></div><h3 class="text-lg font-bold text-slate-900 dark:text-white">Delete Item?</h3></div>
-            <p class="text-slate-500 dark:text-slate-400 text-sm mb-6">Are you sure you want to delete this? This action cannot be undone.</p>
-            <div class="flex gap-3 justify-end"><button onclick="closeConfirmModal()" class="px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-sm font-medium transition-colors">Cancel</button><button id="confirm-delete-btn" class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium shadow-lg shadow-rose-500/30 transition-colors">Delete</button></div>
+    <div id="confirm-modal" class="fixed inset-0 z-[120] flex items-center justify-center modal-backdrop hidden opacity-0 transition-opacity duration-200 px-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm transform scale-95 transition-transform duration-200">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">Delete Item?</h3>
+            <p class="text-slate-500 text-sm mb-6">This action cannot be undone.</p>
+            <div class="flex gap-3 justify-end"><button onclick="closeConfirmModal()" class="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-medium">Cancel</button><button id="confirm-delete-btn" class="px-4 py-2 rounded-lg bg-rose-500 text-white font-medium shadow-lg shadow-rose-500/30">Delete</button></div>
         </div>
     </div>
 
     <!-- Toast -->
-    <div id="toast" class="fixed bottom-14 md:bottom-6 right-6 left-6 md:left-auto bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-medium px-4 py-3 rounded-xl shadow-2xl opacity-0 translate-y-4 transition-all duration-300 pointer-events-none flex items-center gap-2 z-[100] justify-center md:justify-start">
-        <i data-lucide="check-circle" class="w-4 h-4 text-green-400 dark:text-green-600"></i><span id="toast-msg">Action Completed</span>
+    <div id="toast" class="fixed top-6 md:top-auto md:bottom-6 left-1/2 md:left-auto md:right-6 transform -translate-x-1/2 md:translate-x-0 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-bold px-6 py-3 rounded-full md:rounded-xl shadow-2xl opacity-0 translate-y-[-20px] md:translate-y-4 transition-all duration-300 pointer-events-none flex items-center gap-2 z-[150]">
+        <i data-lucide="check-circle" class="w-4 h-4 text-green-400 dark:text-green-600"></i><span id="toast-msg">Success</span>
     </div>
 
-    <!-- Offline Banner -->
-    <div id="offline-banner" class="fixed top-0 left-0 right-0 bg-red-500 text-white text-xs font-bold text-center py-1 hidden z-[200]">
-        You are offline. Changes will sync when you reconnect.
-    </div>
-
+    <!-- Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInWithCustomToken, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, onSnapshot, updateDoc, deleteDoc, enableIndexedDbPersistence, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Firebase Config
-        const firebaseConfig = {
-            apiKey: "AIzaSyAO9ya8gHtVbMfxcnAAJrz6FdYWvIRqgBY",
-            authDomain: "studydashboard-2a3eb.firebaseapp.com",
-            projectId: "studydashboard-2a3eb",
-            storageBucket: "studydashboard-2a3eb.firebasestorage.app",
-            messagingSenderId: "79210973277",
-            appId: "1:79210973277:web:cc0a5fa86729fd6d3f65b4",
-            measurementId: "G-TE7Z0SR8L1",
-        };
+        // CONFIG
+        const firebaseConfig = { apiKey: "AIzaSyAO9ya8gHtVbMfxcnAAJrz6FdYWvIRqgBY", authDomain: "studydashboard-2a3eb.firebaseapp.com", projectId: "studydashboard-2a3eb", storageBucket: "studydashboard-2a3eb.firebasestorage.app", messagingSenderId: "79210973277", appId: "1:79210973277:web:cc0a5fa86729fd6d3f65b4" };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-        // ENABLE PERSISTENCE (Crucial for minimizing reads)
-        enableIndexedDbPersistence(db).catch((err) => {
-            if (err.code == 'failed-precondition') {
-                console.log('Persistence failed: Multiple tabs open');
-            } else if (err.code == 'unimplemented') {
-                console.log('Persistence not supported by browser');
-            }
-        });
+        enableIndexedDbPersistence(db).catch(err => console.log(err.code));
 
-        // Date Constraints
-        const MIN_DATE = new Date(2025, 0, 1); // Jan 1 2025
-        const MAX_DATE = new Date(2030, 11, 31); // Dec 31 2030
-
+        // STATE
         let currentUser = null;
-        let unsubscribeTasks = null;
-        let unsubscribeTargets = null;
-        let unsubscribeSettings = null;
         let mockChartInstance = null;
-        let draggedTaskId = null;
-
-        // State
+        let itemToDelete = null;
+        let draggedTaskId = null; 
+        let currentDayViewDate = null; 
+        let isSettingsDirty = false;
+        
         let state = {
             tasks: [],
-            targets: [],
+            targets: [], // Weekly targets
             viewDate: new Date(),
+            weeklyViewDate: new Date(),
             currentView: 'calendar',
-            settings: { 
-                examType: 'JEE Main', session: 'Jan', targetYear: 2026, targetDate: '2026-01-21', 
-                customSubjects: [], theme: 'light', bgUrl: '' 
-            }
+            settings: { examType: 'JEE Main', session: 'Jan', targetYear: 2026, targetDate: '2026-01-21', customSubjects: [], theme: 'light', bgUrl: '', showCountdown: true }
         };
+        let tempSettings = {};
 
-        let editingTaskId = null;
-        let itemToDelete = null;
-        let tempSettings = { ...state.settings };
-
-        // Updated Distinct Subject Colors for enhanced coding
+        // Subject Styles (Pastel/Modern)
         const subjectColors = {
-            Physics: { 
-                light: 'bg-rose-50 text-rose-700 border-rose-200', 
-                dark: 'dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800' 
-            },
-            Chemistry: { 
-                light: 'bg-amber-50 text-amber-700 border-amber-200', 
-                dark: 'dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800' 
-            },
-            Maths: { 
-                light: 'bg-blue-50 text-blue-700 border-blue-200', 
-                dark: 'dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800' 
-            },
-            Biology: { 
-                light: 'bg-emerald-50 text-emerald-700 border-emerald-200', 
-                dark: 'dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800' 
-            },
-            MockTest: { 
-                light: 'bg-purple-50 text-purple-700 border-purple-200 font-bold', 
-                dark: 'dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800 font-bold' 
-            },
-            Default: { 
-                light: 'bg-slate-50 text-slate-700 border-slate-200', 
-                dark: 'dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700' 
-            },
-            Custom: {
-                light: 'bg-teal-50 text-teal-700 border-teal-200',
-                dark: 'dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-800'
-            }
+            Physics: { light: 'bg-rose-50 text-rose-700 border-rose-200', dark: 'dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800' },
+            Chemistry: { light: 'bg-amber-50 text-amber-700 border-amber-200', dark: 'dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800' },
+            Maths: { light: 'bg-blue-50 text-blue-700 border-blue-200', dark: 'dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800' },
+            Biology: { light: 'bg-emerald-50 text-emerald-700 border-emerald-200', dark: 'dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800' },
+            MockTest: { light: 'bg-purple-50 text-purple-700 border-purple-200 font-bold', dark: 'dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800 font-bold' },
+            Custom: { light: 'bg-teal-50 text-teal-700 border-teal-200', dark: 'dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-800' }
         };
 
-        // Network Status
-        window.addEventListener('online', () => document.getElementById('offline-banner').classList.add('hidden'));
-        window.addEventListener('offline', () => document.getElementById('offline-banner').classList.remove('hidden'));
-
-        // Auth
+        // --- AUTH ---
         async function initAuth() {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
-                else onAuthStateChanged(auth, (user) => { if (user) { setupListeners(user); hideLoginScreen(); } else showLoginScreen(); });
-            } catch (error) { console.error("Auth Failed", error); showLoginScreen(error.message); }
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
+            onAuthStateChanged(auth, (user) => {
+                if (user) { 
+                    currentUser = user; 
+                    updateProfileUI(user);
+                    setupListeners(user); 
+                    toggleAppVisibility(true);
+                    document.getElementById('login-screen').classList.add('hidden');
+                } else { 
+                    toggleAppVisibility(false);
+                    document.getElementById('loading-overlay').classList.add('opacity-0', 'pointer-events-none');
+                    document.getElementById('login-screen').classList.remove('hidden'); 
+                }
+            });
         }
-        window.signInWithGoogle = async () => { const provider = new GoogleAuthProvider(); await signInWithPopup(auth, provider).catch(e => console.error(e)); };
+
+        function toggleAppVisibility(show) {
+            const sidebar = document.getElementById('desktop-sidebar');
+            const main = document.querySelector('main');
+            if(show) {
+                // Remove inline style to revert to CSS classes (flex/hidden based on media query)
+                sidebar.style.display = ''; 
+                main.style.display = '';
+            } else {
+                sidebar.style.display = 'none';
+                main.style.display = 'none';
+            }
+        }
+
+        function updateProfileUI(user) {
+            // Desktop
+            document.getElementById('user-email-desktop').innerText = user.email;
+            document.getElementById('user-name-desktop').innerText = user.displayName || "Aspirant";
+            if(user.photoURL) document.getElementById('user-avatar-desktop').innerHTML = `<img src="${user.photoURL}" class="w-full h-full rounded-full object-cover">`;
+        }
+
+        window.signInWithGoogle = async () => { const provider = new GoogleAuthProvider(); await signInWithPopup(auth, provider).catch(console.error); };
         window.handleSignOut = async () => { await signOut(auth); window.location.reload(); };
-        function showLoginScreen(msg = '') { document.getElementById('loading-overlay').classList.add('opacity-0', 'pointer-events-none'); document.getElementById('login-screen').classList.remove('hidden'); if(msg) document.getElementById('login-status').innerText = msg; }
-        function hideLoginScreen() { document.getElementById('login-screen').classList.add('hidden'); }
-        function handleSyncError(source, error) { 
-            console.error(`Sync Error (${source}):`, error);
-            if (error.code === 'permission-denied') showToast("Permission Denied: Please refresh"); 
-        }
 
+        // --- FIRESTORE LISTENERS ---
         function setupListeners(user) {
-            if (!user) return;
-            currentUser = user;
-            document.getElementById('user-email').innerText = user.email || "Anonymous";
-            document.getElementById('user-name').innerText = user.displayName || "Student";
-            if(user.photoURL) document.getElementById('user-avatar').innerHTML = `<img src="${user.photoURL}" class="w-full h-full rounded-full object-cover">`;
-
-            const settingsRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'config');
-            unsubscribeSettings = onSnapshot(settingsRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    state.settings = { ...state.settings, ...docSnap.data() };
+            // Settings
+            onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'config'), (snap) => {
+                if(snap.exists()) {
+                    state.settings = { ...state.settings, ...snap.data() };
+                    if (state.settings.showCountdown === undefined) state.settings.showCountdown = true;
+                    
                     applyTheme(state.settings.theme);
                     applyBackground(state.settings.bgUrl);
-                    updateSubjectSelector();
-                    // Conditionally render based on active view
-                    if (state.currentView === 'calendar') renderCalendar(); 
+                    updateSubjectSelectors(); 
                     renderCountdown();
-                    updateStats();
-                } else { setDoc(settingsRef, state.settings); }
+                    if(state.currentView === 'calendar') renderCalendar();
+                } else setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'config'), state.settings);
                 document.getElementById('loading-overlay').classList.add('opacity-0', 'pointer-events-none');
-            }, (err) => handleSyncError("Settings", err));
+            });
 
-            const tasksRef = collection(db, 'artifacts', appId, 'users', user.uid, 'tasks');
-            unsubscribeTasks = onSnapshot(tasksRef, (snapshot) => {
-                state.tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                // Optimization: Only render the visible view
+            // Tasks
+            onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'tasks'), (snap) => {
+                state.tasks = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 if(state.currentView === 'calendar') renderCalendar();
-                else if(state.currentView === 'stats') renderMockStats();
-                updateStats(); // Always update sidebar stats as it's visible
-            }, (err) => handleSyncError("Tasks", err));
+                if(state.currentView === 'stats') renderMockStats();
+                updateStats();
+                
+                // Refresh modal if open
+                if(currentDayViewDate && !document.getElementById('day-view-modal').classList.contains('hidden')) {
+                    openDayView(currentDayViewDate);
+                }
+            });
 
-            const targetsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'weeklyTargets');
-            unsubscribeTargets = onSnapshot(targetsRef, (snapshot) => {
-                state.targets = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            }, (err) => handleSyncError("Targets", err));
+            // Weekly Targets
+            onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'weeklyTargets'), (snap) => {
+                state.targets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                if(state.currentView === 'weekly') renderWeeklyView();
+            });
         }
 
-        // --- Drag and Drop Logic ---
+        // --- THEME & SETTINGS HELPERS ---
+        window.applyTheme = function(theme) {
+            const html = document.documentElement;
+            const knob = document.getElementById('theme-knob');
+            const toggle = document.getElementById('theme-toggle');
+            if (theme === 'dark') {
+                html.classList.add('dark');
+                html.classList.remove('light');
+                if(knob) knob.style.transform = 'translateX(20px)';
+                if(toggle) toggle.className = "relative w-12 h-7 bg-indigo-600 rounded-full transition-all duration-300"; 
+            } else {
+                html.classList.remove('dark');
+                html.classList.add('light');
+                if(knob) knob.style.transform = 'translateX(0)';
+                if(toggle) toggle.className = "relative w-12 h-7 bg-slate-200 dark:bg-slate-600 rounded-full transition-all duration-300"; 
+            }
+        }
+
+        window.applyBackground = function(url) {
+            const bg = document.getElementById('app-background');
+            if(url && url.trim() !== '') {
+                bg.style.backgroundImage = `url('${url}')`;
+                bg.style.opacity = '1';
+            } else {
+                bg.style.opacity = '0';
+                setTimeout(() => bg.style.backgroundImage = 'none', 500);
+            }
+        }
+
+        window.setPresetBg = function(url) {
+            document.getElementById('settings-bg-url').value = url;
+            applyBackground(url);
+            markSettingsDirty();
+        }
+
+        // --- Dirty State & Save Logic ---
+        window.markSettingsDirty = function() {
+            isSettingsDirty = true;
+            document.getElementById('unsaved-changes-indicator').classList.remove('hidden');
+            const btn = document.getElementById('save-settings-btn');
+            btn.classList.remove('bg-slate-900', 'dark:bg-slate-700');
+            btn.classList.add('bg-indigo-600', 'hover:bg-indigo-700', 'text-white');
+            btn.innerText = "Save Unsaved Changes";
+        }
+
+        window.resetSettingsDirty = function() {
+            isSettingsDirty = false;
+            document.getElementById('unsaved-changes-indicator').classList.add('hidden');
+            const btn = document.getElementById('save-settings-btn');
+            btn.classList.add('bg-slate-900', 'dark:bg-slate-700');
+            btn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700', 'text-white');
+            btn.innerText = "Save Changes";
+        }
+
+        window.setExamType = function(type) {
+             tempSettings.examType = type;
+             ['jee', 'neet', 'jeeadv', 'custom'].forEach(id => {
+                 const btn = document.getElementById(`btn-${id}`);
+                 const map = { 'jee': 'JEE Main', 'neet': 'NEET', 'jeeadv': 'JEE Advanced', 'custom': 'Custom' };
+                 if(map[id] === type) {
+                     btn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600');
+                     btn.classList.remove('hover:bg-indigo-50');
+                 } else {
+                     btn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600');
+                     btn.classList.add('hover:bg-indigo-50');
+                 }
+             });
+             
+             if(type === 'JEE Main') {
+                 document.getElementById('jee-session-container').classList.remove('hidden');
+                 if(!tempSettings.session) tempSettings.session = 'Jan'; 
+                 updateSessionUI();
+             } else {
+                 document.getElementById('jee-session-container').classList.add('hidden');
+             }
+             
+             updateTargetDateConfig();
+             markSettingsDirty();
+        }
+
+        window.setSession = function(session) {
+            tempSettings.session = session;
+            updateSessionUI();
+            updateTargetDateConfig();
+            markSettingsDirty();
+        }
+
+        function updateSessionUI() {
+            const janBtn = document.getElementById('btn-session-jan');
+            const aprBtn = document.getElementById('btn-session-apr');
+            if(tempSettings.session === 'Jan') {
+                janBtn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600');
+                aprBtn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600');
+            } else {
+                aprBtn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600');
+                janBtn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600');
+            }
+        }
+
+        window.updateTargetDateConfig = function() {
+             const year = document.getElementById('settings-year').value;
+             let date = `${year}-01-01`; 
+             if(tempSettings.examType === 'JEE Main') {
+                 if(tempSettings.session === 'Jan') date = `${year}-01-21`;
+                 else date = `${year}-04-01`;
+             }
+             else if(tempSettings.examType === 'NEET') date = `${year}-05-05`;
+             else if(tempSettings.examType === 'JEE Advanced') date = `${year}-05-17`;
+             
+             tempSettings.targetDate = date;
+             tempSettings.targetYear = parseInt(year);
+        }
+
+        window.saveSettings = async function() {
+            if(!currentUser) return;
+            tempSettings.bgUrl = document.getElementById('settings-bg-url').value;
+            updateTargetDateConfig();
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'config'), {
+                    ...state.settings,
+                    ...tempSettings
+                });
+                resetSettingsDirty();
+                closeSettings();
+                showToast("Settings Saved");
+            } catch(e) { console.error(e); }
+        }
+
+        // --- NEW: Helper to Update Mock Scores via Input ---
+        window.updateTaskScore = async function(id, type, value) {
+            if(!currentUser) return;
+            const updateData = {};
+            const numVal = value === "" ? null : parseInt(value);
+            
+            if(type === 'obtained') {
+                updateData.marks = numVal;
+                if(numVal !== null) updateData.completed = true;
+            } else if (type === 'total') {
+                updateData.maxMarks = numVal;
+            }
+
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', id), updateData);
+            } catch(e) { console.error(e); }
+        }
+
+        // --- DRAG AND DROP HANDLERS ---
         window.handleDragStart = function(e, taskId) {
             draggedTaskId = taskId;
             e.dataTransfer.effectAllowed = 'move';
-            e.target.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', taskId);
+            setTimeout(() => e.target.classList.add('dragging'), 0);
         }
 
         window.handleDragOver = function(e) {
@@ -629,762 +949,724 @@
             e.currentTarget.classList.remove('drag-over');
         }
 
-        window.handleDrop = async function(e, targetDate) {
+        window.handleDrop = async function(e, dateStr) {
             e.preventDefault();
             e.currentTarget.classList.remove('drag-over');
             const draggedEl = document.querySelector('.dragging');
             if(draggedEl) draggedEl.classList.remove('dragging');
 
-            if (!draggedTaskId || !currentUser) return;
+            if(!draggedTaskId || !currentUser) return;
 
-            // Optimistic update handled by Firestore listener, but we can do local validation
             try {
                 const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', draggedTaskId);
-                await updateDoc(taskRef, { date: targetDate });
-                showToast('Task Rescheduled');
-            } catch (error) {
+                await updateDoc(taskRef, { date: dateStr });
+                showToast("Task Rescheduled");
+            } catch(error) {
                 console.error("Drop failed", error);
-                showToast('Move failed');
             }
             draggedTaskId = null;
         }
 
-        // Logic
-        function getSubjectsList() {
-            const type = state.settings.examType;
-            let base = [];
-            if (type === 'JEE Main' || type === 'JEE Advanced') base = ['Physics', 'Chemistry', 'Maths'];
-            else if (type === 'NEET') base = ['Physics', 'Chemistry', 'Biology'];
-            else base = ['Subject 1', 'Subject 2']; 
-            
-            // Merge custom subjects
-            const customs = state.settings.customSubjects || [];
-            return [...new Set([...base, ...customs])];
-        }
-
-        function calculateTargetDate(type, year, session = 'Jan') {
-            const y = parseInt(year);
-            if (type === 'JEE Main') return session === 'Jan' ? `${y}-01-21` : `${y}-04-10`;
-            if (type === 'JEE Advanced') return `${y}-05-17`; 
-            if (type === 'NEET') return `${y}-05-05`;      
-            return state.settings.targetDate; 
-        }
-
-        // UI
-        window.applyTheme = function(theme) {
-            const html = document.documentElement;
-            const knob = document.getElementById('theme-knob');
-            if (theme === 'dark') { html.classList.add('dark'); html.classList.remove('light'); if(knob) knob.classList.add('translate-x-5'); } 
-            else { html.classList.remove('dark'); html.classList.add('light'); if(knob) knob.classList.remove('translate-x-5'); }
-            if(mockChartInstance && state.currentView === 'stats') renderMockStats();
-        }
-
-        window.applyBackground = function(url) {
-            const bg = document.getElementById('app-background');
-            if(url && url.trim() !== '') {
-                bg.style.backgroundImage = `url('${url}')`;
-                bg.style.opacity = '1';
-                document.body.classList.add('has-custom-bg');
-            } else {
-                bg.style.opacity = '0';
-                setTimeout(() => bg.style.backgroundImage = 'none', 500);
-                document.body.classList.remove('has-custom-bg');
-            }
-        }
-
-        window.toggleTheme = function() {
-            tempSettings.theme = tempSettings.theme === 'light' ? 'dark' : 'light';
-            applyTheme(tempSettings.theme);
-        }
-
-        window.setPresetBg = function(url) {
-            document.getElementById('settings-bg-url').value = url;
-            applyBackground(url);
-        }
+        // --- UI & LOGIC ---
         
-        window.toggleSidebar = function(show) {
-            const sidebar = document.getElementById('sidebar');
-            const backdrop = document.getElementById('sidebar-backdrop');
-            if(show) {
-                sidebar.classList.remove('-translate-x-full');
-                backdrop.classList.remove('hidden');
-                setTimeout(() => backdrop.classList.remove('opacity-0'), 10); // Fade in
-            } else {
-                sidebar.classList.add('-translate-x-full');
-                backdrop.classList.add('opacity-0');
-                setTimeout(() => backdrop.classList.add('hidden'), 300); // Wait for transition
-            }
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
         }
 
-        // Day View Modal Logic (Screenshot Mode)
-        window.openDayView = function(dateStr) {
-            const modal = document.getElementById('day-view-modal');
-            const dateObj = new Date(dateStr);
-            const dayTasks = state.tasks.filter(t => t.date === dateStr);
-            
-            document.getElementById('day-view-date').innerText = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-            
-            const total = dayTasks.length;
-            const completed = dayTasks.filter(t => t.completed).length;
-            const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
-            
-            const ring = document.getElementById('day-view-ring');
-            const circumference = 175.9;
-            const offset = circumference - (percent / 100) * circumference;
-            setTimeout(() => ring.style.strokeDashoffset = offset, 100);
-            
-            document.getElementById('day-view-percent').innerText = `${percent}%`;
-            document.getElementById('day-view-stats').innerText = `${completed}/${total} Tasks Completed`;
-            
-            const list = document.getElementById('day-view-tasks');
-            // Optimization: Use DocumentFragment
-            const fragment = document.createDocumentFragment();
-            list.innerHTML = '';
-            
-            if(dayTasks.length === 0) {
-                list.innerHTML = `<div class="text-center text-slate-400 py-6 italic">Rest Day or No Tasks Planned</div>`;
-            } else {
-                dayTasks.forEach(t => {
-                    const el = document.createElement('div');
-                    el.className = "flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800";
-                    const icon = t.completed 
-                        ? `<div class="w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0"><i data-lucide="check" class="w-3.5 h-3.5"></i></div>`
-                        : `<div class="w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center shrink-0"></div>`;
-                    
-                    const subStyle = subjectColors[t.subject] || subjectColors.Custom; // Default to Custom for user added subjects
-                    const badgeClass = state.settings.theme === 'dark' ? subStyle.dark : subStyle.light;
-                    
-                    let marksDisplay = '';
-                    if(t.subject === 'MockTest' && t.marks) {
-                         const max = t.maxMarks || 300;
-                         const pct = Math.round((t.marks/max)*100);
-                         marksDisplay = `<div class="text-[10px] font-bold text-purple-600 dark:text-purple-400 mt-1">${t.marks}/${max} (${pct}%)</div>`;
-                    }
-
-                    el.innerHTML = `
-                        ${icon}
-                        <div class="flex-1 min-w-0">
-                             <div class="text-xs font-bold px-1.5 py-0.5 rounded inline-block mb-1 ${badgeClass}">${t.subject}</div>
-                             <div class="text-sm font-medium text-slate-800 dark:text-slate-200 truncate ${t.completed ? 'line-through opacity-50' : ''}">${t.text}</div>
-                             ${marksDisplay}
-                        </div>
-                    `;
-                    fragment.appendChild(el);
-                });
-                list.appendChild(fragment);
-            }
-            lucide.createIcons();
-            
-            modal.classList.remove('hidden');
-            requestAnimationFrame(() => {
-                modal.classList.remove('opacity-0');
-                document.getElementById('day-view-card').classList.remove('scale-95');
-                document.getElementById('day-view-card').classList.add('scale-100');
-            });
-        }
-
-        window.closeDayView = function() {
-            const modal = document.getElementById('day-view-modal');
-            modal.classList.add('opacity-0');
-            document.getElementById('day-view-card').classList.remove('scale-100');
-            document.getElementById('day-view-card').classList.add('scale-95');
-            setTimeout(() => modal.classList.add('hidden'), 300);
-        }
-
-        // Render Calendar
+        // 1. Calendar Logic
         window.renderCalendar = function() {
             const grid = document.getElementById('calendar-grid');
-            if(!grid) return;
-            
-            // DOM Optimization: Clear via innerHTML but build via Fragment
             grid.innerHTML = '';
-            const fragment = document.createDocumentFragment();
-
             const year = state.viewDate.getFullYear();
             const month = state.viewDate.getMonth();
-            document.getElementById('current-month-display').innerText = state.viewDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-            
-            // Check Bounds for Controls
-            const btnPrev = document.getElementById('btn-prev-month');
-            const btnNext = document.getElementById('btn-next-month');
-            
-            // Allow navigation only within 2025-2030
-            if(year <= MIN_DATE.getFullYear() && month <= MIN_DATE.getMonth()) {
-                btnPrev.disabled = true;
-            } else {
-                btnPrev.disabled = false;
-            }
-
-            if(year >= MAX_DATE.getFullYear() && month >= MAX_DATE.getMonth()) {
-                btnNext.disabled = true;
-            } else {
-                btnNext.disabled = false;
-            }
-
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
             const todayStr = getLocalISODate(new Date());
 
+            document.getElementById('current-month-display').innerText = state.viewDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
             for (let i = 1; i <= daysInMonth; i++) {
-                const currentDate = new Date(year, month, i);
-                const dateStr = getLocalISODate(currentDate);
-                const dayName = currentDate.toLocaleDateString('en-US', { weekday: 'short' });
+                const date = new Date(year, month, i);
+                const dateStr = getLocalISODate(date);
+                const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+                const tasks = state.tasks.filter(t => t.date === dateStr);
                 
-                // Note: filtering arrays in JS is fast for small datasets (<5000 items)
-                const dayTasks = state.tasks.filter(t => t.date === dateStr);
-                dayTasks.sort((a, b) => (a.completed === b.completed) ? 0 : a.completed ? 1 : -1);
                 const isToday = dateStr === todayStr;
+                const completedCount = tasks.filter(t => t.completed).length;
+                const totalCount = tasks.length;
+                const progress = totalCount ? Math.round((completedCount/totalCount)*100) : 0;
                 
                 const card = document.createElement('div');
-                card.className = `day-card bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-2xl border p-3 md:p-4 flex flex-col h-full min-h-[160px] md:min-h-[180px] relative group ${isToday ? 'border-indigo-500 ring-2 ring-indigo-500/20 shadow-lg dark:ring-indigo-500/40' : 'border-slate-200 dark:border-slate-700'}`;
-                if (isToday) card.id = 'today-card';
-                
-                // DRAG TARGET ATTRIBUTES
+                // Updated Card classes for mobile responsiveness
+                card.className = `day-card group relative p-3 md:p-4 rounded-2xl md:rounded-3xl flex md:flex-col min-h-[60px] md:min-h-[160px] h-auto border transition-all items-center md:items-stretch gap-3 md:gap-0 ${isToday ? 'bg-white dark:bg-slate-800 border-indigo-500 shadow-glow-sm ring-1 ring-indigo-500/50' : 'bg-white/80 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 md:hover:border-indigo-300 md:dark:hover:border-slate-600'}`;
+                if(isToday) card.id = 'today-card';
+
                 card.setAttribute('ondragover', 'handleDragOver(event)');
                 card.setAttribute('ondragleave', 'handleDragLeave(event)');
                 card.setAttribute('ondrop', `handleDrop(event, '${dateStr}')`);
 
-                const progress = dayTasks.length > 0 ? Math.round((dayTasks.filter(t => t.completed).length / dayTasks.length) * 100) : 0;
-                const progressColor = progress === 100 ? 'bg-green-500' : 'bg-indigo-500';
-
-                card.innerHTML = `
-                    <div class="flex justify-between items-start mb-3 pointer-events-none"> <!-- Prevent drag events on header -->
-                        <div>
-                            <span class="text-[10px] font-bold uppercase tracking-wider ${isToday ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'}">${dayName}</span>
-                            <div class="text-xl md:text-2xl font-bold ${isToday ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-200'}">${i}</div>
-                        </div>
-                        <div class="flex gap-2 pointer-events-auto"> <!-- Enable clicks on buttons -->
-                             ${dayTasks.length > 0 ? `<div class="flex flex-col items-end">
-                                <span class="text-[9px] font-bold text-slate-400 mb-1">${progress}%</span>
-                                <div class="w-8 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden"><div class="h-full ${progressColor} transition-all" style="width: ${progress}%"></div></div>
-                            </div>` : ''}
-                            <button onclick="openDayView('${dateStr}')" class="text-slate-300 hover:text-indigo-500 transition-colors" title="Expand View">
-                                <i data-lucide="maximize-2" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="flex-1 space-y-2 task-container">
-                         ${dayTasks.length === 0 ? `<div class="h-full flex items-center justify-center opacity-30 pointer-events-none text-xs text-slate-400 italic">No tasks</div>` : ''}
-                    </div>
-                    
-                    <!-- Add Button -->
-                    <div class="mt-auto pt-2 flex justify-center md:opacity-0 group-hover:opacity-100 transition-opacity">
-                         <button onclick="selectDateForAdd('${dateStr}')" class="text-xs text-indigo-500 font-medium hover:bg-indigo-50 dark:hover:bg-slate-700 px-3 py-1.5 rounded-full transition-colors border border-transparent hover:border-indigo-100 dark:hover:border-slate-600 pointer-events-auto">+ Add Task</button>
-                    </div>
-                    `;
-
-                const taskContainer = card.querySelector('.task-container');
-                if(dayTasks.length > 0) taskContainer.innerHTML = ''; 
+                const progBar = totalCount > 0 ? `<div class="w-full h-1 bg-slate-100 dark:bg-slate-700 rounded-full mt-2 mb-2 overflow-hidden hidden md:block"><div class="h-full bg-indigo-500 transition-all duration-500" style="width: ${progress}%"></div></div>` : '';
                 
-                dayTasks.forEach(task => {
-                    const taskEl = document.createElement('div');
-                    const colors = subjectColors[task.subject] || subjectColors.Custom; // Default to custom if not standard
-                    const styleClass = state.settings.theme === 'dark' ? colors.dark : colors.light;
-                    taskEl.className = `task-item group flex items-center gap-2 p-1.5 rounded-lg border text-xs cursor-pointer transition-all ${styleClass}`;
-                    // DRAGGABLE ATTRIBUTES
-                    taskEl.setAttribute('draggable', 'true');
-                    taskEl.setAttribute('ondragstart', `handleDragStart(event, '${task.id}')`);
-                    
-                    let marksBadge = ''; 
-                    if(task.subject === 'MockTest') {
-                        if(task.marks) {
-                            marksBadge = `<span class="ml-auto text-[9px] font-bold bg-white/50 dark:bg-black/20 px-1.5 rounded min-w-[24px] text-center">${task.marks}</span>`;
-                        } else if(task.completed) {
-                            marksBadge = `<span class="ml-auto text-[9px] font-bold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 rounded text-center whitespace-nowrap">Add Score</span>`;
-                        }
-                    }
+                // Mobile Progress Dot
+                const mobileDot = totalCount > 0 
+                    ? `<div class="md:hidden w-2 h-2 rounded-full ${progress === 100 ? 'bg-green-500' : 'bg-indigo-500'}"></div>` 
+                    : '';
 
-                    taskEl.onclick = () => openTaskDetails(task.id);
-                    taskEl.innerHTML = `
-                        <input type="checkbox" ${task.completed ? 'checked' : ''} class="task-checkbox accent-indigo-600 w-3.5 h-3.5 cursor-pointer rounded-sm" onclick="event.stopPropagation(); toggleTask('${task.id}', ${task.completed})">
-                        <div class="flex-1 truncate select-none font-medium ${task.completed ? 'opacity-50' : ''}">${task.text}</div>
-                        ${marksBadge}
-                        <button onclick="requestDelete('task', '${task.id}', event)" class="text-slate-400 hover:text-rose-500 md:opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-white/50 dark:hover:bg-slate-800/50"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-                    `;
-                    taskContainer.appendChild(taskEl);
-                });
-                fragment.appendChild(card);
+                let taskListHTML = '';
+                
+                // Desktop Task List
+                if (tasks.length > 0) {
+                    taskListHTML = '<div class="space-y-1.5 flex-1 mt-1 hidden md:block">';
+                    tasks.forEach(t => {
+                        const styleClass = t.completed ? 'line-through opacity-60 grayscale' : '';
+                        const colors = subjectColors[t.subject] || subjectColors.Custom;
+                        const colorClass = state.settings.theme === 'dark' ? colors.dark : colors.light;
+
+                        taskListHTML += `
+                            <div draggable="true" ondragstart="handleDragStart(event, '${t.id}')" class="task-item text-xs font-medium flex items-center gap-2 p-1.5 rounded-lg border transition-all cursor-grab active:cursor-grabbing hover:shadow-sm ${colorClass} ${styleClass}">
+                                <i data-lucide="grip-vertical" class="w-3 h-3 opacity-40 shrink-0 cursor-grab"></i>
+                                <span class="truncate pointer-events-none flex-1">${t.text}</span>
+                            </div>
+                        `;
+                    });
+                    taskListHTML += '</div>';
+                }
+
+                // Mobile Task Summary Text
+                let mobileTaskSummary = '';
+                if(tasks.length > 0) {
+                    mobileTaskSummary = `<div class="md:hidden text-xs text-slate-500 dark:text-slate-400 truncate flex-1 text-left">${completedCount}/${totalCount} completed</div>`;
+                } else {
+                    mobileTaskSummary = `<div class="md:hidden text-xs text-slate-300 dark:text-slate-600 italic flex-1 text-left">No tasks</div>`;
+                }
+
+                card.onclick = () => openDayView(dateStr);
+                
+                // CHANGE HERE: Removed "opacity-0 group-hover:opacity-100 transition-opacity" from the button class
+                card.innerHTML = `
+                    <div class="flex flex-col md:flex-row md:justify-between items-center md:items-start md:mb-1 pointer-events-none shrink-0 md:w-full">
+                        <div class="text-center md:text-left">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">${dayName}</span>
+                            <div class="text-xl font-bold ${isToday ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-200'}">${i}</div>
+                        </div>
+                        ${totalCount > 0 ? `<div class="text-[10px] font-bold text-slate-400 hidden md:block">${completedCount}/${totalCount}</div>` : ''}
+                    </div>
+                    ${progBar}
+                    ${taskListHTML}
+                    ${mobileTaskSummary}
+                    ${mobileDot}
+                    <button onclick="event.stopPropagation(); selectDateForAdd('${dateStr}')" class="mt-auto pt-2 text-[10px] text-indigo-500 font-bold text-left pointer-events-auto hidden md:block hover:text-indigo-600">+ Add Task</button>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300 md:hidden ml-auto"></i>
+                `;
+                
+                grid.appendChild(card);
             }
-            grid.appendChild(fragment);
             lucide.createIcons();
         }
 
-        // --- MISSING FUNCTIONS FIX FROM PREVIOUS ---
-        window.requestDelete = function(type, id, event) {
-            if(event) event.stopPropagation();
+        window.selectDateForAdd = function(dateStr) {
+            if(window.innerWidth >= 768) {
+                // Desktop
+                document.getElementById('task-date').value = dateStr;
+                document.getElementById('task-input').focus();
+            } else {
+                // Mobile
+                document.getElementById('task-date-mobile').value = dateStr;
+                openAddTaskModal();
+            }
+        }
+
+        // 2. Weekly Targets Logic
+        function getStartOfWeek(d) {
+            const date = new Date(d);
+            const day = date.getDay(); // 0 (Sun) to 6 (Sat)
+            const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Adjust to Monday
+            const monday = new Date(date.setDate(diff));
+            monday.setHours(0,0,0,0);
+            return monday;
+        }
+
+        window.renderWeeklyView = function() {
+            const list = document.getElementById('weekly-list');
+            list.innerHTML = '';
+            
+            const startOfWeek = getStartOfWeek(state.weeklyViewDate);
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            
+            const weekId = getLocalISODate(startOfWeek);
+            
+            document.getElementById('weekly-date-range').innerText = `${startOfWeek.getDate()} ${startOfWeek.toLocaleString('default',{month:'short'})} - ${endOfWeek.getDate()} ${endOfWeek.toLocaleString('default',{month:'short'})}`;
+
+            const targets = state.targets.filter(t => t.weekId === weekId);
+            const total = targets.length;
+            const completed = targets.filter(t => t.completed).length;
+            const percent = total === 0 ? 0 : Math.round((completed/total)*100);
+            
+            document.getElementById('weekly-progress-text').innerText = `${percent}%`;
+            document.getElementById('weekly-count-text').innerText = `${completed}/${total} Targets Completed`;
+            
+            const ring = document.getElementById('weekly-ring');
+            const circumference = 251.2;
+            const offset = circumference - (percent / 100) * circumference;
+            setTimeout(() => ring.style.strokeDashoffset = offset, 100);
+
+            if(targets.length === 0) {
+                list.innerHTML = `<div class="text-center py-10 opacity-50"><p>No targets for this week yet.</p></div>`;
+                return;
+            }
+
+            targets.forEach(t => {
+                const el = document.createElement('div');
+                el.className = `flex items-center gap-4 p-4 rounded-2xl border transition-all ${t.completed ? 'bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`;
+                el.innerHTML = `
+                    <div onclick="toggleTarget('${t.id}', ${t.completed})" class="w-6 h-6 rounded-lg border-2 flex items-center justify-center cursor-pointer transition-colors shrink-0 ${t.completed ? 'bg-green-500 border-green-500' : 'border-slate-300 dark:border-slate-600'}">
+                        ${t.completed ? '<i data-lucide="check" class="w-4 h-4 text-white"></i>' : ''}
+                    </div>
+                    <div class="flex-1 text-sm font-medium ${t.completed ? 'line-through text-slate-400' : 'text-slate-800 dark:text-slate-200'}">${t.text}</div>
+                    <button onclick="requestDelete('target', '${t.id}')" class="text-slate-300 hover:text-rose-500 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                `;
+                list.appendChild(el);
+            });
+            lucide.createIcons();
+        }
+
+        window.addWeeklyTarget = async function() {
+            const input = document.getElementById('target-input');
+            const text = input.value.trim();
+            if(!text) return;
+            
+            const weekId = getLocalISODate(getStartOfWeek(state.weeklyViewDate));
+            
+            try {
+                await setDoc(doc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'weeklyTargets')), {
+                    text, weekId, completed: false, createdAt: new Date().toISOString()
+                });
+                input.value = '';
+                showToast("Target Set!");
+            } catch(e) { console.error(e); }
+        }
+
+        window.toggleTarget = async function(id, status) {
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'weeklyTargets', id), { completed: !status });
+                if(!status) {
+                    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#6366f1', '#a855f7', '#ec4899'] });
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        window.requestDelete = function(type, id) {
             itemToDelete = { type, id };
             const modal = document.getElementById('confirm-modal');
             modal.classList.remove('hidden');
-            requestAnimationFrame(() => {
-                modal.classList.remove('opacity-0');
-                modal.querySelector('div').classList.remove('scale-95');
-                modal.querySelector('div').classList.add('scale-100');
-            });
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
         }
-
-        window.closeConfirmModal = function() {
-            const modal = document.getElementById('confirm-modal');
-            modal.classList.add('opacity-0');
-            modal.querySelector('div').classList.remove('scale-100');
-            modal.querySelector('div').classList.add('scale-95');
-            setTimeout(() => modal.classList.add('hidden'), 200);
-            itemToDelete = null;
-        }
-
-        window.toggleTask = async function(taskId, currentStatus) {
-            if(!currentUser) return;
-            try {
-                const taskRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', taskId);
-                await updateDoc(taskRef, { completed: !currentStatus });
-            } catch(e) {
-                console.error("Toggle error", e);
-                showToast("Error updating task");
-            }
-        }
-
-        const confirmBtn = document.getElementById('confirm-delete-btn');
-        if(confirmBtn) {
-            confirmBtn.addEventListener('click', async () => {
-                if(!currentUser || !itemToDelete) return;
-                const btn = document.getElementById('confirm-delete-btn');
-                const originalText = btn.innerText;
-                btn.innerText = "Deleting...";
-                try {
-                    if(itemToDelete.type === 'task') {
-                        await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', itemToDelete.id));
-                        showToast('Item Deleted');
-                    }
-                    closeConfirmModal();
-                } catch(e) {
-                    console.error("Delete error", e);
-                    showToast("Error deleting item");
-                } finally {
-                    btn.innerText = originalText;
+        
+        document.getElementById('confirm-delete-btn').onclick = async () => {
+            if(!itemToDelete) return;
+            const { type, id } = itemToDelete;
+            const col = type === 'task' ? 'tasks' : 'weeklyTargets';
+            
+            // Optimistic UI Update
+            if (type === 'task') {
+                state.tasks = state.tasks.filter(t => t.id !== id);
+                renderCalendar(); 
+                if(state.currentView === 'stats') renderMockStats();
+                if(currentDayViewDate && !document.getElementById('day-view-modal').classList.contains('hidden')) {
+                    openDayView(currentDayViewDate);
                 }
-            });
-        }
-
-        // Rest of standard functions...
-        function updateSubjectSelector() { 
-            const container = document.getElementById('subject-selector'); 
-            let html = ''; 
-            getSubjectsList().forEach((sub, idx) => html += createRadioHTML(sub, idx === 0)); 
-            html += createRadioHTML("MockTest", false, true); 
-            container.innerHTML = html; 
-            
-            // Add Listener for Radio Changes to toggle Mock Fields
-            const radios = container.querySelectorAll('input[name="subject"]');
-            radios.forEach(radio => {
-                radio.addEventListener('change', (e) => {
-                    const mockContainer = document.getElementById('mock-fields-container');
-                    if(e.target.value === 'MockTest') {
-                        mockContainer.classList.remove('hidden');
-                    } else {
-                        mockContainer.classList.add('hidden');
-                    }
-                });
-            });
-
-            lucide.createIcons(); 
-            document.getElementById('app-title').innerText = {'JEE Main': `JEE Main (${state.settings.session})`, 'JEE Advanced': 'JEE Advanced', 'NEET': 'NEET', 'Custom': 'Custom Tracker'}[state.settings.examType] || 'Tracker'; 
-        }
-
-        function createRadioHTML(sub, checked, isMock = false) { 
-            // Check if subject is standard or custom for coloring
-            const isStandard = ['Physics','Chemistry','Maths','Biology','MockTest'].includes(sub);
-            const colorClass = isStandard ? `radio-${sub}` : `radio-Custom`;
-            
-            const icon = isMock ? '<i data-lucide="trophy" class="w-3 h-3"></i> ' : ''; 
-            
-            // Add delete button for custom subjects
-            const deleteBtn = !isStandard && !isMock ? `<button type="button" onclick="removeCustomSubject('${sub}', event)" class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-rose-500 text-white rounded-full flex items-center justify-center hover:bg-rose-600 transition-colors z-10 shadow-sm"><i data-lucide="x" class="w-2.5 h-2.5"></i></button>` : '';
-
-            return `<div class="relative group">
-                ${deleteBtn}
-                <label class="cursor-pointer block h-full">
-                    <input type="radio" name="subject" value="${sub}" class="peer sr-only ${colorClass}" ${checked ? 'checked' : ''}>
-                    <div class="h-full text-center px-2 py-2.5 rounded-lg text-xs font-medium border transition-all hover:opacity-80 truncate flex items-center justify-center gap-1 border-slate-200 bg-white text-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600">${icon}${isMock ? 'Mock' : sub}</div>
-                </label>
-            </div>`; 
-        }
-
-        window.promptAddSubject = async function() {
-            const name = prompt("Enter new subject name (e.g., English, CS):");
-            if(!name || !name.trim()) return;
-            const cleanName = name.trim();
-            
-            if(!state.settings.customSubjects) state.settings.customSubjects = [];
-            // Prevent duplicates (case insensitive check optional, doing strict here)
-            if(state.settings.customSubjects.includes(cleanName) || getSubjectsList().includes(cleanName)) {
-                showToast("Subject already exists");
-                return;
-            }
-            
-            state.settings.customSubjects.push(cleanName);
-            
-            // Optimistic Update
-            updateSubjectSelector();
-            
-            // Persist - OPTIMIZATION: Use arrayUnion for atomic write, avoiding full object rewrite
-            if(currentUser) {
-                try {
-                    const settingsRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'config');
-                    await updateDoc(settingsRef, {
-                        customSubjects: arrayUnion(cleanName)
-                    });
-                    showToast(`Added ${cleanName}`);
-                } catch(e) {
-                    console.error("Error saving subject", e);
-                    // Fallback for first time creation if update fails
-                    try {
-                         const settingsRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'config');
-                         await setDoc(settingsRef, state.settings, { merge: true });
-                    } catch(err2) {
-                        console.error(err2);
-                    }
-                }
-            }
-        }
-
-        window.removeCustomSubject = async function(subjectName, event) {
-            if(event) event.stopPropagation();
-            if(!confirm(`Remove subject "${subjectName}"?`)) return;
-
-            // Optimistic update
-            state.settings.customSubjects = state.settings.customSubjects.filter(s => s !== subjectName);
-            updateSubjectSelector();
-
-            if(currentUser) {
-                try {
-                    const settingsRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'config');
-                    await updateDoc(settingsRef, {
-                        customSubjects: arrayRemove(subjectName)
-                    });
-                    showToast(`Removed ${subjectName}`);
-                } catch(e) {
-                    console.error("Error removing subject", e);
-                    showToast("Error removing subject");
-                    // Revert optimistic update ideally, but simpler to just reload or let next sync fix it
-                }
-            }
-        }
-
-        function renderCountdown() {
-            // 1. Get the current date and time
-            const now = new Date();
-            
-            // 2. Get the target date and time
-            const target = new Date(state.settings.targetDate);
-            
-            // 3. Calculate the difference in milliseconds
-            const diff = target.getTime() - now.getTime();
-            
-            // 4. Calculate the remaining days.
-            // Use Math.floor() to count only FULL 24-hour periods remaining.
-            const millisecondsInDay = 1000 * 60 * 60 * 24;
-            const days = Math.floor(diff / millisecondsInDay); 
-            
-            // 5. Get the output element
-            const el = document.getElementById('days-left');
-            
-            // 6. Display the days left, ensuring it's not negative.
-            const displayDays = days > 0 ? days : 0;
-            el.innerText = displayDays;
-            
-            // 7. Apply styling based on whether the countdown is finished
-            if (days <= 0) {
-                el.classList.add('text-rose-600');
             } else {
-                el.classList.remove('text-rose-600');
+                state.targets = state.targets.filter(t => t.id !== id);
+                renderWeeklyView();
             }
             
-            // 8. Display the target date for reference
-            document.getElementById('target-date-display').innerText = 
-                `Target: ${target.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}`;
+            closeConfirmModal();
+
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, col, id));
+            } catch(e) {
+                console.error("Delete failed", e);
+                showToast("Error deleting item");
+            }
+        };
+
+        window.changeWeek = function(delta) {
+            state.weeklyViewDate.setDate(state.weeklyViewDate.getDate() + (delta * 7));
+            renderWeeklyView();
         }
 
-        window.updateStats = function() { 
-            const container = document.getElementById('stats-container'); 
-            if (!container) return; 
-            const subjects = getSubjectsList(); 
-            let html = ''; 
-            subjects.forEach(sub => { 
-                const count = state.tasks.filter(t => t.subject === sub).length; 
-                html += `<div class="flex justify-between text-xs text-slate-600 dark:text-slate-400"><span>${sub} Tasks</span><span class="font-bold text-slate-800 dark:text-slate-200">${count}</span></div>`; 
-            }); 
-            const mocks = state.tasks.filter(t => t.subject === 'MockTest').length; 
-            html += `<div class="flex justify-between text-xs text-purple-600 dark:text-purple-400 mt-2 pt-2 border-t border-slate-100 dark:border-slate-700"><span class="font-bold">Mock Tests</span><span class="font-bold">${mocks}</span></div>`; 
-            container.innerHTML = html; 
-        }
-        
-        // Settings & Other UI
-        window.openSettings = function() { tempSettings = { ...state.settings }; document.getElementById('settings-year').value = tempSettings.targetYear; document.getElementById('settings-bg-url').value = tempSettings.bgUrl || ''; updateSettingsUI(); const modal = document.getElementById('settings-modal'); modal.classList.remove('hidden'); requestAnimationFrame(() => { modal.classList.remove('opacity-0'); document.getElementById('settings-modal-content').classList.remove('scale-95'); document.getElementById('settings-modal-content').classList.add('scale-100'); }); }
-        window.closeSettings = function() { applyTheme(state.settings.theme); applyBackground(state.settings.bgUrl); document.getElementById('settings-modal').classList.add('opacity-0'); setTimeout(() => document.getElementById('settings-modal').classList.add('hidden'), 200); }
-        window.saveSettings = async function() { if (!currentUser) return; tempSettings.bgUrl = document.getElementById('settings-bg-url').value; if (tempSettings.examType === 'Custom') { const customDate = document.getElementById('settings-custom-date').value; if(customDate) tempSettings.targetDate = customDate; } else tempSettings.targetDate = calculateTargetDate(tempSettings.examType, tempSettings.targetYear, tempSettings.session); try { await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'config'), tempSettings); closeSettings(); showToast('Settings Saved'); } catch(e) { console.error(e); showToast('Error Saving Settings'); } }
-        window.setExamType = function(type) { tempSettings.examType = type; updateTargetDateConfig(); updateSettingsUI(); }
-        window.setSession = function(session) { tempSettings.session = session; updateTargetDateConfig(); updateSettingsUI(); }
-        window.updateTargetDateConfig = function() { const year = document.getElementById('settings-year').value; tempSettings.targetYear = parseInt(year); if (tempSettings.examType !== 'Custom') tempSettings.targetDate = calculateTargetDate(tempSettings.examType, year, tempSettings.session); else { const customDate = document.getElementById('settings-custom-date').value; if(customDate) tempSettings.targetDate = customDate; } updateSettingsUI(); }
-        function updateSettingsUI() { ['jee', 'jeeadv', 'neet', 'custom'].forEach(id => { const btn = document.getElementById(`btn-${id}`); const typeName = {'jee':'JEE Main','jeeadv':'JEE Advanced','neet':'NEET','custom':'Custom'}[id]; if (tempSettings.examType === typeName) { btn.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600'); btn.classList.remove('hover:bg-indigo-50', 'dark:hover:bg-slate-700'); } else { btn.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600'); btn.classList.add('hover:bg-indigo-50', 'dark:hover:bg-slate-700'); } }); if(tempSettings.examType==='JEE Main'){document.getElementById('jee-session-container').classList.remove('hidden'); const janBtn = document.getElementById('btn-session-jan'); const aprBtn = document.getElementById('btn-session-apr'); if(tempSettings.session === 'Jan') { janBtn.classList.add('bg-indigo-600', 'text-white'); aprBtn.classList.remove('bg-indigo-600','text-white'); } else { aprBtn.classList.add('bg-indigo-600', 'text-white'); janBtn.classList.remove('bg-indigo-600','text-white'); }} else document.getElementById('jee-session-container').classList.add('hidden'); if(tempSettings.examType==='Custom') document.getElementById('custom-date-container').classList.remove('hidden'); else document.getElementById('custom-date-container').classList.add('hidden'); }
-        
-        // Stats/Mocks
-        window.switchView = function(viewName) { state.currentView = viewName; if(viewName === 'calendar') { document.getElementById('view-calendar').classList.remove('hidden'); document.getElementById('toolbar-calendar').classList.remove('hidden'); document.getElementById('view-stats').classList.add('hidden'); document.getElementById('nav-calendar').className = "flex-1 py-2.5 text-xs font-semibold rounded-xl bg-indigo-600 text-white transition-all shadow-lg shadow-indigo-200 dark:shadow-none flex items-center justify-center gap-2"; document.getElementById('nav-stats').className = "flex-1 py-2.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"; renderCalendar(); } else { document.getElementById('view-calendar').classList.add('hidden'); document.getElementById('toolbar-calendar').classList.add('hidden'); document.getElementById('view-stats').classList.remove('hidden'); document.getElementById('nav-stats').className = "flex-1 py-2.5 text-xs font-semibold rounded-xl bg-indigo-600 text-white transition-all shadow-lg shadow-indigo-200 dark:shadow-none flex items-center justify-center gap-2"; document.getElementById('nav-calendar').className = "flex-1 py-2.5 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"; renderMockStats(); } }
-        
-        // UPDATE: Render Mocks with RAW MARKS
-        window.renderMockStats = function() { 
-            const mockTasks = state.tasks.filter(t => t.subject === 'MockTest').sort((a, b) => new Date(a.date) - new Date(b.date)); 
+        // 3. Mock Stats Logic (Raw Scores)
+        window.renderMockStats = function() {
+            const mockTasks = state.tasks.filter(t => t.subject === 'MockTest').sort((a,b) => new Date(a.date) - new Date(b.date));
+            const scored = mockTasks.filter(t => t.marks !== undefined && t.marks !== null && t.marks !== "");
             
-            // KEY FIX: Filter by checks if marks exists, NOT if task is 'completed'
-            // This ensures "Added Later" marks show up even if the checkbox isn't ticked.
-            const scoredMocks = mockTasks.filter(t => t.marks !== undefined && t.marks !== null && t.marks !== "");
+            const total = scored.length;
+            const marks = scored.map(t => parseInt(t.marks));
+            const globalMax = scored.length > 0 ? Math.max(...scored.map(t => parseInt(t.maxMarks || 300))) : 300;
             
-            // Map to Data Points
-            const dataPoints = scoredMocks.map(t => {
-                const max = t.maxMarks || 300; 
-                return {
-                    date: t.date,
-                    marks: parseInt(t.marks),
-                    max: max,
-                    percent: Math.round((parseInt(t.marks) / max) * 100),
-                    text: t.text
-                };
-            });
+            document.getElementById('stats-total-tests').innerText = total;
+            document.getElementById('stats-avg-score').innerText = total ? Math.round(marks.reduce((a,b)=>a+b,0)/total) : 0;
+            document.getElementById('stats-max-score').innerText = total ? Math.max(...marks) : 0;
+            document.getElementById('stats-last-5').innerText = marks.slice(-5).length ? Math.round(marks.slice(-5).reduce((a,b)=>a+b,0)/marks.slice(-5).length) : 0;
 
-            const marksList = dataPoints.map(d => d.marks);
-
-            // FIX: Use scoredMocks.length instead of mockTasks.length
-            document.getElementById('stats-total-tests').innerText = scoredMocks.length; 
+            const ctx = document.getElementById('mockChart');
+            if(mockChartInstance) mockChartInstance.destroy();
             
-            // Average Score (Raw)
-            document.getElementById('stats-avg-score').innerText = marksList.length ? Math.round(marksList.reduce((a, b) => a + b, 0) / marksList.length) : '0'; 
-            
-            // Best Score (Raw)
-            document.getElementById('stats-max-score').innerText = marksList.length ? Math.max(...marksList) : '0'; 
-            
-            // Last 5 Avg (Raw)
-            document.getElementById('stats-last-5').innerText = marksList.slice(-5).length ? Math.round(marksList.slice(-5).reduce((a, b) => a + b, 0) / marksList.slice(-5).length) : '0'; 
-            
-            const list = document.getElementById('mock-history-list'); 
-            list.innerHTML = '';
-            
-            // DOM Optimization: DocumentFragment for list
-            const fragment = document.createDocumentFragment();
-            
-            // Sort Ascending: Upcoming/Later implies chronological timeline (Oldest -> Newest/Future)
-            [...mockTasks].sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(t => { 
-                const max = t.maxMarks || 300;
-                
-                const el = document.createElement('div'); 
-                el.className = "bg-white/60 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex justify-between items-center cursor-pointer hover:shadow-md transition-all backdrop-blur-sm"; 
-                el.onclick = () => openTaskDetails(t.id); 
-                
-                let marksDisplay = '';
-                if(t.marks !== undefined && t.marks !== null && t.marks !== "") {
-                    // Show marks even if checkbox not ticked
-                    const pct = Math.round((parseInt(t.marks)/max)*100);
-                    marksDisplay = `<div class="text-indigo-600 dark:text-indigo-400 font-bold">${t.marks}/${max}</div><div class="text-xs text-slate-400 font-bold">(${pct}%)</div>`;
-                } else if (t.completed) {
-                    marksDisplay = `<div class="text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded">Add Score</div>`;
-                } else {
-                    marksDisplay = `<div class="text-xs font-bold text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">Planned</div>`;
-                }
-
-                el.innerHTML = `<div class="flex-1"><div class="flex items-center gap-2 mb-1"><div class="text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">${new Date(t.date).toLocaleDateString('en-US', {month:'short', day:'numeric'})}</div><div class="text-xs ${t.completed ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : 'text-amber-600 bg-amber-50 dark:bg-amber-900/20'} px-2 py-0.5 rounded font-medium">${t.completed ? 'Completed' : 'Planned'}</div></div><div class="text-sm text-slate-800 dark:text-slate-200 truncate pr-4">${t.text || "No notes"}</div></div><div class="text-right">${marksDisplay}</div><i data-lucide="chevron-right" class="w-4 h-4 text-slate-300 inline-block ml-2"></i>`; 
-                fragment.appendChild(el); 
-            });
-            list.appendChild(fragment); 
-            lucide.createIcons(); 
-            
-            const ctx = document.getElementById('mockChart'); 
-            if(mockChartInstance) mockChartInstance.destroy(); 
-            if(!ctx) return; 
-            
-            const labels = dataPoints.map(d => new Date(d.date).toLocaleDateString('en-US', {month:'short', day:'numeric'})); 
-            const chartData = dataPoints.map(d => d.marks); 
-            const isDark = document.documentElement.classList.contains('dark'); 
-            
-            mockChartInstance = new Chart(ctx, { 
-                type: 'line', 
-                data: { 
-                    labels: labels, 
-                    datasets: [{ 
-                        label: 'Marks Scored', 
-                        data: chartData, 
-                        borderColor: '#6366f1', 
-                        backgroundColor: 'rgba(99, 102, 241, 0.1)', 
-                        borderWidth: 2, 
-                        tension: 0.3, 
-                        pointBackgroundColor: '#fff', 
-                        pointBorderColor: '#6366f1', 
-                        fill: true 
-                    }] 
-                }, 
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    plugins: { 
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const index = context.dataIndex;
-                                    const point = dataPoints[index];
-                                    return `${point.marks}/${point.max} Marks (${point.percent}%)`;
-                                }
-                            }
-                        }
-                    }, 
+            mockChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: scored.map(t => new Date(t.date).toLocaleDateString('en-GB', {day: '2-digit', month: '2-digit'})),
+                    datasets: [{
+                        label: 'Marks',
+                        data: marks,
+                        borderColor: '#6366f1',
+                        backgroundColor: (context) => {
+                            const ctx = context.chart.ctx;
+                            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                            gradient.addColorStop(0, 'rgba(99, 102, 241, 0.4)');
+                            gradient.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+                            return gradient;
+                        },
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#6366f1',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: {display:false} },
                     scales: { 
                         y: { 
-                            beginAtZero: true, 
-                            // Dynamic Max or default 300
-                            suggestedMax: dataPoints.length > 0 ? Math.max(...dataPoints.map(d => d.max)) : 300,
-                            grid: { color: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)' } 
+                            beginAtZero: true,
+                            max: globalMax, 
+                            grid: { display: false } 
                         }, 
                         x: { grid: { display: false } } 
-                    } 
-                } 
-            }); 
+                    }
+                }
+            });
+            
+            const list = document.getElementById('mock-history-list');
+            list.innerHTML = '';
+            [...mockTasks].sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(t => {
+                const el = document.createElement('div');
+                el.className = "flex justify-between items-center p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm";
+                
+                const marksVal = t.marks !== undefined && t.marks !== null ? t.marks : '';
+                const maxVal = t.maxMarks || 300;
+                
+                el.innerHTML = `
+                    <div class="flex-1"><div class="text-xs font-bold text-slate-400 mb-1">${formatDate(t.date)}</div><div class="font-medium text-sm text-slate-700 dark:text-slate-200">${t.text || 'Mock Test'}</div></div>
+                    <div class="flex items-center gap-1">
+                        <input type="number" value="${marksVal}" onchange="updateTaskScore('${t.id}', 'obtained', this.value)" placeholder="--" class="w-12 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-1 py-2 text-sm text-center font-bold text-indigo-600 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none">
+                        <span class="text-slate-400 text-xs">/</span>
+                        <input type="number" value="${maxVal}" onchange="updateTaskScore('${t.id}', 'total', this.value)" class="w-12 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-1 py-2 text-sm text-center font-bold text-slate-500 focus:ring-2 focus:ring-indigo-500 outline-none appearance-none">
+                    </div>
+                `;
+                list.appendChild(el);
+            });
         }
 
-        // Core CRUD
-        document.getElementById('add-task-form').addEventListener('submit', async (e) => { 
-            e.preventDefault(); 
-            if(!currentUser) return; 
-            const btn = document.getElementById('btn-add-task');
-            const originalContent = btn.innerHTML;
+        window.switchView = function(view) {
+            state.currentView = view;
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`view-container-${view}`).classList.remove('hidden');
             
-            // Loading State
-            btn.disabled = true;
-            btn.innerHTML = `<div class="btn-spinner"></div>`;
+            // Desktop Nav
+            ['calendar', 'weekly', 'stats'].forEach(v => {
+                const btn = document.getElementById(`nav-desktop-${v}`);
+                if(v === view) {
+                    btn.classList.add('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'text-indigo-600', 'dark:text-indigo-300');
+                    btn.classList.remove('text-slate-500', 'dark:text-slate-400');
+                } else {
+                    btn.classList.remove('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'text-indigo-600', 'dark:text-indigo-300');
+                    btn.classList.add('text-slate-500', 'dark:text-slate-400');
+                }
+            });
 
-            const dateVal = document.getElementById('task-date').value; 
-            const textVal = document.getElementById('task-input').value; 
-            const subjectVal = document.querySelector('input[name="subject"]:checked')?.value; 
+            // Mobile Nav
+            ['calendar', 'weekly', 'stats'].forEach(v => {
+                 const btn = document.getElementById(`nav-mobile-${v}`);
+                 if(v === view) {
+                     btn.classList.remove('text-slate-400', 'dark:text-slate-500');
+                     btn.classList.add('text-indigo-600', 'dark:text-indigo-400');
+                 } else {
+                     btn.classList.add('text-slate-400', 'dark:text-slate-500');
+                     btn.classList.remove('text-indigo-600', 'dark:text-indigo-400');
+                 }
+            });
+
+            if(view === 'calendar') renderCalendar();
+            if(view === 'weekly') renderWeeklyView();
+            if(view === 'stats') renderMockStats();
+        }
+
+        // --- NEW MODAL LOGIC FOR MOBILE ---
+        window.openAddTaskModal = function() {
+             // Populate Subject Selector
+             updateSubjectSelectors();
+
+             const modal = document.getElementById('add-task-modal');
+             modal.classList.remove('hidden');
+             setTimeout(() => {
+                 modal.classList.remove('opacity-0');
+                 modal.querySelector('.mobile-sheet').classList.add('open');
+             }, 10);
+        }
+
+        window.closeAddTaskModal = function() {
+            const modal = document.getElementById('add-task-modal');
+            modal.querySelector('.mobile-sheet').classList.remove('open');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        function updateSubjectSelectors() {
+             const type = state.settings.examType;
+             let subjects = [];
+             
+             if(type === 'NEET') subjects = ['Physics', 'Chemistry', 'Biology'];
+             else if(type === 'JEE Main' || type === 'JEE Advanced') subjects = ['Physics', 'Chemistry', 'Maths'];
+             else subjects = ['Physics', 'Chemistry', 'Maths', 'Biology']; 
+             
+             subjects = [...subjects, ...(state.settings.customSubjects || []), 'MockTest'];
+             
+             // Render helper
+             const renderRadios = (containerId, formSuffix) => {
+                 const container = document.getElementById(containerId);
+                 if(!container) return;
+                 let html = '';
+                 subjects.forEach((sub, i) => {
+                     const isMock = sub === 'MockTest';
+                     const style = isMock ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800' : 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+                     const padding = formSuffix === '-mobile' ? 'py-3 rounded-xl' : 'py-2 rounded-lg'; // Taller touch target on mobile
+                     html += `
+                     <label class="cursor-pointer">
+                         <input type="radio" name="subject" value="${sub}" class="peer sr-only ${isMock?'radio-MockTest':`radio-${sub}`}" ${i===0?'checked':''}>
+                         <div class="text-center px-2 ${padding} text-xs font-bold border transition-all hover:opacity-80 peer-checked:ring-2 peer-checked:ring-offset-1 ${style}">${isMock ? '🏆 Mock' : sub}</div>
+                     </label>`;
+                 });
+                 container.innerHTML = html;
+                 
+                 // Mock toggle listener
+                 container.querySelectorAll('input').forEach(radio => {
+                    radio.addEventListener('change', (e) => {
+                        const mockContainerId = formSuffix === '-mobile' ? 'mock-fields-container-mobile' : 'mock-fields-container';
+                        const mockFields = document.getElementById(mockContainerId);
+                        if(e.target.value === 'MockTest') mockFields.classList.remove('hidden');
+                        else mockFields.classList.add('hidden');
+                    });
+                 });
+             };
+
+             renderRadios('subject-selector-mobile', '-mobile');
+             renderRadios('subject-selector', '');
+        }
+
+        // Handle Add Task Form Submission (Mobile)
+        document.getElementById('add-task-form-mobile').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await handleTaskSubmit('mobile');
+        });
+
+        // Handle Add Task Form Submission (Desktop)
+        document.getElementById('add-task-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await handleTaskSubmit('desktop');
+        });
+
+        async function handleTaskSubmit(mode) {
+            if(!currentUser) return;
+            const suffix = mode === 'mobile' ? '-mobile' : '';
+            const btn = document.getElementById(`btn-add-task${suffix}`);
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = `<div class="btn-spinner"></div>`;
+            btn.disabled = true;
+
+            const date = document.getElementById(`task-date${suffix}`).value;
+            const text = document.getElementById(`task-input${suffix}`).value;
+            const selectorId = mode === 'mobile' ? 'subject-selector-mobile' : 'subject-selector';
+            const subject = document.querySelector(`#${selectorId} input[name="subject"]:checked`)?.value;
             
-            if(!textVal.trim() || !dateVal || !subjectVal) {
-                showToast("Please fill all required fields");
-                btn.disabled = false;
+            if(!date || !text || !subject) {
+                showToast("Missing details!");
                 btn.innerHTML = originalContent;
+                btn.disabled = false;
+                lucide.createIcons();
                 return;
             }
-            
-            // KEY CHANGE: Auto-complete if marks are entered
-            let isCompleted = false;
-            let finalMarks = null;
-            let finalMax = null;
 
-            if(subjectVal === 'MockTest') {
-                const marksVal = document.getElementById('task-marks').value; 
-                const maxMarksVal = document.getElementById('task-max-marks').value;
-                if(marksVal && marksVal.trim() !== "") {
-                    finalMarks = parseInt(marksVal);
-                    isCompleted = true; // Auto-complete
-                }
-                if(maxMarksVal) finalMax = parseInt(maxMarksVal);
+            const newTask = { text, date, subject, completed: false, createdAt: new Date().toISOString() };
+            
+            if(subject === 'MockTest') {
+                const marksId = mode === 'mobile' ? 'task-marks-mobile' : 'task-marks';
+                const maxMarksId = mode === 'mobile' ? 'task-max-marks-mobile' : 'task-max-marks';
+                const marks = document.getElementById(marksId).value;
+                if(marks) { newTask.marks = marks; newTask.completed = true; }
+                newTask.maxMarks = document.getElementById(maxMarksId).value || 300;
             }
 
-            const newTask = { 
-                text: textVal.trim(), 
-                subject: subjectVal, 
-                date: dateVal, 
-                completed: isCompleted, // Use the auto-determined status
-                createdAt: new Date().toISOString() 
-            }; 
-            
-            if(finalMarks !== null) newTask.marks = finalMarks;
-            if(finalMax !== null) newTask.maxMarks = finalMax;
-            
-            try { 
-                await setDoc(doc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks')), newTask); 
-                document.getElementById('task-input').value = ''; 
-                document.getElementById('task-marks').value = '';
-                showToast('Task Added'); 
-                const addedDate = new Date(dateVal); 
-                if(addedDate.getMonth() !== state.viewDate.getMonth()) { state.viewDate = addedDate; renderCalendar(); } 
-                // Auto close sidebar on mobile after add
-                if(window.innerWidth < 768) toggleSidebar(false);
-            } catch(e) { 
-                console.error(e); 
-                showToast("Failed to add task");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalContent;
-            }
-        });
-        
-        // Modal Logic
-        window.openTaskDetails = function(taskId) { 
-            const task = state.tasks.find(t => t.id === taskId); 
-            if(!task) return; 
-            editingTaskId = taskId; 
-            const modal = document.getElementById('task-modal'); 
-            document.getElementById('modal-desc').value = task.text || ""; 
-            
-            const colors = subjectColors[task.subject] || subjectColors.Custom; // Default custom
-            document.getElementById('modal-subject-badge').innerHTML = `<span class="text-xs font-bold px-2 py-0.5 rounded ${colors.light}">${task.subject}</span>`; 
-            
-            if(task.subject === 'MockTest') { 
-                document.getElementById('modal-marks-container').classList.remove('hidden'); 
-                document.getElementById('modal-marks').value = task.marks !== undefined ? task.marks : ""; 
-                document.getElementById('modal-max-marks').value = task.maxMarks || "300"; 
-            } else {
-                document.getElementById('modal-marks-container').classList.add('hidden'); 
-            }
-            
-            modal.classList.remove('hidden'); 
-            requestAnimationFrame(() => { 
-                modal.classList.remove('opacity-0'); 
-                document.getElementById('task-modal-content').classList.remove('scale-95'); 
-                document.getElementById('task-modal-content').classList.add('scale-100'); 
-            }); 
-        }
-        
-        window.closeTaskModal = function() { const modal = document.getElementById('task-modal'); modal.classList.add('opacity-0'); setTimeout(() => modal.classList.add('hidden'), 200); editingTaskId = null; }
-        
-        window.saveTaskDetails = async function() { 
-            if(!currentUser || !editingTaskId) return; 
-            const desc = document.getElementById('modal-desc').value; 
-            const marks = document.getElementById('modal-marks').value; 
-            const maxMarks = document.getElementById('modal-max-marks').value;
-            
-            const task = state.tasks.find(t => t.id === editingTaskId); 
-            const updates = { text: desc }; 
-            
-            if(task.subject === 'MockTest') {
-                if(marks && marks.trim() !== "") {
-                    updates.marks = parseInt(marks);
-                    updates.completed = true; // Auto-complete on edit if marks added
+            try {
+                await setDoc(doc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks')), newTask);
+                showToast("Added to Plan!");
+                
+                // Reset Fields
+                document.getElementById(`task-input${suffix}`).value = '';
+                if(mode === 'mobile') {
+                    document.getElementById('task-marks-mobile').value = '';
+                    closeAddTaskModal();
                 } else {
-                    updates.marks = null;
+                    document.getElementById('task-marks').value = '';
                 }
-                updates.maxMarks = maxMarks ? parseInt(maxMarks) : 300;
+                
+                const addedDate = new Date(date);
+                if(addedDate.getMonth() !== state.viewDate.getMonth()) {
+                    state.viewDate = addedDate;
+                    if(state.currentView === 'calendar') renderCalendar();
+                }
+            } catch(e) { console.error(e); }
+            
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
+            lucide.createIcons();
+        }
+
+        window.changeMonth = function(d) { state.viewDate.setMonth(state.viewDate.getMonth() + d); renderCalendar(); }
+        window.goToToday = function() { 
+            state.viewDate = new Date(); 
+            renderCalendar(); 
+            setTimeout(() => {
+                const card = document.getElementById('today-card');
+                if(card) card.scrollIntoView({behavior: 'smooth', block: 'center'});
+            }, 100);
+        }
+        
+        window.openDayView = function(dateStr) {
+            currentDayViewDate = dateStr; 
+            const modal = document.getElementById('day-view-modal');
+            const list = document.getElementById('day-view-tasks');
+            const dateObj = new Date(dateStr);
+            document.getElementById('day-view-date').innerText = dateObj.toLocaleDateString('en-GB', {weekday:'long', day: 'numeric', month: 'short'});
+            
+            const tasks = state.tasks.filter(t => t.date === dateStr);
+            list.innerHTML = '';
+            
+            if(tasks.length === 0) list.innerHTML = `<div class="text-center text-slate-400 italic py-8 flex flex-col items-center justify-center h-full"><i data-lucide="coffee" class="w-10 h-10 mb-2 opacity-20"></i><p>Free Day! No tasks scheduled.</p></div>`;
+            
+            tasks.forEach(t => {
+                const el = document.createElement('div');
+                const isMock = t.subject === 'MockTest';
+                el.className = "flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700";
+                
+                const badgeClass = state.settings.theme === 'dark' ? (subjectColors[t.subject]?.dark || subjectColors.Custom.dark) : (subjectColors[t.subject]?.light || subjectColors.Custom.light);
+                
+                let contentHTML = '';
+                if(isMock) {
+                    const marksVal = t.marks !== undefined && t.marks !== null ? t.marks : '';
+                    const maxVal = t.maxMarks || 300;
+                    contentHTML = `
+                        <div class="flex-1">
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${badgeClass}">${t.subject}</span>
+                            <div class="text-sm font-medium mb-1.5 ${t.completed ? 'line-through opacity-50' : ''}">${t.text}</div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase">Score:</span>
+                                <input type="number" value="${marksVal}" onchange="updateTaskScore('${t.id}', 'obtained', this.value)" placeholder="--" class="w-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded px-1 py-1 text-xs text-center font-bold text-indigo-600 focus:ring-1 focus:ring-indigo-500 outline-none appearance-none">
+                                <span class="text-slate-400 text-xs">/</span>
+                                <input type="number" value="${maxVal}" onchange="updateTaskScore('${t.id}', 'total', this.value)" class="w-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded px-1 py-1 text-xs text-center font-bold text-slate-500 focus:ring-1 focus:ring-indigo-500 outline-none appearance-none">
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    contentHTML = `
+                        <div class="flex-1">
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${badgeClass}">${t.subject}</span>
+                            <div class="text-sm font-medium ${t.completed ? 'line-through opacity-50' : ''}">${t.text}</div>
+                        </div>
+                    `;
+                }
+
+                el.innerHTML = `
+                    <input type="checkbox" ${t.completed ? 'checked' : ''} class="w-6 h-6 rounded accent-indigo-600 shrink-0" onclick="toggleTask('${t.id}', ${t.completed})">
+                    ${contentHTML}
+                    <button onclick="requestDelete('task', '${t.id}')" class="text-slate-300 hover:text-rose-500 p-2"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                `;
+                list.appendChild(el);
+            });
+            lucide.createIcons();
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('.mobile-sheet').classList.add('open');
+            }, 10);
+        }
+
+        window.addTaskFromDayView = function() {
+            if(currentDayViewDate) {
+                closeDayView();
+                // Short delay to allow animation to clear
+                setTimeout(() => {
+                    selectDateForAdd(currentDayViewDate);
+                }, 300);
+            }
+        }
+
+        window.toggleTask = async function(id, status) {
+            if(!currentUser) return;
+            await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', id), { completed: !status });
+            const task = state.tasks.find(t=>t.id===id);
+            if(task && document.getElementById('day-view-modal').classList.contains('hidden') === false) {
+                 setTimeout(() => openDayView(task.date), 200);
+            }
+        }
+
+        window.closeDayView = () => { 
+            const modal = document.getElementById('day-view-modal');
+            modal.querySelector('.mobile-sheet').classList.remove('open');
+            modal.classList.add('opacity-0'); 
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                currentDayViewDate = null;
+            }, 300); 
+        }
+        
+        window.closeConfirmModal = () => { document.getElementById('confirm-modal').classList.add('opacity-0'); setTimeout(() => document.getElementById('confirm-modal').classList.add('hidden'), 200); }
+        
+        window.openCustomSubjectModal = () => {
+             document.getElementById('custom-subject-input').value = '';
+             document.getElementById('custom-subject-modal').classList.remove('hidden');
+             setTimeout(() => document.getElementById('custom-subject-modal').classList.remove('opacity-0'), 10);
+             document.getElementById('custom-subject-input').focus();
+        }
+
+        window.closeCustomSubjectModal = () => {
+             document.getElementById('custom-subject-modal').classList.add('opacity-0');
+             setTimeout(() => document.getElementById('custom-subject-modal').classList.add('hidden'), 200);
+        }
+
+        window.confirmAddSubject = async () => {
+            const sub = document.getElementById('custom-subject-input').value.trim();
+            if(sub) {
+                if(!state.settings.customSubjects.includes(sub)) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'config'), { customSubjects: arrayUnion(sub) });
+                    showToast(`${sub} added!`);
+                }
+            }
+            closeCustomSubjectModal();
+        }
+
+        function updateStats() { }
+
+        function renderCountdown() {
+            const card = document.getElementById('desktop-countdown-card');
+            const pill = document.getElementById('mobile-countdown-pill');
+            
+            if(!state.settings.showCountdown) {
+                card.classList.add('hidden');
+                pill.classList.add('hidden');
+                return;
+            } else {
+                card.classList.remove('hidden');
+                pill.classList.remove('hidden');
+            }
+
+            const target = new Date(state.settings.targetDate);
+            const now = new Date();
+            const diff = target - now;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            
+            // Desktop
+            document.getElementById('days-left-desktop').innerText = days > 0 ? days : 0;
+            document.getElementById('target-date-display-desktop').innerText = `Goal: ${target.toLocaleDateString('en-GB')}`;
+            
+            // Mobile
+            document.getElementById('days-left-mobile').innerText = `${days > 0 ? days : 0} days left`;
+        }
+        
+        function getLocalISODate(d) { const z = d.getTimezoneOffset() * 60000; return new Date(d.getTime() - z).toISOString().split('T')[0]; }
+        function showToast(msg) { 
+            const t = document.getElementById('toast'); 
+            document.getElementById('toast-msg').innerText = msg; 
+            t.classList.remove('opacity-0', 'translate-y-[-20px]', 'md:translate-y-4'); 
+            setTimeout(() => t.classList.add('opacity-0', 'translate-y-[-20px]', 'md:translate-y-4'), 3000); 
+        }
+        
+        window.openSettings = () => { 
+            tempSettings = { ...state.settings };
+            document.getElementById('settings-bg-url').value = tempSettings.bgUrl || '';
+            document.getElementById('settings-year').value = tempSettings.targetYear || 2026;
+            setExamType(tempSettings.examType || 'JEE Main');
+            
+            const isShown = tempSettings.showCountdown !== false;
+            const knob = document.getElementById('countdown-knob');
+            const toggle = document.getElementById('countdown-toggle');
+            if(isShown) {
+                knob.style.transform = 'translateX(20px)';
+                toggle.className = "relative w-12 h-7 bg-indigo-600 rounded-full transition-all duration-300";
+            } else {
+                knob.style.transform = 'translateX(0)';
+                toggle.className = "relative w-12 h-7 bg-slate-200 dark:bg-slate-600 rounded-full transition-all duration-300";
             }
             
-            try { 
-                await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'tasks', editingTaskId), updates); 
-                showToast("Details Updated"); 
-                closeTaskModal(); 
-            } catch(e) { console.error(e); } 
-        }
+            resetSettingsDirty(); 
+            // Correctly set toggle UI based on current theme state when opening
+            applyTheme(tempSettings.theme || 'light');
 
-        // Utility
-        window.changeMonth = function(delta) { 
-            const newDate = new Date(state.viewDate); 
-            newDate.setMonth(newDate.getMonth() + delta); 
+            const modal = document.getElementById('settings-modal');
+            modal.classList.remove('hidden'); 
+            setTimeout(()=> {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('.mobile-sheet').classList.add('open');
+            }, 10); 
+        }
+        
+        window.closeSettings = () => { 
+            // Revert theme if changes weren't saved
+            if(state.settings.theme) applyTheme(state.settings.theme);
+
+            const modal = document.getElementById('settings-modal');
+            modal.querySelector('.mobile-sheet').classList.remove('open');
+            modal.classList.add('opacity-0'); 
+            setTimeout(()=>modal.classList.add('hidden'), 200); 
+        }
+        
+        window.toggleCountdownSetting = () => {
+            tempSettings.showCountdown = !tempSettings.showCountdown;
+            const isShown = tempSettings.showCountdown;
+            const knob = document.getElementById('countdown-knob');
+            const toggle = document.getElementById('countdown-toggle');
             
-            // Allow checking slightly outside to render but button logic prevents navigation
-            if (newDate < new Date(MIN_DATE.getFullYear(), MIN_DATE.getMonth() - 1, 1) || 
-                newDate > new Date(MAX_DATE.getFullYear(), MAX_DATE.getMonth() + 1, 1)) return;
-
-            state.viewDate = newDate; 
-            renderCalendar(); 
+            if(isShown) {
+                knob.style.transform = 'translateX(20px)';
+                toggle.className = "relative w-12 h-7 bg-indigo-600 rounded-full transition-all duration-300";
+            } else {
+                knob.style.transform = 'translateX(0)';
+                toggle.className = "relative w-12 h-7 bg-slate-200 dark:bg-slate-600 rounded-full transition-all duration-300";
+            }
+            markSettingsDirty();
         }
-        window.goToToday = function() { state.viewDate = new Date(); renderCalendar(); setTimeout(() => { const el = document.getElementById('today-card'); if(el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100); }
-        window.selectDateForAdd = function(dateStr) { document.getElementById('task-date').value = dateStr; if(window.innerWidth < 768) toggleSidebar(true); document.getElementById('task-input').focus(); }
-        function getLocalISODate(date) { const offset = date.getTimezoneOffset() * 60000; return new Date(date.getTime() - offset).toISOString().split('T')[0]; }
-        function showToast(msg) { const toast = document.getElementById('toast'); document.getElementById('toast-msg').innerText = msg; toast.classList.remove('opacity-0', 'translate-y-4'); setTimeout(() => toast.classList.add('opacity-0', 'translate-y-4'), 3000); }
 
+        window.toggleTheme = () => { 
+            const currentTheme = tempSettings.theme || state.settings.theme || 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            tempSettings.theme = newTheme;
+            applyTheme(newTheme);
+            markSettingsDirty();
+        }
+        
+        // Initialize Desktop Date Input
         document.getElementById('task-date').value = getLocalISODate(new Date());
+        document.getElementById('task-date-mobile').value = getLocalISODate(new Date());
         initAuth();
+        lucide.createIcons();
     </script>
 </body>
 </html>
