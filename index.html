@@ -252,7 +252,7 @@
                     Zenith 
                     <span class="text-sm font-medium text-slate-400 dark:text-slate-500 mt-1">by <a href="https://sval.tech" target="_blank" class="hover:text-indigo-500 underline decoration-indigo-500/30">sval.tech</a></span>
                 </h1>
-                <p class="text-slate-500 dark:text-slate-400 mb-6">Your workspace for success.</p>
+                <p class="text-slate-500 dark:text-slate-400 mb-6">Your aesthetic workspace for success.</p>
                 
                 <!-- Feature Grid -->
                 <div class="grid grid-cols-2 gap-3 mb-2 text-left">
@@ -1289,7 +1289,8 @@
             
             const list = document.getElementById('mock-history-list');
             list.innerHTML = '';
-            [...mockTasks].sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(t => {
+            // Changed sorting to Ascending (a - b) to show in upcoming chronological order
+            [...mockTasks].sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(t => {
                 const el = document.createElement('div');
                 el.className = "flex justify-between items-center p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm";
                 
@@ -1859,20 +1860,35 @@
                 let currentY = 0;
 
                 sheet.addEventListener('touchstart', (e) => {
-                    // Only trigger if at top of scroll or hitting drag handle
-                    if (sheet.querySelector('.overflow-y-auto').scrollTop <= 0) {
-                        startY = e.touches[0].clientY;
-                    } else {
-                        startY = -1; // Ignore
+                    const scrollEl = sheet.querySelector('.overflow-y-auto');
+                    const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
+                    
+                    // 1. Must be at the top of the scroll content
+                    if (scrollTop > 0) {
+                        startY = -1;
+                        return;
                     }
+
+                    // 2. FIX: Don't trigger drag on interactive elements
+                    // This prevents the modal from closing when interacting with inputs, subject selectors (labels), or buttons
+                    if (e.target.closest('input, textarea, select, label, button, .no-drag')) {
+                        startY = -1;
+                        return;
+                    }
+
+                    startY = e.touches[0].clientY;
                 }, {passive: true});
 
                 sheet.addEventListener('touchmove', (e) => {
                     if (startY === -1) return;
                     currentY = e.touches[0].clientY;
                     const diff = currentY - startY;
+                    
+                    // Only move if pulling down
                     if (diff > 0) {
-                        e.preventDefault(); // Prevent body scroll
+                        // Prevent default only if we are actually dragging the sheet
+                        // This allows natural scrolling behavior if the intent wasn't a sheet drag
+                        if (e.cancelable) e.preventDefault(); 
                         sheet.style.transform = `translateY(${diff}px)`;
                     }
                 }, {passive: false});
@@ -1881,11 +1897,13 @@
                     if (startY === -1) return;
                     const diff = currentY - startY;
                     sheet.style.transform = ''; // Clear inline style to let CSS class take over
-                    if (diff > 100) {
+                    if (diff > 100) { // Threshold to close
                         closeFn();
                     } else {
                         sheet.classList.add('open'); // Snap back
                     }
+                    startY = -1;
+                    currentY = 0;
                 });
             }
 
