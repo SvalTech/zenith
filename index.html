@@ -252,7 +252,7 @@
                     Zenith 
                     <span class="text-sm font-medium text-slate-400 dark:text-slate-500 mt-1">by <a href="https://sval.tech" target="_blank" class="hover:text-indigo-500 underline decoration-indigo-500/30">sval.tech</a></span>
                 </h1>
-                <p class="text-slate-500 dark:text-slate-400 mb-6">Your aesthetic workspace for success.</p>
+                <p class="text-slate-500 dark:text-slate-400 mb-6">Your workspace for success.</p>
                 
                 <!-- Feature Grid -->
                 <div class="grid grid-cols-2 gap-3 mb-2 text-left">
@@ -1544,11 +1544,16 @@
         }
 
         window.addTaskFromDayView = function() {
-            if(currentDayViewDate) {
+            if (currentDayViewDate) {
+                // FIX: Capture the date locally BEFORE closing the view
+                // This prevents the race condition where closeDayView() sets the global variable to null
+                const dateToUse = currentDayViewDate; 
+                
                 closeDayView();
-                // Short delay to allow animation to clear
+                
+                // Wait for the close animation to finish, then open the Add Task modal
                 setTimeout(() => {
-                    selectDateForAdd(currentDayViewDate);
+                    selectDateForAdd(dateToUse); // Use the captured local variable
                 }, 300);
             }
         }
