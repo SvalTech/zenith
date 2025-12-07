@@ -149,6 +149,7 @@
             transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
             transform: translateY(100%);
             border-radius: 2rem 2rem 0 0;
+            touch-action: none; /* Prepare for swipe down */
         }
         .mobile-sheet.open {
             transform: translateY(0);
@@ -216,6 +217,16 @@
                 scrollbar-width: none;
             }
         }
+        
+        /* Drag Handle for Sheets */
+        .drag-handle {
+            width: 48px;
+            height: 6px;
+            background-color: #e2e8f0;
+            border-radius: 9999px;
+            margin: 0 auto 16px auto;
+        }
+        .dark .drag-handle { background-color: #334155; }
     </style>
 </head>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCK0S6VC58"></script>
@@ -241,7 +252,7 @@
                     Zenith 
                     <span class="text-sm font-medium text-slate-400 dark:text-slate-500 mt-1">by <a href="https://sval.tech" target="_blank" class="hover:text-indigo-500 underline decoration-indigo-500/30">sval.tech</a></span>
                 </h1>
-                <p class="text-slate-500 dark:text-slate-400 mb-6">Your aesthetic workspace for success.</p>
+                <p class="text-slate-500 dark:text-slate-400 mb-6">Your workspace for success.</p>
                 
                 <!-- Feature Grid -->
                 <div class="grid grid-cols-2 gap-3 mb-2 text-left">
@@ -372,7 +383,7 @@
     </aside>
 
     <!-- Main Content Area -->
-    <main class="flex-1 flex flex-col h-full overflow-hidden relative bg-slate-50/50 dark:bg-slate-900/50 mobile-content-padding">
+    <main id="main-content-area" class="flex-1 flex flex-col h-full overflow-hidden relative bg-slate-50/50 dark:bg-slate-900/50 mobile-content-padding touch-pan-x">
         
         <!-- Mobile Header -->
         <div class="md:hidden glass border-b border-slate-200 dark:border-slate-800 p-4 flex justify-between items-center z-20 sticky top-0 shadow-sm">
@@ -503,9 +514,11 @@
 
     <!-- Add Task Modal (Bottom Sheet on Mobile, Centered on Desktop) -->
     <div id="add-task-modal" class="fixed inset-0 z-[100] flex items-end md:items-center justify-center modal-backdrop hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-white dark:bg-slate-900 w-full md:w-[480px] md:rounded-[2rem] mobile-sheet md:transform md:scale-95 transition-transform duration-300 shadow-2xl h-[85vh] md:h-auto border-t md:border border-slate-200 dark:border-slate-800 flex flex-col">
+        <div class="bg-white dark:bg-slate-900 w-full md:w-[480px] md:rounded-[2rem] mobile-sheet md:transform md:scale-95 transition-transform duration-300 shadow-2xl h-[85vh] md:h-auto border-t md:border border-slate-200 dark:border-slate-800 flex flex-col relative">
+            <div class="md:hidden pt-3 pb-1" id="add-task-drag-handle">
+                <div class="drag-handle"></div>
+            </div>
             <div class="p-6 md:p-8 flex-1 overflow-y-auto">
-                <div class="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-6 md:hidden"></div>
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2"><i data-lucide="plus-square" class="w-5 h-5 text-indigo-500"></i> Add New Task</h2>
                     <button onclick="closeAddTaskModal()" class="p-2 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-400 hover:text-rose-500 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -553,9 +566,11 @@
 
     <!-- Day View Modal -->
     <div id="day-view-modal" class="fixed inset-0 z-[110] flex items-end md:items-center justify-center modal-backdrop hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-white dark:bg-slate-900 w-full md:w-[450px] md:rounded-[2rem] mobile-sheet md:transform md:scale-95 transition-transform duration-300 shadow-2xl h-[75vh] md:h-auto border-t md:border border-slate-200 dark:border-slate-800 flex flex-col">
+        <div class="bg-white dark:bg-slate-900 w-full md:w-[450px] md:rounded-[2rem] mobile-sheet md:transform md:scale-95 transition-transform duration-300 shadow-2xl h-[75vh] md:h-auto border-t md:border border-slate-200 dark:border-slate-800 flex flex-col relative">
+            <div class="md:hidden pt-3 pb-1" id="day-view-drag-handle">
+                <div class="drag-handle"></div>
+            </div>
             <div class="p-6 md:p-8 flex flex-col h-full">
-                <div class="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-4 md:hidden"></div>
                 <div class="flex justify-between items-start mb-6">
                     <div><h2 id="day-view-date" class="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">--</h2><p class="text-sm text-slate-500 font-medium">Your daily focus</p></div>
                     <button onclick="closeDayView()" class="p-2 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-400 hover:text-rose-500 transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
@@ -739,6 +754,9 @@
                     document.getElementById('login-screen').classList.remove('hidden'); 
                 }
             });
+            // Initialize Interactions
+            setupKeyboardShortcuts();
+            setupTouchGestures();
         }
 
         function toggleAppVisibility(show) {
@@ -1615,7 +1633,6 @@
             }
         }
 
-        // Updated confirmAddSubject (Logic remains mostly same, just adds list re-render)
         window.confirmAddSubject = async () => {
             const sub = document.getElementById('custom-subject-input').value.trim();
             if(sub) {
@@ -1640,24 +1657,11 @@
                     showToast("Subject already exists");
                 }
             }
-            // Optional: Don't close modal immediately so they can add more, or close it:
-            // closeCustomSubjectModal(); 
         }
 
         window.closeCustomSubjectModal = () => {
              document.getElementById('custom-subject-modal').classList.add('opacity-0');
              setTimeout(() => document.getElementById('custom-subject-modal').classList.add('hidden'), 200);
-        }
-
-        window.confirmAddSubject = async () => {
-            const sub = document.getElementById('custom-subject-input').value.trim();
-            if(sub) {
-                if(!state.settings.customSubjects.includes(sub)) {
-                    await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'settings', 'config'), { customSubjects: arrayUnion(sub) });
-                    showToast(`${sub} added!`);
-                }
-            }
-            closeCustomSubjectModal();
         }
 
         function updateStats() { }
@@ -1760,6 +1764,136 @@
             markSettingsDirty();
         }
         
+        // --- KEYBOARD & TOUCH NAVIGATION ---
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                // Ignore if typing in input/textarea
+                if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+                
+                // Helper: Is any modal open?
+                const isModalOpen = !document.getElementById('add-task-modal').classList.contains('hidden') ||
+                                    !document.getElementById('settings-modal').classList.contains('hidden') ||
+                                    !document.getElementById('day-view-modal').classList.contains('hidden') ||
+                                    !document.getElementById('custom-subject-modal').classList.contains('hidden');
+
+                switch(e.key) {
+                    case 'ArrowRight':
+                        if (isModalOpen) return;
+                        if (state.currentView === 'calendar') { changeMonth(1); showToast('Next Month'); }
+                        else if (state.currentView === 'weekly') { changeWeek(1); showToast('Next Week'); }
+                        break;
+                    case 'ArrowLeft':
+                        if (isModalOpen) return;
+                        if (state.currentView === 'calendar') { changeMonth(-1); showToast('Previous Month'); }
+                        else if (state.currentView === 'weekly') { changeWeek(-1); showToast('Previous Week'); }
+                        break;
+                    case 'n':
+                    case 'N':
+                        if (isModalOpen) return;
+                        e.preventDefault();
+                        if (window.innerWidth < 768) openAddTaskModal();
+                        else document.getElementById('task-input').focus();
+                        break;
+                    case 't':
+                    case 'T':
+                         if (isModalOpen) return;
+                         goToToday();
+                         showToast('Today');
+                         break;
+                    case 'Escape':
+                        if (!document.getElementById('add-task-modal').classList.contains('hidden')) closeAddTaskModal();
+                        if (!document.getElementById('settings-modal').classList.contains('hidden')) closeSettings();
+                        if (!document.getElementById('day-view-modal').classList.contains('hidden')) closeDayView();
+                        if (!document.getElementById('custom-subject-modal').classList.contains('hidden')) closeCustomSubjectModal();
+                        break;
+                    case '1': switchView('calendar'); showToast('Planner View'); break;
+                    case '2': switchView('weekly'); showToast('Targets View'); break;
+                    case '3': switchView('stats'); showToast('Stats View'); break;
+                }
+            });
+        }
+
+        function setupTouchGestures() {
+            // Main View Swipes (Left/Right)
+            const mainContent = document.getElementById('main-content-area');
+            let touchStartX = 0;
+            let touchStartY = 0;
+
+            mainContent.addEventListener('touchstart', e => {
+                touchStartX = e.changedTouches[0].screenX;
+                touchStartY = e.changedTouches[0].screenY;
+            }, {passive: true});
+
+            mainContent.addEventListener('touchend', e => {
+                const touchEndX = e.changedTouches[0].screenX;
+                const touchEndY = e.changedTouches[0].screenY;
+                const diffX = touchEndX - touchStartX;
+                const diffY = touchEndY - touchStartY;
+                
+                // Horizontal Swipe threshold
+                if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+                     // Check if modal is open (don't swipe view if modal is up)
+                    const isModalOpen = !document.getElementById('add-task-modal').classList.contains('hidden') ||
+                                        !document.getElementById('settings-modal').classList.contains('hidden') ||
+                                        !document.getElementById('day-view-modal').classList.contains('hidden');
+                    
+                    if(isModalOpen) return;
+
+                    if (diffX < 0) {
+                        // Swipe Left -> Next
+                        if (state.currentView === 'calendar') changeMonth(1);
+                        else if (state.currentView === 'weekly') changeWeek(1);
+                    } else {
+                        // Swipe Right -> Prev
+                        if (state.currentView === 'calendar') changeMonth(-1);
+                        else if (state.currentView === 'weekly') changeWeek(-1);
+                    }
+                }
+            }, {passive: true});
+            
+            // Bottom Sheet Swipe Down to Close Logic
+            const attachSwipeDown = (modalId, closeFn) => {
+                const modal = document.getElementById(modalId);
+                const sheet = modal.querySelector('.mobile-sheet');
+                let startY = 0;
+                let currentY = 0;
+
+                sheet.addEventListener('touchstart', (e) => {
+                    // Only trigger if at top of scroll or hitting drag handle
+                    if (sheet.querySelector('.overflow-y-auto').scrollTop <= 0) {
+                        startY = e.touches[0].clientY;
+                    } else {
+                        startY = -1; // Ignore
+                    }
+                }, {passive: true});
+
+                sheet.addEventListener('touchmove', (e) => {
+                    if (startY === -1) return;
+                    currentY = e.touches[0].clientY;
+                    const diff = currentY - startY;
+                    if (diff > 0) {
+                        e.preventDefault(); // Prevent body scroll
+                        sheet.style.transform = `translateY(${diff}px)`;
+                    }
+                }, {passive: false});
+
+                sheet.addEventListener('touchend', (e) => {
+                    if (startY === -1) return;
+                    const diff = currentY - startY;
+                    sheet.style.transform = ''; // Clear inline style to let CSS class take over
+                    if (diff > 100) {
+                        closeFn();
+                    } else {
+                        sheet.classList.add('open'); // Snap back
+                    }
+                });
+            }
+
+            attachSwipeDown('add-task-modal', closeAddTaskModal);
+            attachSwipeDown('day-view-modal', closeDayView);
+            attachSwipeDown('settings-modal', closeSettings);
+        }
+
         // Initialize Desktop Date Input
         document.getElementById('task-date').value = getLocalISODate(new Date());
         document.getElementById('task-date-mobile').value = getLocalISODate(new Date());
