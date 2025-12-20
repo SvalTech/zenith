@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <!-- Emoji Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📅</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>">
     <title>Zenith - sval.tech</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -30,6 +30,7 @@
                         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                         'slide-up': 'slideUp 0.3s ease-out',
                         'bounce-slight': 'bounceSlight 1s infinite',
+                        'spin-slow': 'spin 3s linear infinite',
                     },
                     keyframes: {
                         float: {
@@ -227,6 +228,54 @@
             margin: 0 auto 16px auto;
         }
         .dark .drag-handle { background-color: #334155; }
+
+        /* --- SYLLABUS TRACKER STYLES --- */
+        .chapter-leaf {
+            transition: background-color 0.15s ease-out;
+            cursor: pointer;
+        }
+        .chapter-leaf:hover {
+            background-color: rgba(241, 245, 249, 0.5);
+        }
+        .dark .chapter-leaf:hover {
+            background-color: rgba(30, 41, 59, 0.5);
+        }
+        .action-panel {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease-out;
+            opacity: 0;
+        }
+        .action-panel.open {
+            max-height: 500px;
+            opacity: 1;
+        }
+        .arrow-icon { transition: transform 0.3s ease; }
+        .rotate-180 { transform: rotate(180deg); }
+        .columns-1 { column-count: 1; }
+        @media (min-width: 1024px) {
+            .columns-2 { column-count: 2; }
+        }
+        .break-inside-avoid { break-inside: avoid; }
+        
+        .badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .badge-pyq { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+        .dark .badge-pyq { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+        
+        .badge-rev { background: rgba(99, 102, 241, 0.1); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.2); }
+        .dark .badge-rev { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
+        
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .dot-neutral { background-color: #94a3b8; }
+        .dot-yellow { background-color: #eab308; }
+        .dot-green { background-color: #22c55e; }
+        .dot-indigo { background-color: #6366f1; }
     </style>
 </head>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCK0S6VC58"></script>
@@ -254,43 +303,11 @@
                 </h1>
                 <p class="text-slate-500 dark:text-slate-400 mb-6">Your workspace for success.</p>
                 
-                <!-- Feature Grid -->
-                <div class="grid grid-cols-2 gap-3 mb-2 text-left">
-                    <div class="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-900/30">
-                        <div class="bg-white dark:bg-indigo-900/50 w-8 h-8 rounded-full flex items-center justify-center mb-2 shadow-sm">
-                            <span class="text-lg">📅</span>
-                        </div>
-                        <h3 class="font-bold text-slate-800 dark:text-slate-200 text-sm">Planner</h3>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-1">Track daily subject tasks.</p>
-                    </div>
-                    <div class="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-2xl border border-purple-100 dark:border-purple-900/30">
-                        <div class="bg-white dark:bg-purple-900/50 w-8 h-8 rounded-full flex items-center justify-center mb-2 shadow-sm">
-                            <span class="text-lg">🎯</span>
-                        </div>
-                        <h3 class="font-bold text-slate-800 dark:text-slate-200 text-sm">Targets</h3>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-1">Set big weekly goals.</p>
-                    </div>
-                    <div class="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl border border-emerald-100 dark:border-emerald-900/30">
-                        <div class="bg-white dark:bg-emerald-900/50 w-8 h-8 rounded-full flex items-center justify-center mb-2 shadow-sm">
-                            <span class="text-lg">📊</span>
-                        </div>
-                        <h3 class="font-bold text-slate-800 dark:text-slate-200 text-sm">Analytics</h3>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-1">Visualize your progress.</p>
-                    </div>
-                    <div class="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-100 dark:border-amber-900/30">
-                        <div class="bg-white dark:bg-amber-900/50 w-8 h-8 rounded-full flex items-center justify-center mb-2 shadow-sm">
-                            <span class="text-lg">⏳</span>
-                        </div>
-                        <h3 class="font-bold text-slate-800 dark:text-slate-200 text-sm">Focus</h3>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-1">Exam countdown & focus.</p>
-                    </div>
-                </div>
-             </div>
-             <button onclick="signInWithGoogle()" class="w-full flex items-center justify-center gap-3 bg-slate-900 dark:bg-white hover:opacity-90 text-white dark:text-slate-900 font-bold py-4 px-4 rounded-2xl transition-all shadow-xl shadow-slate-200 dark:shadow-none transform active:scale-95 group">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5" alt="Google">
-                <span>Start Your Journey</span>
-            </button>
-            <p id="login-status" class="text-center text-xs text-slate-400 mt-4 h-4"></p>
+                <button onclick="signInWithGoogle()" class="w-full flex items-center justify-center gap-3 bg-slate-900 dark:bg-white hover:opacity-90 text-white dark:text-slate-900 font-bold py-4 px-4 rounded-2xl transition-all shadow-xl shadow-slate-200 dark:shadow-none transform active:scale-95 group">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5" alt="Google">
+                    <span>Start Your Journey</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -325,10 +342,16 @@
             </div>
 
             <!-- Navigation Tabs -->
-            <nav class="flex p-1 bg-slate-100 dark:bg-slate-800/50 rounded-2xl mb-6">
-                <button onclick="switchView('calendar')" id="nav-desktop-calendar" class="flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-300"><i data-lucide="calendar" class="w-4 h-4"></i> Planner</button>
-                <button onclick="switchView('weekly')" id="nav-desktop-weekly" class="flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700"><i data-lucide="crosshair" class="w-4 h-4"></i> Targets</button>
-                <button onclick="switchView('stats')" id="nav-desktop-stats" class="flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700"><i data-lucide="bar-chart-2" class="w-4 h-4"></i> Stats</button>
+            <nav class="flex flex-col gap-1 p-1 bg-slate-100 dark:bg-slate-800/50 rounded-2xl mb-6">
+                <div class="flex w-full">
+                    <button onclick="switchView('calendar')" id="nav-desktop-calendar" class="flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-300"><i data-lucide="calendar" class="w-4 h-4"></i> Planner</button>
+                    <button onclick="switchView('weekly')" id="nav-desktop-weekly" class="flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700"><i data-lucide="crosshair" class="w-4 h-4"></i> Targets</button>
+                </div>
+                <div class="flex w-full mt-1">
+                    <button onclick="switchView('timer')" id="nav-desktop-timer" class="flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700"><i data-lucide="timer" class="w-4 h-4"></i> Timer</button>
+                    <button onclick="switchView('stats')" id="nav-desktop-stats" class="flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700"><i data-lucide="bar-chart-2" class="w-4 h-4"></i> Stats</button>
+                    <button onclick="switchView('syllabus')" id="nav-desktop-syllabus" class="flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700"><i data-lucide="book-open" class="w-4 h-4"></i> Syllabus</button>
+                </div>
             </nav>
         </div>
 
@@ -380,6 +403,14 @@
                 <button onclick="handleSignOut()" class="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors" title="Sign Out"><i data-lucide="log-out" class="w-4 h-4"></i></button>
             </div>
         </div>
+        <footer class="border-t border-zinc-800 pt-2 pb-2 text-center">
+        
+            <p class="text-zinc-600 text-xs">
+               © <a href="https://sval.tech" target="_blank" class="text-zinc-400 hover:text-white transition-colors underline decoration-dotted underline-offset-4">sval.tech</a> 2025
+            </p>
+
+        </footer>
+
     </aside>
 
     <!-- Main Content Area -->
@@ -425,7 +456,7 @@
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h2 class="text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">Weekly Targets <span class="hidden md:inline-flex text-xs font-medium px-2 py-1 bg-amber-100 text-amber-700 rounded-full">High Priority</span></h2>
-                        <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-1">Focus on big chapters rather than small tasks.</p>
+                        <!-- <p class="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-1">Focus on big chapters rather than small tasks.</p> -->
                     </div>
                     <div class="flex items-center gap-3 bg-white dark:bg-slate-800 p-1.5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 self-start md:self-auto">
                         <button onclick="changeWeek(-1)" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors active:scale-95"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
@@ -464,6 +495,76 @@
             </div>
         </div>
 
+        <!-- Timer View (New) -->
+        <div id="view-container-timer" class="view-section hidden flex-1 flex flex-col h-full overflow-hidden">
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar no-scrollbar">
+                <div class="max-w-2xl mx-auto pb-24 space-y-6">
+                    <!-- Main Timer Card -->
+                    <div class="glass-card p-6 md:p-10 rounded-[2.5rem] text-center relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-b from-indigo-500/5 to-transparent pointer-events-none"></div>
+                        
+                        <div class="mb-6">
+                             <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Focus Subject</label>
+                             <div id="timer-subject-selector" class="flex flex-wrap gap-2 justify-center">
+                                 <!-- Injected via JS -->
+                             </div>
+                        </div>
+
+                        <div class="relative w-80 h-80 md:w-96 md:h-96 mx-auto mb-8 flex items-center justify-center">
+                            <div class="absolute inset-0 rounded-full border-4 border-slate-100 dark:border-slate-800"></div>
+                            <div id="timer-active-ring" class="absolute inset-0 rounded-full border-4 border-indigo-500 border-t-transparent opacity-0 transition-opacity duration-300"></div>
+                            
+                            <div class="text-6xl md:text-7xl font-black text-slate-800 dark:text-white tabular-nums tracking-tighter" id="timer-display">
+                                00:00:00
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-center gap-4">
+                            <button id="btn-timer-toggle" onclick="toggleTimer()" class="w-16 h-16 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30 active:scale-95 transition-all">
+                                <i data-lucide="play" class="w-8 h-8 fill-current"></i>
+                            </button>
+                            <button id="btn-timer-stop" onclick="stopTimer()" disabled class="w-16 h-16 rounded-2xl bg-rose-50 dark:bg-rose-900/20 text-rose-500 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-rose-100 dark:hover:bg-rose-900/40 flex items-center justify-center transition-all active:scale-95">
+                                <i data-lucide="square" class="w-6 h-6 fill-current"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Stats Row -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="glass-card p-4 rounded-2xl flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400">
+                                <i data-lucide="flame" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <div class="text-[10px] font-bold text-slate-400 uppercase">Streak</div>
+                                <div class="text-xl font-black text-slate-800 dark:text-white"><span id="streak-count">0</span> Days</div>
+                            </div>
+                        </div>
+                        <div class="glass-card p-4 rounded-2xl flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                <i data-lucide="clock" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <div class="text-[10px] font-bold text-slate-400 uppercase">Today</div>
+                                <div class="text-xl font-black text-slate-800 dark:text-white"><span id="today-total">0</span>m</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Logs -->
+                    <div>
+                        <div class="flex items-center justify-between mb-3 px-1">
+                            <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300">Today's Logs</h3>
+                            <button onclick="openManualLogModal()" class="text-xs font-bold text-indigo-500 hover:text-indigo-600 px-2 py-1 rounded bg-indigo-50 dark:bg-indigo-900/20">+ Add Manual Log</button>
+                        </div>
+                        <div id="timer-logs-list" class="space-y-3">
+                            <!-- Logs injected here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Stats View -->
         <div id="view-container-stats" class="view-section hidden flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar no-scrollbar">
             <div class="max-w-5xl mx-auto pb-24">
@@ -485,6 +586,36 @@
             </div>
         </div>
 
+        <!-- Syllabus View -->
+        <div id="view-container-syllabus" class="view-section hidden flex-1 flex flex-col h-full overflow-hidden">
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar no-scrollbar">
+                <div class="max-w-6xl mx-auto pb-24">
+                    <div class="flex flex-col lg:flex-row gap-6">
+                        <!-- Syllabus Sidebar: Overall Stats -->
+                        <div class="w-full lg:w-80 shrink-0">
+                            <div class="glass-card p-5 rounded-3xl sticky top-4">
+                                <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Syllabus Progress</h3>
+                                <div id="overall-progress-data"></div>
+                                
+                                <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+                                    <div class="relative mb-3">
+                                        <input type="text" id="syllabus-search" placeholder="Search chapters..." class="w-full pl-9 p-2.5 rounded-xl bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white placeholder-slate-500 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all">
+                                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+                                    </div>
+                                    <button id="btn-reset-syllabus" class="w-full py-2 text-xs font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors border border-rose-100 dark:border-rose-900/30">Reset Syllabus Data</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Syllabus Content -->
+                        <div id="syllabus-content" class="flex-1 columns-1 lg:columns-2 gap-6 space-y-6">
+                            <!-- Cards Injected Here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Floating Action Button (Mobile Only) -->
         <button onclick="openAddTaskModal()" class="md:hidden fixed bottom-24 right-5 w-14 h-14 bg-indigo-600 rounded-full text-white shadow-xl shadow-indigo-600/30 flex items-center justify-center z-40 active:scale-90 transition-transform">
             <i data-lucide="plus" class="w-8 h-8"></i>
@@ -492,7 +623,7 @@
 
         <!-- Mobile Bottom Navigation -->
         <div id="mobile-bottom-nav" class="md:hidden fixed bottom-0 left-0 w-full glass border-t border-slate-200 dark:border-slate-800 z-50 mobile-bottom-nav">
-            <div class="flex justify-around items-center h-16 px-2">
+            <div class="flex justify-around items-center h-16 px-1">
                 <button onclick="switchView('calendar')" id="nav-mobile-calendar" class="flex flex-col items-center justify-center w-full h-full gap-1 text-indigo-600 dark:text-indigo-400">
                     <i data-lucide="calendar" class="w-5 h-5"></i>
                     <span class="text-[10px] font-bold">Planner</span>
@@ -501,9 +632,17 @@
                     <i data-lucide="crosshair" class="w-5 h-5"></i>
                     <span class="text-[10px] font-bold">Targets</span>
                 </button>
+                 <button onclick="switchView('timer')" id="nav-mobile-timer" class="flex flex-col items-center justify-center w-full h-full gap-1 text-slate-400 dark:text-slate-500">
+                    <i data-lucide="timer" class="w-5 h-5"></i>
+                    <span class="text-[10px] font-bold">Timer</span>
+                </button>
                 <button onclick="switchView('stats')" id="nav-mobile-stats" class="flex flex-col items-center justify-center w-full h-full gap-1 text-slate-400 dark:text-slate-500">
                     <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
                     <span class="text-[10px] font-bold">Stats</span>
+                </button>
+                <button onclick="switchView('syllabus')" id="nav-mobile-syllabus" class="flex flex-col items-center justify-center w-full h-full gap-1 text-slate-400 dark:text-slate-500">
+                    <i data-lucide="book-open" class="w-5 h-5"></i>
+                    <span class="text-[10px] font-bold">Syllabus</span>
                 </button>
             </div>
         </div>
@@ -511,6 +650,33 @@
     </main>
 
     <!-- Modals -->
+
+    <!-- Manual Log Modal -->
+    <div id="manual-log-modal" class="fixed inset-0 z-[120] flex items-center justify-center modal-backdrop hidden opacity-0 transition-opacity duration-200 px-4">
+        <div class="bg-white dark:bg-slate-800 rounded-[2rem] shadow-2xl p-6 w-full max-w-sm transform scale-95 transition-transform duration-200 border border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Add Study Log</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">Subject</label>
+                    <select id="manual-log-subject" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm outline-none dark:text-white">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">Duration (Minutes)</label>
+                    <input type="number" id="manual-log-duration" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm outline-none dark:text-white" placeholder="e.g. 60">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">Notes</label>
+                    <textarea id="manual-log-notes" rows="2" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm outline-none dark:text-white" placeholder="Optional notes..."></textarea>
+                </div>
+            </div>
+            <div class="flex gap-3 justify-end mt-6">
+                <button onclick="closeManualLogModal()" class="px-4 py-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700/50 font-medium text-sm transition-colors">Cancel</button>
+                <button onclick="saveManualLog()" class="px-6 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-lg shadow-indigo-500/20 transition-all">Save Log</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Add Task Modal (Bottom Sheet on Mobile, Centered on Desktop) -->
     <div id="add-task-modal" class="fixed inset-0 z-[100] flex items-end md:items-center justify-center modal-backdrop hidden opacity-0 transition-opacity duration-300">
@@ -658,7 +824,10 @@
                             <button onclick="setSession('Apr')" id="btn-session-apr" class="flex-1 py-2 rounded-lg text-xs font-bold border transition-colors">April</button>
                         </div>
                     </div>
-
+                    <div id="custom-date-container" class="hidden mb-3 bg-slate-50 dark:bg-slate-700/30 p-3 rounded-xl border border-slate-200 dark:border-slate-700 animate-slide-up">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-2">Manual Target Date</label>
+                        <input type="date" id="settings-custom-date" onchange="markSettingsDirty()" class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm outline-none dark:text-white">
+                    </div>
                     <select id="settings-year" onchange="updateTargetDateConfig(); markSettingsDirty()" class="w-full bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-3 text-sm outline-none dark:text-white appearance-none">
                         <option value="2026">2026</option>
                         <option value="2027">2027</option>
@@ -718,15 +887,55 @@
         let currentDayViewDate = null; 
         let isSettingsDirty = false;
         
+        let timerInterval = null;
+        let timerSeconds = 0;
+        let isTimerRunning = false;
+        let timerSubject = "Physics"; // Default
+        
         let state = {
             tasks: [],
             targets: [], // Weekly targets
+            studyLogs: [], // New Study Logs
             viewDate: new Date(),
             weeklyViewDate: new Date(),
             currentView: 'calendar',
-            settings: { examType: 'JEE Main', session: 'Jan', targetYear: 2026, targetDate: '2026-01-21', customSubjects: [], theme: 'light', bgUrl: '', showCountdown: true }
+            settings: { examType: 'JEE Main', session: 'Jan', targetYear: 2026, targetDate: '2026-01-21', customSubjects: [], theme: 'light', bgUrl: '', showCountdown: true },
+            syllabusData: { status: {}, meta: {} },
+            syllabusOpenStates: {} // Local UI state
         };
         let tempSettings = {};
+
+        // Syllabus DB
+        const syllabus = [
+            { subject: "Physics", units: [
+                { unitName: "Mechanics I", chapters: [{ id: "PHY_B_11", name: "Motion In One Dimension", priority: 'B' }, { id: "PHY_D_01", name: "Motion In Two Dimensions", priority: 'D' }, { id: "PHY_B_10", name: "Laws of Motion", priority: 'B' }, { id: "PHY_B_07", name: "Work Power Energy", priority: 'B' }, { id: "PHY_D_05", name: "Center of Mass Momentum", priority: 'D' }, { id: "PHY_B_03", name: "Rotational Motion", priority: 'B' }] },
+                { unitName: "Mechanics II & Waves", chapters: [{ id: "PHY_B_04", name: "Gravitation", priority: 'B' }, { id: "PHY_D_02", name: "Mechanical Properties of Solids", priority: 'D' }, { id: "PHY_B_05", name: "Mechanical Properties of Fluids", priority: 'B' }, { id: "PHY_C_06", name: "Oscillations", priority: 'C' }, { id: "PHY_D_03", name: "Waves and Sound", priority: 'D' }] },
+                { unitName: "Thermodynamics", chapters: [{ id: "PHY_D_06", name: "Thermal Properties", priority: 'D' }, { id: "PHY_A_05", name: "Thermodynamics", priority: 'A' }, { id: "PHY_C_05", name: "Kinetic Theory of Gases", priority: 'C' }] },
+                { unitName: "Electromagnetism", chapters: [{ id: "PHY_A_02", name: "Electrostatics", priority: 'A' }, { id: "PHY_C_02", name: "Capacitance", priority: 'C' }, { id: "PHY_A_01", name: "Current Electricity", priority: 'A' }, { id: "PHY_A_04", name: "Magnetic Effects of Current", priority: 'A' }, { id: "PHY_D_07", name: "Magnetism & Matter", priority: 'D' }, { id: "PHY_C_03", name: "EMI", priority: 'C' }, { id: "PHY_C_01", name: "Alternating Current", priority: 'C' }, { id: "PHY_C_07", name: "EM Waves", priority: 'C' }] },
+                { unitName: "Optics & Modern", chapters: [{ id: "PHY_A_03", name: "Ray Optics", priority: 'A' }, { id: "PHY_B_09", name: "Wave Optics", priority: 'B' }, { id: "PHY_A_06", name: "Dual Nature of Matter", priority: 'A' }, { id: "PHY_A_07", name: "Atoms", priority: 'A' }, { id: "PHY_C_04", name: "Nuclei", priority: 'C' }, { id: "PHY_B_06", name: "Semiconductors", priority: 'B' }] },
+                { unitName: "Experimental", chapters: [{ id: "PHY_B_08", name: "Units and Dimensions", priority: 'B' }, { id: "PHY_D_08", name: "Experimental Physics", priority: 'D' }] }
+            ]},
+            { subject: "Chemistry", units: [
+                { unitName: "Physical Chem", chapters: [{ id: "CHE_C_01", name: "Mole Concept", priority: 'C' }, { id: "CHE_B_01", name: "Structure of Atom", priority: 'B' }, { id: "CHE_A_03", name: "Chemical Bonding", priority: 'A' }, { id: "CHE_A_05", name: "Thermodynamics", priority: 'A' }, { id: "CHE_D_05", name: "Chemical Equilibrium", priority: 'D' }, { id: "CHE_D_03", name: "Ionic Equilibrium", priority: 'D' }, { id: "CHE_B_02", name: "Solutions", priority: 'B' }, { id: "CHE_D_04", name: "Redox Reactions", priority: 'D' }, { id: "CHE_A_06", name: "Electrochemistry", priority: 'A' }, { id: "CHE_B_06", name: "Chemical Kinetics", priority: 'B' }] },
+                { unitName: "Inorganic Chem", chapters: [{ id: "CHE_C_03", name: "Periodic Table", priority: 'C' }, { id: "CHE_B_05", name: "p-Block Elements", priority: 'B' }, { id: "CHE_A_04", name: "d and f Block", priority: 'A' }, { id: "CHE_A_02", name: "Coordination Compounds", priority: 'A' }, { id: "CHE_C_06", name: "Salt Analysis", priority: 'C' }] },
+                { unitName: "Organic Chem", chapters: [{ id: "CHE_A_01", name: "GOC", priority: 'A' }, { id: "CHE_B_03", name: "Hydrocarbons", priority: 'B' }, { id: "CHE_C_04", name: "Haloalkanes/Haloarenes", priority: 'C' }, { id: "CHE_C_05", name: "Alcohols, Phenols, Ethers", priority: 'C' }, { id: "CHE_C_02", name: "Aldehydes & Ketones", priority: 'C' }, { id: "CHE_D_02", name: "Carboxylic Acids", priority: 'D' }, { id: "CHE_B_04", name: "Amines", priority: 'B' }, { id: "CHE_B_07", name: "Biomolecules", priority: 'B' }] }
+            ]},
+            { subject: "Mathematics", units: [
+                { unitName: "Algebra", chapters: [{ id: "MAT_B_07", name: "Sets and Relations", priority: 'B' }, { id: "MAT_B_08", name: "Quadratic Equation", priority: 'B' }, { id: "MAT_B_05", name: "Complex Number", priority: 'B' }, { id: "MAT_A_03", name: "Matrices Determinants", priority: 'A' }, { id: "MAT_B_02", name: "Permutation Combination", priority: 'B' }, { id: "MAT_A_07", name: "Binomial Theorem", priority: 'A' }, { id: "MAT_A_02", name: "Sequence and Series", priority: 'A' }, { id: "MAT_B_01", name: "Probability", priority: 'B' }] },
+                { unitName: "Calculus", chapters: [{ id: "MAT_A_06", name: "Functions", priority: 'A' }, { id: "MAT_C_03", name: "Limits", priority: 'C' }, { id: "MAT_C_06", name: "Continuity & Diff.", priority: 'C' }, { id: "MAT_D_04", name: "Differentiation", priority: 'D' }, { id: "MAT_B_06", name: "AOD", priority: 'B' }, { id: "MAT_D_02", name: "Indefinite Integration", priority: 'D' }, { id: "MAT_A_05", name: "Definite Integration", priority: 'A' }, { id: "MAT_B_04", name: "Area Under Curves", priority: 'B' }, { id: "MAT_A_08", name: "Differential Equations", priority: 'A' }] },
+                { unitName: "Coordinate & Vectors", chapters: [{ id: "MAT_B_03", name: "Straight Lines", priority: 'B' }, { id: "MAT_C_01", name: "Circle", priority: 'C' }, { id: "MAT_C_04", name: "Parabola", priority: 'C' }, { id: "MAT_C_07", name: "Ellipse", priority: 'C' }, { id: "MAT_C_05", name: "Hyperbola", priority: 'C' }, { id: "MAT_A_01", name: "3D Geometry", priority: 'A' }, { id: "MAT_A_04", name: "Vector Algebra", priority: 'A' }] },
+                { unitName: "Trigonometry & Stats", chapters: [{ id: "MAT_D_05", name: "Trig Ratios & Identities", priority: 'D' }, { id: "MAT_D_03", name: "Trig Equations", priority: 'D' }, { id: "MAT_D_01", name: "ITF", priority: 'D' }, { id: "MAT_C_02", name: "Statistics", priority: 'C' }] }
+            ]},
+            { subject: "Biology", units: [
+                { unitName: "Diversity & Structure", chapters: [{id: "BIO_A_01", name: "Living World", priority: "A"}, {id: "BIO_A_02", name: "Biological Classification", priority: "A"}, {id: "BIO_A_03", name: "Plant Kingdom", priority: "A"}, {id: "BIO_A_04", name: "Animal Kingdom", priority: "A"}, {id: "BIO_A_05", name: "Morphology of Flowering Plants", priority: "A"}, {id: "BIO_A_06", name: "Anatomy of Flowering Plants", priority: "A"}, {id: "BIO_A_07", name: "Structural Org in Animals", priority: "A"}] },
+                { unitName: "Cell Structure & Function", chapters: [{id: "BIO_B_01", name: "Cell: The Unit of Life", priority: "B"}, {id: "BIO_B_02", name: "Biomolecules", priority: "B"}, {id: "BIO_B_03", name: "Cell Cycle and Cell Division", priority: "B"}] },
+                { unitName: "Plant Physiology", chapters: [{id: "BIO_C_01", name: "Photosynthesis", priority: "C"}, {id: "BIO_C_02", name: "Respiration in Plants", priority: "C"}, {id: "BIO_C_03", name: "Plant Growth & Development", priority: "C"}] },
+                { unitName: "Human Physiology", chapters: [{id: "BIO_D_01", name: "Breathing & Exchange", priority: "D"}, {id: "BIO_D_02", name: "Body Fluids & Circulation", priority: "D"}, {id: "BIO_D_03", name: "Excretory Products", priority: "D"}, {id: "BIO_D_04", name: "Locomotion & Movement", priority: "D"}, {id: "BIO_D_05", name: "Neural Control", priority: "D"}, {id: "BIO_D_06", name: "Chemical Coordination", priority: "D"}] },
+                { unitName: "Reproduction & Genetics", chapters: [{id: "BIO_E_01", name: "Sexual Repr. in Flowering Plants", priority: "A"}, {id: "BIO_E_02", name: "Human Reproduction", priority: "A"}, {id: "BIO_E_03", name: "Reproductive Health", priority: "A"}, {id: "BIO_E_04", name: "Principles of Inheritance", priority: "A"}, {id: "BIO_E_05", name: "Molecular Basis of Inheritance", priority: "A"}, {id: "BIO_E_06", name: "Evolution", priority: "B"}] },
+                { unitName: "Biology in Human Welfare", chapters: [{id: "BIO_F_01", name: "Human Health & Disease", priority: "B"}, {id: "BIO_F_02", name: "Microbes in Human Welfare", priority: "C"}] },
+                { unitName: "Biotech & Ecology", chapters: [{id: "BIO_G_01", name: "Biotech: Principles", priority: "A"}, {id: "BIO_G_02", name: "Biotech: Applications", priority: "A"}, {id: "BIO_G_03", name: "Organisms & Populations", priority: "B"}, {id: "BIO_G_04", name: "Ecosystem", priority: "B"}, {id: "BIO_G_05", name: "Biodiversity", priority: "B"}] }
+            ]}
+        ];
 
         // Subject Styles (Pastel/Modern)
         const subjectColors = {
@@ -736,6 +945,13 @@
             Biology: { light: 'bg-emerald-50 text-emerald-700 border-emerald-200', dark: 'dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800' },
             MockTest: { light: 'bg-purple-50 text-purple-700 border-purple-200 font-bold', dark: 'dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800 font-bold' },
             Custom: { light: 'bg-teal-50 text-teal-700 border-teal-200', dark: 'dark:bg-teal-900/30 dark:text-teal-300 dark:border-teal-800' }
+        };
+
+        const syllabusStatusConfig = {
+            'not-started': { text: 'To Do', color: 'text-slate-500', bg: 'bg-slate-100 dark:bg-slate-800', border: 'border-slate-200 dark:border-slate-700', weight: 0, dot: 'dot-neutral' },
+            'in-progress': { text: 'Doing', color: 'text-yellow-600 dark:text-yellow-400', bg: 'bg-yellow-50 dark:bg-yellow-900/20', border: 'border-yellow-200 dark:border-yellow-800', weight: 0.5, dot: 'dot-yellow' },
+            'completed': { text: 'Done', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/20', border: 'border-green-200 dark:border-green-800', weight: 1, dot: 'dot-green' },
+            'mastered': { text: 'Mastered', color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-900/20', border: 'border-indigo-200 dark:border-indigo-800', weight: 1, dot: 'dot-indigo' }
         };
 
         // --- AUTH ---
@@ -795,6 +1011,8 @@
                     updateSubjectSelectors(); 
                     renderCountdown();
                     if(state.currentView === 'calendar') renderCalendar();
+                    if(state.currentView === 'syllabus') renderSyllabusView(); 
+                    if(state.currentView === 'timer') { updateSubjectSelectors(); updateTimerStats(); }
                 } else setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'config'), state.settings);
                 document.getElementById('loading-overlay').classList.add('opacity-0', 'pointer-events-none');
             });
@@ -817,7 +1035,556 @@
                 state.targets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 if(state.currentView === 'weekly') renderWeeklyView();
             });
+            
+            // Study Logs (New)
+            onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'studyLogs'), (snap) => {
+                state.studyLogs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                if(state.currentView === 'timer') {
+                    renderRecentLogs();
+                    updateTimerStats();
+                }
+            });
+
+            // Syllabus Data (Single Document for Efficiency)
+            onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'syllabus', 'progress'), (snap) => {
+                if(snap.exists()) {
+                    state.syllabusData = snap.data();
+                    if(!state.syllabusData.status) state.syllabusData.status = {};
+                    if(!state.syllabusData.meta) state.syllabusData.meta = {};
+                } else {
+                    state.syllabusData = { status: {}, meta: {} };
+                }
+                
+                if(state.currentView === 'syllabus') renderSyllabusView();
+            });
         }
+        
+        // --- TIMER LOGIC ---
+        
+        window.toggleTimer = function() {
+            if(isTimerRunning) {
+                // Pause
+                clearInterval(timerInterval);
+                isTimerRunning = false;
+                document.getElementById('btn-timer-toggle').innerHTML = `<i data-lucide="play" class="w-8 h-8 fill-current"></i>`;
+                document.getElementById('btn-timer-stop').disabled = false;
+                document.getElementById('timer-active-ring').classList.remove('opacity-100', 'animate-spin-slow');
+                document.getElementById('timer-active-ring').classList.add('opacity-0');
+            } else {
+                // Start
+                isTimerRunning = true;
+                timerInterval = setInterval(() => {
+                    timerSeconds++;
+                    updateTimerDisplay();
+                }, 1000);
+                document.getElementById('btn-timer-toggle').innerHTML = `<i data-lucide="pause" class="w-8 h-8 fill-current"></i>`;
+                document.getElementById('btn-timer-stop').disabled = false;
+                document.getElementById('timer-active-ring').classList.remove('opacity-0');
+                document.getElementById('timer-active-ring').classList.add('opacity-100', 'animate-spin-slow');
+            }
+            lucide.createIcons();
+        }
+        
+        window.stopTimer = async function() {
+            if(timerSeconds < 60) {
+                if(!confirm("Less than 1 minute logged. Discard session?")) return;
+                resetTimer();
+                return;
+            }
+            
+            // Save log
+            const duration = Math.round(timerSeconds / 60);
+            const log = {
+                subject: timerSubject,
+                durationMinutes: duration,
+                date: getLocalISODate(new Date()),
+                timestamp: new Date().toISOString(),
+                type: 'timer'
+            };
+            
+            try {
+                await setDoc(doc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'studyLogs')), log);
+                showToast(`Logged ${duration}m of ${timerSubject}`);
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#6366f1', '#a855f7'] });
+            } catch(e) { console.error(e); }
+            
+            resetTimer();
+        }
+        
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            timerSeconds = 0;
+            updateTimerDisplay();
+            document.getElementById('btn-timer-toggle').innerHTML = `<i data-lucide="play" class="w-8 h-8 fill-current"></i>`;
+            document.getElementById('btn-timer-stop').disabled = true;
+            document.getElementById('timer-active-ring').classList.remove('opacity-100', 'animate-spin-slow');
+            document.getElementById('timer-active-ring').classList.add('opacity-0');
+            lucide.createIcons();
+        }
+        
+        function updateTimerDisplay() {
+            const h = Math.floor(timerSeconds / 3600).toString().padStart(2, '0');
+            const m = Math.floor((timerSeconds % 3600) / 60).toString().padStart(2, '0');
+            const s = (timerSeconds % 60).toString().padStart(2, '0');
+            document.getElementById('timer-display').innerText = `${h}:${m}:${s}`;
+        }
+        
+        window.setTimerSubject = function(sub) {
+            timerSubject = sub;
+            // Visual update
+            document.querySelectorAll('.timer-subject-pill').forEach(el => {
+                if(el.dataset.sub === sub) {
+                    el.classList.add('bg-indigo-600', 'text-white', 'border-indigo-600');
+                    el.classList.remove('bg-white', 'dark:bg-slate-800', 'text-slate-500', 'dark:text-slate-400', 'hover:bg-slate-50');
+                } else {
+                    el.classList.remove('bg-indigo-600', 'text-white', 'border-indigo-600');
+                    el.classList.add('bg-white', 'dark:bg-slate-800', 'text-slate-500', 'dark:text-slate-400', 'hover:bg-slate-50');
+                }
+            });
+        }
+        
+        function updateTimerStats() {
+            const today = getLocalISODate(new Date());
+            
+            // 1. Calculate Today's Total
+            const todayLogs = state.studyLogs.filter(l => l.date === today);
+            const totalMins = todayLogs.reduce((acc, curr) => acc + (curr.durationMinutes || 0), 0);
+            
+            let displayTime = `${totalMins}m`;
+            if (totalMins > 60) {
+                 displayTime = `${(totalMins/60).toFixed(1)}h`;
+            }
+            document.getElementById('today-total').innerText = displayTime;
+            
+            // 2. Calculate Streak
+            const dates = [...new Set(state.studyLogs.map(l => l.date))].sort().reverse();
+            let streak = 0;
+            let checkDate = new Date(); // Start checking from today
+            
+            // Check if we studied today or yesterday to start the streak
+            const checkStr = getLocalISODate(checkDate);
+            const yesterday = new Date(checkDate); yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = getLocalISODate(yesterday);
+
+            if (dates.includes(checkStr)) {
+                 // Streak active today
+            } else if (dates.includes(yesterdayStr)) {
+                 // Streak active yesterday, need to study today to keep it
+                 checkDate = yesterday;
+            } else {
+                 streak = 0;
+            }
+            
+            // If we have a valid starting point
+            if (streak === 0 && (dates.includes(checkStr) || dates.includes(yesterdayStr))) {
+                 // Simple consecutive count logic
+                 // Re-sort dates descending
+                 const sortedUniqueDates = dates; 
+                 // Find index of today or yesterday
+                 let startIndex = sortedUniqueDates.indexOf(checkStr);
+                 if (startIndex === -1) startIndex = sortedUniqueDates.indexOf(yesterdayStr);
+                 
+                 if (startIndex !== -1) {
+                     streak = 1; 
+                     let currentDate = new Date(sortedUniqueDates[startIndex]);
+                     
+                     for(let i = startIndex + 1; i < sortedUniqueDates.length; i++) {
+                         currentDate.setDate(currentDate.getDate() - 1);
+                         const expectedDateStr = getLocalISODate(currentDate);
+                         if (sortedUniqueDates[i] === expectedDateStr) {
+                             streak++;
+                         } else {
+                             break;
+                         }
+                     }
+                 }
+            }
+            
+            document.getElementById('streak-count').innerText = streak;
+        }
+        
+        function renderRecentLogs() {
+            const list = document.getElementById('timer-logs-list');
+            list.innerHTML = '';
+            
+            const logs = [...state.studyLogs].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 10);
+            const today = getLocalISODate(new Date());
+            const todayLogs = logs.filter(l => l.date === today);
+            
+            if(todayLogs.length === 0) {
+                list.innerHTML = `<div class="text-center py-6 text-slate-400 italic text-xs">No study sessions logged today. Start the timer!</div>`;
+                return;
+            }
+            
+            todayLogs.forEach(log => {
+                const el = document.createElement('div');
+                el.className = "flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700";
+                
+                const colors = subjectColors[log.subject] || subjectColors.Custom;
+                const badgeClass = state.settings.theme === 'dark' ? colors.dark : colors.light;
+                
+                el.innerHTML = `
+                    <div class="flex items-center gap-3">
+                         <div class="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm ${badgeClass}">
+                            ${log.durationMinutes}m
+                         </div>
+                         <div>
+                             <div class="text-xs font-bold text-slate-700 dark:text-slate-200">${log.subject}</div>
+                             <div class="text-[10px] text-slate-400">${new Date(log.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} ${log.notes ? '• ' + log.notes : ''}</div>
+                         </div>
+                    </div>
+                    <button onclick="requestDelete('studyLog', '${log.id}')" class="p-2 text-slate-300 hover:text-rose-500 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                `;
+                list.appendChild(el);
+            });
+            lucide.createIcons();
+        }
+        
+        // Manual Log Modal
+        window.openManualLogModal = () => {
+            const select = document.getElementById('manual-log-subject');
+            const type = state.settings.examType;
+            let subjects = [];
+             if(type === 'NEET') subjects = ['Physics', 'Chemistry', 'Biology'];
+             else if(type === 'JEE Main' || type === 'JEE Advanced') subjects = ['Physics', 'Chemistry', 'Maths'];
+             else subjects = ['Physics', 'Chemistry', 'Maths', 'Biology']; 
+             subjects = [...subjects, ...(state.settings.customSubjects || [])];
+             
+             select.innerHTML = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+             
+             document.getElementById('manual-log-modal').classList.remove('hidden');
+             setTimeout(() => document.getElementById('manual-log-modal').classList.remove('opacity-0'), 10);
+        }
+        
+        window.closeManualLogModal = () => {
+            document.getElementById('manual-log-modal').classList.add('opacity-0');
+            setTimeout(() => document.getElementById('manual-log-modal').classList.add('hidden'), 200);
+        }
+        
+        window.saveManualLog = async () => {
+            const subject = document.getElementById('manual-log-subject').value;
+            const duration = parseInt(document.getElementById('manual-log-duration').value);
+            const notes = document.getElementById('manual-log-notes').value;
+            
+            if(!duration || duration <= 0) { showToast("Invalid duration"); return; }
+            
+            const log = {
+                subject,
+                durationMinutes: duration,
+                notes,
+                date: getLocalISODate(new Date()),
+                timestamp: new Date().toISOString(),
+                type: 'manual'
+            };
+            
+            try {
+                await setDoc(doc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'studyLogs')), log);
+                showToast("Log Added");
+                closeManualLogModal();
+                document.getElementById('manual-log-duration').value = '';
+                document.getElementById('manual-log-notes').value = '';
+            } catch(e) { console.error(e); }
+        }
+
+        // --- SYLLABUS LOGIC ---
+        function getSyllabusMeta(id) {
+            if (!state.syllabusData.meta[id]) {
+                state.syllabusData.meta[id] = { rev: 0, pyq: false };
+            }
+            return state.syllabusData.meta[id];
+        }
+
+        async function saveSyllabusData() {
+            if(!currentUser) return;
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'syllabus', 'progress'), state.syllabusData, { merge: true });
+            } catch(e) { console.error("Error saving syllabus", e); }
+        }
+
+        function calculateSyllabusStats(chapters) {
+            let total = chapters.length;
+            if (total === 0) return { percent: 0, mastered: 0, completed: 0, inProgress: 0, notStarted: 0, total: 0 };
+
+            let weightedSum = 0, mastered = 0, completed = 0, inProgress = 0;
+
+            chapters.forEach(ch => {
+                const status = state.syllabusData.status[ch.id] || 'not-started';
+                const weight = syllabusStatusConfig[status].weight;
+                weightedSum += weight;
+                if (status === 'mastered') mastered++;
+                else if (status === 'completed') completed++;
+                else if (status === 'in-progress') inProgress++;
+            });
+
+            return {
+                percent: Math.round((weightedSum / total) * 100),
+                mastered, completed, inProgress,
+                notStarted: total - (mastered + completed + inProgress),
+                total
+            };
+        }
+
+        // Filter Syllabus based on Exam Target
+        function getFilteredSyllabus() {
+            const target = state.settings.examType; // JEE Main, NEET, JEE Advanced
+            const isNEET = target === 'NEET';
+            
+            return syllabus.filter(s => {
+                if (isNEET && s.subject === 'Mathematics') return false;
+                if (!isNEET && s.subject === 'Biology') return false;
+                return true;
+            });
+        }
+
+        // --- NEW: Helper for rendering single chapter HTML content ---
+        function renderChapterContent(ch) {
+            const status = state.syllabusData.status[ch.id] || 'not-started';
+            const meta = getSyllabusMeta(ch.id);
+            const config = syllabusStatusConfig[status];
+            const isOpen = state.syllabusOpenStates[ch.id];
+
+            // Badge HTML
+            let badges = '';
+            if (meta.pyq) badges += `<span class="badge badge-pyq mr-1">PYQ</span>`;
+            if (meta.rev > 0) badges += `<span class="badge badge-rev">R${meta.rev}</span>`;
+
+            // Action Panel HTML
+            const actionPanel = isOpen ? `
+                <div class="p-3 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700/50 space-y-3 animate-slide-up">
+                    <div>
+                        <label class="text-[10px] uppercase text-slate-400 font-bold tracking-wider mb-1.5 block">Status</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            ${Object.keys(syllabusStatusConfig).map(key => `
+                                <button onclick="updateSyllabusStatus('${ch.id}', '${key}')" 
+                                    class="px-2 py-1.5 text-[10px] font-bold rounded border transition-all ${status===key ? 'bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50'}">
+                                    ${syllabusStatusConfig[key].text}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="flex-1">
+                            <label class="text-[10px] uppercase text-slate-400 font-bold tracking-wider mb-1.5 block">Revisions</label>
+                            <div class="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1 justify-center">
+                                <button onclick="modSyllabusRev('${ch.id}', -1)" class="w-6 h-6 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400 font-bold">-</button>
+                                <span class="text-xs font-bold w-4 text-center dark:text-white">${meta.rev}</span>
+                                <button onclick="modSyllabusRev('${ch.id}', 1)" class="w-6 h-6 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-indigo-500 font-bold">+</button>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <label class="text-[10px] uppercase text-slate-400 font-bold tracking-wider mb-1.5 block">Practice</label>
+                            <button onclick="toggleSyllabusPyq('${ch.id}')" class="w-full py-1.5 flex items-center justify-center gap-2 border rounded-lg transition-colors ${meta.pyq ? 'bg-green-50 text-green-600 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500'}">
+                                <span class="text-[10px] font-bold">PYQs</span>
+                                ${meta.pyq ? '<i data-lucide="check" class="w-3 h-3"></i>' : ''}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ` : '';
+
+            // Note the id="wrapper-${ch.id}" used for targeted updates
+            return `
+                <div id="wrapper-${ch.id}" class="mb-1 rounded-lg overflow-hidden border border-transparent dark:border-transparent transition-all ${isOpen ? 'bg-white dark:bg-slate-800/80 shadow-sm border-slate-200 dark:border-slate-700' : ''}">
+                    <div onclick="toggleSyllabusChapter('${ch.id}')" class="chapter-leaf p-2.5 flex justify-between items-center ${isOpen ? 'bg-slate-50 dark:bg-slate-800' : ''}">
+                        <div class="flex-1 pr-2">
+                            <div class="flex items-center gap-2 mb-0.5">
+                                <span class="text-xs font-medium ${config.color}">${ch.name}</span>
+                            </div>
+                            <div class="flex items-center h-4">${badges}</div>
+                        </div>
+                        <div class="flex items-center gap-2.5">
+                            <div class="status-dot ${config.dot}"></div>
+                            <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400 arrow-icon ${isOpen ? 'rotate-180' : ''}"></i>
+                        </div>
+                    </div>
+                    ${actionPanel}
+                </div>
+            `;
+        }
+
+        // Render Syllabus View (Initial Full Render)
+        window.renderSyllabusView = function() {
+            const container = document.getElementById('syllabus-content');
+            const progressContainer = document.getElementById('overall-progress-data');
+            if(!container || !progressContainer) return;
+
+            // Only clear HTML if we are doing a full re-render (init or search)
+            // For targeted updates we will call a different function
+            container.innerHTML = '';
+            
+            const filteredSyllabus = getFilteredSyllabus();
+            const allChapters = filteredSyllabus.flatMap(s => s.units.flatMap(u => u.chapters));
+            const searchLower = (document.getElementById('syllabus-search')?.value || '').trim().toLowerCase();
+
+            // 1. Render Overall Stats
+            const stats = calculateSyllabusStats(allChapters);
+            progressContainer.innerHTML = `
+                <div class="flex items-end justify-between mb-2">
+                    <div>
+                        <span class="text-5xl font-black text-slate-900 dark:text-white tracking-tighter">${stats.percent}%</span>
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Covered</span>
+                    </div>
+                </div>
+                <div class="w-full h-2.5 rounded-full flex overflow-hidden bg-slate-100 dark:bg-slate-700/50">
+                    <div class="bg-indigo-500" style="width: ${(stats.mastered/stats.total)*100}%"></div>
+                    <div class="bg-green-500" style="width: ${(stats.completed/stats.total)*100}%"></div>
+                    <div class="bg-yellow-500" style="width: ${(stats.inProgress/stats.total)*100}%"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-y-1 gap-x-2 text-[10px] font-bold mt-3 uppercase tracking-wide">
+                    <div class="flex justify-between text-slate-500 dark:text-slate-400"><span>Mastered</span> <span class="text-indigo-500">${stats.mastered}</span></div>
+                    <div class="flex justify-between text-slate-500 dark:text-slate-400"><span>Done</span> <span class="text-green-500">${stats.completed}</span></div>
+                    <div class="flex justify-between text-slate-500 dark:text-slate-400"><span>Doing</span> <span class="text-yellow-500">${stats.inProgress}</span></div>
+                    <div class="flex justify-between text-slate-400 dark:text-slate-500"><span>To Do</span> <span class="text-slate-600 dark:text-slate-300">${stats.notStarted}</span></div>
+                </div>
+            `;
+
+            // 2. Render Cards
+            filteredSyllabus.forEach((subject, idx) => {
+                let hasMatch = false;
+                const unitsHtml = subject.units.map(unit => {
+                    const unitChapters = unit.chapters.filter(ch => 
+                        !searchLower || 
+                        ch.name.toLowerCase().includes(searchLower) || 
+                        unit.unitName.toLowerCase().includes(searchLower) ||
+                        subject.subject.toLowerCase().includes(searchLower)
+                    );
+                    
+                    if (unitChapters.length === 0) return '';
+                    hasMatch = true;
+
+                    const unitStats = calculateSyllabusStats(unitChapters);
+                    const unitId = `${subject.subject}-${unit.unitName}`.replace(/\s+/g, '-');
+                    const isExpanded = state.syllabusOpenStates[unitId];
+
+                    // FIX: Use renderChapterContent here for consistency with targeted updates
+                    const chaptersHtml = unitChapters.map(ch => renderChapterContent(ch)).join('');
+
+                    return `
+                        <div class="mb-3 border border-slate-100 dark:border-slate-700 rounded-xl overflow-hidden">
+                            <div onclick="toggleSyllabusGroup('${unitId}')" class="p-3 bg-slate-50/50 dark:bg-slate-800/30 flex justify-between items-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="folder" class="w-3.5 h-3.5 text-slate-400"></i>
+                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">${unit.unitName}</span>
+                                </div>
+                                <span class="text-[10px] font-bold ${unitStats.percent===100?'text-green-500':'text-slate-400'}">${unitStats.percent}%</span>
+                            </div>
+                            <div class="${isExpanded ? 'block' : 'hidden'} p-2 bg-white dark:bg-slate-900/20 border-t border-slate-100 dark:border-slate-700">
+                                ${chaptersHtml}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                if (!hasMatch) return;
+
+                const subjStats = calculateSyllabusStats(subject.units.flatMap(u => u.chapters));
+                
+                const card = document.createElement('div');
+                card.className = "glass-card p-0 rounded-2xl overflow-hidden break-inside-avoid mb-6 flex flex-col";
+                card.innerHTML = `
+                    <div class="p-5 pb-0">
+                        <div class="flex justify-between items-center mb-2">
+                            <h2 class="text-lg font-black text-slate-800 dark:text-white">${subject.subject}</h2>
+                            <span class="text-lg font-bold ${subjStats.percent===100?'text-green-500':'text-indigo-500'}">${subjStats.percent}%</span>
+                        </div>
+                        <div class="w-full h-1.5 rounded-full flex overflow-hidden bg-slate-100 dark:bg-slate-700">
+                            <div class="bg-indigo-500" style="width: ${(subjStats.mastered/subjStats.total)*100}%"></div>
+                            <div class="bg-green-500" style="width: ${(subjStats.completed/subjStats.total)*100}%"></div>
+                            <div class="bg-yellow-500" style="width: ${(subjStats.inProgress/subjStats.total)*100}%"></div>
+                        </div>
+                    </div>
+                    <div class="p-4 space-y-2">
+                        ${unitsHtml}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        // --- NEW: Targeted Update Function to prevent full re-render flickering ---
+        function refreshChapterUI(id) {
+            const wrapper = document.getElementById(`wrapper-${id}`);
+            if(wrapper) {
+                // Find chapter object in syllabus to re-render
+                let chObj = null;
+                for (let s of syllabus) {
+                    for (let u of s.units) {
+                        const found = u.chapters.find(c => c.id === id);
+                        if (found) { chObj = found; break; }
+                    }
+                    if (chObj) break;
+                }
+                
+                if (chObj) {
+                    wrapper.outerHTML = renderChapterContent(chObj);
+                    lucide.createIcons();
+                }
+            }
+        }
+
+        // Window Actions for Syllabus
+        window.toggleSyllabusGroup = (id) => {
+            state.syllabusOpenStates[id] = !state.syllabusOpenStates[id];
+            renderSyllabusView(); // Group toggle changes layout significantly, full render is safer
+        }
+        
+        window.toggleSyllabusChapter = (id) => {
+            // Close other open chapters
+            Object.keys(state.syllabusOpenStates).forEach(key => {
+                if (key !== id && state.syllabusOpenStates[key]) {
+                    // Check if it's a chapter (has wrapper) to avoid closing groups
+                    if (document.getElementById(`wrapper-${key}`)) {
+                        state.syllabusOpenStates[key] = false;
+                        refreshChapterUI(key);
+                    }
+                }
+            });
+
+            state.syllabusOpenStates[id] = !state.syllabusOpenStates[id];
+            // Use targeted update instead of full render
+            refreshChapterUI(id);
+        }
+        
+        window.updateSyllabusStatus = async (id, status) => {
+            state.syllabusData.status[id] = status;
+            await saveSyllabusData();
+            // Targeted update
+            refreshChapterUI(id);
+        }
+        
+        window.modSyllabusRev = async (id, delta) => {
+            const meta = getSyllabusMeta(id);
+            let val = (meta.rev || 0) + delta;
+            if (val < 0) val = 0;
+            state.syllabusData.meta[id].rev = val;
+            await saveSyllabusData();
+            refreshChapterUI(id);
+        }
+        
+        window.toggleSyllabusPyq = async (id) => {
+            const meta = getSyllabusMeta(id);
+            state.syllabusData.meta[id].pyq = !meta.pyq;
+            await saveSyllabusData();
+            refreshChapterUI(id);
+        }
+
+        // Syllabus Search Debounce
+        document.getElementById('syllabus-search').addEventListener('input', (e) => {
+            clearTimeout(window.searchTimeout);
+            window.searchTimeout = setTimeout(renderSyllabusView, 300);
+        });
+
+        // Reset Syllabus Data
+        document.getElementById('btn-reset-syllabus').addEventListener('click', async () => {
+            if(confirm("Reset all syllabus progress? This cannot be undone.")) {
+                state.syllabusData = { status: {}, meta: {} };
+                await saveSyllabusData();
+                renderSyllabusView();
+            }
+        });
+
 
         // --- THEME & SETTINGS HELPERS ---
         window.applyTheme = function(theme) {
@@ -894,7 +1661,7 @@
              } else {
                  document.getElementById('jee-session-container').classList.add('hidden');
              }
-             
+             document.getElementById('custom-date-container').classList.toggle('hidden', type !== 'Custom');
              updateTargetDateConfig();
              markSettingsDirty();
         }
@@ -1183,7 +1950,25 @@
                 showToast("Target Set!");
             } catch(e) { console.error(e); }
         }
+        window.updateTargetDateConfig = function() {
+            const year = document.getElementById('settings-year').value;
+            let date = `${year}-01-01`; 
 
+            if (tempSettings.examType === 'JEE Main') {
+                date = (tempSettings.session === 'Jan') ? `${year}-01-21` : `${year}-04-01`;
+            } else if (tempSettings.examType === 'NEET') {
+                date = `${year}-05-05`;
+            } else if (tempSettings.examType === 'JEE Advanced') {
+                date = `${year}-05-17`;
+            } else if (tempSettings.examType === 'Custom') {
+                // Pull from the manual picker
+                const manualDate = document.getElementById('settings-custom-date').value;
+                if (manualDate) date = manualDate;
+            }
+            
+            tempSettings.targetDate = date;
+            tempSettings.targetYear = parseInt(year);
+        }
         window.toggleTarget = async function(id, status) {
             try {
                 await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'weeklyTargets', id), { completed: !status });
@@ -1203,19 +1988,26 @@
         document.getElementById('confirm-delete-btn').onclick = async () => {
             if(!itemToDelete) return;
             const { type, id } = itemToDelete;
-            const col = type === 'task' ? 'tasks' : 'weeklyTargets';
+            let col = '';
             
-            // Optimistic UI Update
+            // Optimistic UI Update & Collection selection
             if (type === 'task') {
+                col = 'tasks';
                 state.tasks = state.tasks.filter(t => t.id !== id);
                 renderCalendar(); 
                 if(state.currentView === 'stats') renderMockStats();
                 if(currentDayViewDate && !document.getElementById('day-view-modal').classList.contains('hidden')) {
                     openDayView(currentDayViewDate);
                 }
-            } else {
+            } else if (type === 'target') {
+                col = 'weeklyTargets';
                 state.targets = state.targets.filter(t => t.id !== id);
                 renderWeeklyView();
+            } else if (type === 'studyLog') {
+                col = 'studyLogs';
+                state.studyLogs = state.studyLogs.filter(t => t.id !== id);
+                renderRecentLogs();
+                updateTimerStats();
             }
             
             closeConfirmModal();
@@ -1315,7 +2107,7 @@
             document.getElementById(`view-container-${view}`).classList.remove('hidden');
             
             // Desktop Nav
-            ['calendar', 'weekly', 'stats'].forEach(v => {
+            ['calendar', 'weekly', 'stats', 'syllabus', 'timer'].forEach(v => {
                 const btn = document.getElementById(`nav-desktop-${v}`);
                 if(v === view) {
                     btn.classList.add('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'text-indigo-600', 'dark:text-indigo-300');
@@ -1327,7 +2119,7 @@
             });
 
             // Mobile Nav
-            ['calendar', 'weekly', 'stats'].forEach(v => {
+            ['calendar', 'weekly', 'stats', 'syllabus', 'timer'].forEach(v => {
                  const btn = document.getElementById(`nav-mobile-${v}`);
                  if(v === view) {
                      btn.classList.remove('text-slate-400', 'dark:text-slate-500');
@@ -1341,6 +2133,12 @@
             if(view === 'calendar') renderCalendar();
             if(view === 'weekly') renderWeeklyView();
             if(view === 'stats') renderMockStats();
+            if(view === 'syllabus') renderSyllabusView();
+            if(view === 'timer') {
+                updateSubjectSelectors(); // Ensure timer subjects are up to date
+                updateTimerStats();
+                renderRecentLogs();
+            }
         }
 
         // --- NEW MODAL LOGIC FOR MOBILE ---
@@ -1371,14 +2169,15 @@
              else if(type === 'JEE Main' || type === 'JEE Advanced') subjects = ['Physics', 'Chemistry', 'Maths'];
              else subjects = ['Physics', 'Chemistry', 'Maths', 'Biology']; 
              
-             subjects = [...subjects, ...(state.settings.customSubjects || []), 'MockTest'];
+             subjects = [...subjects, ...(state.settings.customSubjects || [])];
              
-             // Render helper
+             // 1. Render for Add Task Forms (Desktop & Mobile)
+             const fullSubjects = [...subjects, 'MockTest'];
              const renderRadios = (containerId, formSuffix) => {
                  const container = document.getElementById(containerId);
                  if(!container) return;
                  let html = '';
-                 subjects.forEach((sub, i) => {
+                 fullSubjects.forEach((sub, i) => {
                      const isMock = sub === 'MockTest';
                      const style = isMock ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-800' : 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
                      const padding = formSuffix === '-mobile' ? 'py-3 rounded-xl' : 'py-2 rounded-lg'; // Taller touch target on mobile
@@ -1403,6 +2202,22 @@
 
              renderRadios('subject-selector-mobile', '-mobile');
              renderRadios('subject-selector', '');
+             
+             // 2. Render for Timer Subject Selector
+             const timerContainer = document.getElementById('timer-subject-selector');
+             if(timerContainer) {
+                 let timerHtml = '';
+                 subjects.forEach((sub) => {
+                     const isActive = timerSubject === sub;
+                     const activeClass = isActive ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50';
+                     timerHtml += `
+                         <button onclick="setTimerSubject('${sub}')" data-sub="${sub}" class="timer-subject-pill px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 text-xs font-bold transition-all ${activeClass}">
+                            ${sub}
+                         </button>
+                     `;
+                 });
+                 timerContainer.innerHTML = timerHtml;
+             }
         }
 
         // Handle Add Task Form Submission (Mobile)
@@ -1706,6 +2521,8 @@
             setTimeout(() => t.classList.add('opacity-0', 'translate-y-[-20px]', 'md:translate-y-4'), 3000); 
         }
         
+
+        
         window.openSettings = () => { 
             tempSettings = { ...state.settings };
             document.getElementById('settings-bg-url').value = tempSettings.bgUrl || '';
@@ -1733,6 +2550,12 @@
                 modal.classList.remove('opacity-0');
                 modal.querySelector('.mobile-sheet').classList.add('open');
             }, 10); 
+            if (tempSettings.examType === 'Custom') {
+                document.getElementById('custom-date-container').classList.remove('hidden');
+                document.getElementById('settings-custom-date').value = tempSettings.targetDate || '';
+            } else {
+                document.getElementById('custom-date-container').classList.add('hidden');
+            }
         }
         
         window.closeSettings = () => { 
@@ -1815,6 +2638,7 @@
                     case '1': switchView('calendar'); showToast('Planner View'); break;
                     case '2': switchView('weekly'); showToast('Targets View'); break;
                     case '3': switchView('stats'); showToast('Stats View'); break;
+                    case '4': switchView('syllabus'); showToast('Syllabus View'); break;
                 }
             });
         }
