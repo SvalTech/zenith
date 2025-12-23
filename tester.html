@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KOTA HOD: Cyberpunk Protocol v3.0</title>
+    <title>Test Application</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,489 +16,456 @@
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
-    <!-- Fonts: Orbitron for HUD, Rajdhani for text -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
     <style>
-        :root {
-            --neon-red: #ff003c;
-            --neon-blue: #00f3ff;
-            --neon-green: #00ff41;
-            --bg-dark: #050505;
-            --grid-color: rgba(0, 243, 255, 0.1);
-        }
+        :root { --bg-color: #050505; }
+        body { background-color: var(--bg-color); color: #f3f4f6; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
 
-        body {
-            background-color: var(--bg-dark);
-            color: #e0f7fa;
-            font-family: 'Rajdhani', sans-serif;
-            overflow: hidden;
-            height: 100vh;
-        }
-
-        /* --- Cyberpunk Grid Background --- */
-        .cyber-grid {
-            position: fixed;
-            width: 200%;
-            height: 200%;
-            top: -50%;
-            left: -50%;
-            background-image: 
-                linear-gradient(var(--grid-color) 1px, transparent 1px),
-                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
-            background-size: 50px 50px;
-            transform: perspective(500px) rotateX(60deg);
-            animation: grid-move 20s linear infinite;
-            z-index: 0;
-            pointer-events: none;
-            opacity: 0.5;
-        }
-
-        @keyframes grid-move {
-            0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
-            100% { transform: perspective(500px) rotateX(60deg) translateY(50px); }
-        }
-
-        /* --- CRT Scanlines --- */
+        /* CRT Scanline Effect */
         .scanlines {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            background-size: 100% 2px, 3px 100%;
-            z-index: 50;
-            pointer-events: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.02) 50%, rgba(0,0,0,0.02));
+            background-size: 100% 4px; pointer-events: none; z-index: 50;
         }
 
-        /* --- HUD Elements --- */
-        .hud-border {
-            border: 1px solid var(--neon-blue);
-            box-shadow: 0 0 5px var(--neon-blue), inset 0 0 10px rgba(0, 243, 255, 0.2);
-            backdrop-filter: blur(5px);
-            background: rgba(5, 5, 5, 0.8);
-        }
+        /* Message Styling */
+        .hod-message { border-left: 3px solid #ef4444; background-color: #111; }
+        .user-message { border-right: 3px solid #3b82f6; background-color: #1e293b; text-align: right; margin-left: auto; }
 
-        .hud-text {
-            font-family: 'Orbitron', sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .hud-red {
-            border-color: var(--neon-red);
-            box-shadow: 0 0 5px var(--neon-red), inset 0 0 10px rgba(255, 0, 60, 0.2);
-            color: var(--neon-red);
-        }
-
-        /* --- Glitch Effect --- */
-        .glitch {
-            position: relative;
-        }
-        .glitch::before, .glitch::after {
-            content: attr(data-text);
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-        }
-        .glitch::before {
-            left: 2px; text-shadow: -1px 0 red; clip: rect(24px, 550px, 90px, 0);
-            animation: glitch-anim-2 3s infinite linear alternate-reverse;
-        }
-        .glitch::after {
-            left: -2px; text-shadow: -1px 0 blue; clip: rect(85px, 550px, 140px, 0);
-            animation: glitch-anim 2.5s infinite linear alternate-reverse;
-        }
-        @keyframes glitch-anim {
-            0% { clip: rect(11px, 9999px, 81px, 0); }
-            20% { clip: rect(68px, 9999px, 19px, 0); }
-            40% { clip: rect(10px, 9999px, 86px, 0); }
-            60% { clip: rect(44px, 9999px, 20px, 0); }
-            80% { clip: rect(18px, 9999px, 49px, 0); }
-            100% { clip: rect(98px, 9999px, 78px, 0); }
-        }
-
-        /* --- Chat Bubbles --- */
-        .hod-message {
-            border-left: 3px solid var(--neon-red);
-            background: rgba(20, 0, 0, 0.6);
-            clip-path: polygon(0 0, 100% 0, 100% 90%, 98% 100%, 0 100%);
-        }
-        .user-message {
-            border-right: 3px solid var(--neon-blue);
-            background: rgba(0, 20, 20, 0.6);
-            clip-path: polygon(0 0, 100% 0, 100% 100%, 2% 100%, 0 90%);
-            text-align: right;
-            margin-left: auto;
-        }
-
-        /* --- Markdown & Math --- */
-        .prose strong { color: var(--neon-blue); }
-        .prose ul { list-style: none; padding-left: 0; }
-        .prose li::before { content: "> "; color: var(--neon-red); }
-        .katex-display { margin: 1em 0; overflow-x: auto; }
-        
-        /* --- Inputs --- */
-        .cyber-input {
-            background: rgba(0,0,0,0.8);
-            border: 1px solid #333;
-            color: var(--neon-blue);
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 1.1rem;
-            transition: all 0.3s;
-        }
-        .cyber-input:focus {
-            border-color: var(--neon-blue);
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
-            outline: none;
+        /* Question Card */
+        .question-card {
+            background: #0f172a; border: 1px solid #1e293b; border-radius: 12px;
+            overflow: hidden; margin-top: 1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
         }
         
-        .cyber-btn {
-            background: rgba(0, 243, 255, 0.1);
-            border: 1px solid var(--neon-blue);
-            color: var(--neon-blue);
-            font-family: 'Orbitron', sans-serif;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-            overflow: hidden;
+        /* Option Buttons */
+        .option-btn {
+            text-align: left; transition: all 0.2s; position: relative; overflow: hidden;
+            border: 1px solid #374151; background: #1a2336;
         }
-        .cyber-btn:hover {
-            background: var(--neon-blue);
-            color: #000;
-            box-shadow: 0 0 20px var(--neon-blue);
+        .option-btn:hover:not(:disabled) { background-color: #1e293b; border-color: #3b82f6; transform: translateX(4px); }
+        .option-btn:disabled { opacity: 0.6; cursor: not-allowed; filter: grayscale(0.8); }
+        
+        .option-key {
+            font-family: 'JetBrains Mono', monospace; background: rgba(255,255,255,0.05);
+            width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;
+            border-radius: 4px; margin-right: 12px; font-size: 12px; font-weight: bold; flex-shrink: 0;
         }
-        .cyber-btn:active { transform: scale(0.98); }
 
-        /* Scrollbar */
+        /* Markdown & Math Tweaks */
+        .prose p { margin-bottom: 0.5rem; }
+        .katex-display { overflow-x: auto; padding: 0.5rem 0; margin: 0.5rem 0; }
+        
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #000; }
-        ::-webkit-scrollbar-thumb { background: var(--neon-blue); }
+        ::-webkit-scrollbar-track { background: #050505; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
     </style>
 </head>
-<body class="flex flex-col relative">
+<body class="flex flex-col h-screen">
 
-    <div class="cyber-grid"></div>
     <div class="scanlines"></div>
 
-    <!-- HUD Header -->
-    <header class="p-4 z-20 flex justify-between items-end border-b border-[#333] bg-black/80 backdrop-blur">
-        <div class="flex flex-col">
-            <h1 class="hud-text text-2xl font-black text-white glitch" data-text="KOTA_HOD_OS">KOTA_HOD_OS</h1>
-            <div class="flex items-center space-x-2 mt-1">
-                <span class="text-xs text-gray-400">TARGET:</span>
-                <span class="text-xs text-[#ff003c] font-bold glow">JEE MAIN 2026</span>
+    <!-- Header -->
+    <header class="bg-[#0a0a0a] border-b border-gray-800 p-4 flex justify-between items-center z-10">
+        <div class="flex items-center space-x-6">
+            <div class="flex flex-col">
+                <span class="text-[10px] text-gray-500 uppercase tracking-widest font-mono">Exam</span>
+                <span class="text-red-500 font-bold tracking-wide text-sm font-mono">JEE MAIN 2026</span>
             </div>
-        </div>
-
-        <!-- Rank Display -->
-        <div class="hud-border px-6 py-2 flex flex-col items-center">
-            <span class="text-[10px] text-gray-400 tracking-widest">CURRENT RANK</span>
-            <div class="flex items-baseline space-x-2">
-                <span class="text-xl text-yellow-400 font-mono">AIR</span>
-                <span id="rank-display" class="text-3xl font-bold text-white font-mono glitch" data-text="150000">150,000</span>
-            </div>
-            <div id="rank-delta" class="h-4 text-xs font-bold"></div>
-        </div>
-
-        <!-- Stress Meter -->
-        <div class="w-32">
-            <div class="flex justify-between text-[10px] text-gray-400 mb-1">
-                <span>STRESS</span>
-                <span id="stress-val">0%</span>
-            </div>
-            <div class="h-2 bg-gray-900 border border-gray-700 rounded-sm overflow-hidden">
-                <div id="stress-bar" class="h-full bg-[#ff003c] w-0 transition-all duration-500"></div>
+            <div class="h-8 w-px bg-gray-800"></div>
+            <div class="flex flex-col">
+                <span class="text-[10px] text-gray-500 uppercase tracking-widest font-mono">AIR Rank</span>
+                <div class="flex items-baseline gap-2">
+                    <span id="rank-display" class="text-white font-bold text-xl tabular-nums font-mono">150,000</span>
+                    <span id="rank-delta" class="text-xs font-bold font-mono opacity-0 transition-opacity duration-500"></span>
+                </div>
             </div>
         </div>
         
-        <button id="settings-btn" class="cyber-btn p-2" title="Config">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <button id="settings-btn" class="p-2 text-gray-400 hover:text-white transition">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
         </button>
     </header>
 
-    <!-- Main Chat -->
-    <main id="chat-container" class="flex-1 overflow-y-auto p-6 space-y-6 z-10 scroll-smooth pb-32">
-        <div id="welcome-screen" class="flex flex-col items-center justify-center h-full text-center opacity-80">
-            <div class="hud-border p-10 max-w-lg relative bg-black">
-                <div class="absolute top-0 left-0 w-2 h-2 bg-white"></div>
-                <div class="absolute top-0 right-0 w-2 h-2 bg-white"></div>
-                <div class="absolute bottom-0 left-0 w-2 h-2 bg-white"></div>
-                <div class="absolute bottom-0 right-0 w-2 h-2 bg-white"></div>
-                
-                <h2 class="text-4xl hud-text text-[#ff003c] mb-4">SYSTEM_OFFLINE</h2>
-                <p class="text-gray-400 mb-6">Connect API Key to initialize Rank Gatekeeper Protocol.</p>
-                <button id="init-btn" class="cyber-btn px-8 py-3 font-bold text-lg w-full">INITIALIZE</button>
-            </div>
+    <!-- Chat Area -->
+    <main id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 relative z-10 scroll-smooth pb-24">
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 z-0">
+            <h1 class="text-5xl md:text-6xl font-black text-red-600 mb-2 tracking-tighter uppercase font-mono">HOD<br><span class="text-white text-2xl md:text-3xl tracking-widest">GATEKEEPER</span></h1>
+            <p class="text-gray-500 mb-8 max-w-md font-mono text-sm">> TARGET: 99.9%ILE</p>
+            <button id="init-btn" class="px-8 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded border-b-4 border-red-800 active:border-b-0 active:translate-y-1 transition-all uppercase tracking-widest text-sm font-mono shadow-[0_0_20px_rgba(220,38,38,0.5)]">
+                Enter Cabin
+            </button>
         </div>
     </main>
 
-    <!-- Input Deck -->
-    <footer class="absolute bottom-0 w-full p-4 bg-gradient-to-t from-black via-black to-transparent z-20">
-        <div class="max-w-5xl mx-auto space-y-3">
-            
-            <!-- Quick Actions -->
-            <div class="grid grid-cols-6 gap-2">
-                <button onclick="sendOption('A')" class="cyber-btn col-span-1 py-3 text-lg font-bold">A</button>
-                <button onclick="sendOption('B')" class="cyber-btn col-span-1 py-3 text-lg font-bold">B</button>
-                <button onclick="sendOption('C')" class="cyber-btn col-span-1 py-3 text-lg font-bold">C</button>
-                <button onclick="sendOption('D')" class="cyber-btn col-span-1 py-3 text-lg font-bold">D</button>
-                
-                <div class="col-span-2 flex space-x-1">
-                    <input type="number" id="num-input" placeholder="12.5" class="cyber-input w-full px-3 text-center font-mono">
-                    <button onclick="sendNumeric()" class="cyber-btn px-4 text-[#00ff41] border-[#00ff41]">↵</button>
-                </div>
+    <!-- Controls -->
+    <footer class="bg-[#0a0a0a] border-t border-gray-800 p-4 z-20">
+        <div class="max-w-4xl mx-auto flex space-x-3">
+            <div class="relative flex-1">
+                <input type="text" id="text-input" placeholder="Type answer or chat..." class="w-full bg-[#111] border border-gray-700 text-white p-3 rounded-lg focus:outline-none focus:border-red-500 transition font-sans placeholder-gray-600 font-medium">
             </div>
-
-            <!-- Text Input -->
-            <div class="flex space-x-2">
-                <input type="text" id="text-input" placeholder="Enter topic or explanation..." class="cyber-input w-full p-4">
-                <button onclick="sendText()" class="cyber-btn px-8 font-bold bg-[#ff003c] text-black border-[#ff003c] hover:text-white">SEND</button>
-            </div>
+            <button onclick="sendText()" class="px-6 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition shadow-lg border-b-4 border-red-800 active:border-b-0 active:translate-y-1 font-mono uppercase text-sm">SEND</button>
         </div>
     </footer>
 
     <!-- Settings Modal -->
-    <div id="settings-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center">
-        <div class="hud-border p-8 w-full max-w-md bg-black relative">
-            <h3 class="hud-text text-xl text-white mb-6 border-b border-gray-800 pb-2">SYSTEM CONFIG</h3>
-            <label class="block text-[#00f3ff] text-xs uppercase tracking-widest mb-2">Gemini API Key</label>
-            <input type="password" id="api-key-input" class="cyber-input w-full p-3 mb-6">
-            <div class="flex justify-end space-x-4">
-                <button id="close-settings" class="text-gray-500 hover:text-white uppercase text-xs font-bold tracking-wider">Cancel</button>
-                <button id="save-settings" class="cyber-btn px-6 py-2 text-xs font-bold">CONNECT</button>
+    <div id="settings-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-[#111] border border-gray-800 p-8 rounded-xl max-w-md w-full shadow-2xl relative">
+            <h3 class="text-xl font-bold text-white mb-6 tracking-wide font-mono uppercase border-b border-gray-800 pb-2">System Config</h3>
+            <label class="block text-gray-500 text-xs uppercase tracking-widest mb-2 font-mono">Gemini API Key</label>
+            <input type="password" id="api-key-input" class="w-full bg-black border border-gray-700 text-white p-3 rounded mb-6 focus:border-red-500 outline-none font-mono text-sm shadow-inner">
+            <div class="flex justify-end space-x-3">
+                <button id="close-settings" class="px-4 py-2 text-gray-400 hover:text-white uppercase text-xs font-bold tracking-wider font-mono">Cancel</button>
+                <button id="save-settings" class="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 uppercase text-xs font-bold tracking-wider shadow-lg font-mono">Connect</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- GAME STATE ---
+        /* --- STATE --- */
         let currentRank = 150000;
-        let stressLevel = 0;
         let apiKey = localStorage.getItem('gemini_api_key') || '';
-        let chatHistory = [];
+        let chatHistory = []; 
 
-        // --- DOM ---
+        /* --- PROMPT --- */
+        const SYSTEM_INSTRUCTION = `
+            You are the "Kota HOD" (Head of Department) for JEE Advanced Physics/Maths/Chemistry.
+            **Persona:** Cynical, brutal, elitist. You believe only the top 0.1% matter.
+            
+            **CRITICAL FORMATTING RULES:**
+            1. You MUST return ONLY a JSON object. No intro text, no markdown block wrapping.
+            2. **MATH LATEX SAFETY:** You MUST escape backslashes in JSON strings excessively. 
+               - BAD: "\\frac{1}{2}" (Will fail JSON parsing)
+               - GOOD: "\\\\frac{1}{2}" (Correct)
+            
+            **JSON STRUCTURE:**
+            {
+                "verdict": "CORRECT" | "INCORRECT" | "NEUTRAL",
+                "rank_delta": (integer),
+                "commentary": "(String) Markdown. Roast/Praise + Explanation.",
+                "quiz_data": { 
+                    "question_text": "(String) Markdown/LaTeX.",
+                    "type": "MCQ" | "NUMERICAL",
+                    "options": [ "A) ...", "B) ...", "C) ...", "D) ..." ]
+                }
+            }
+
+            **PROTOCOL:**
+            - **NUMERICAL QUESTIONS:** Answer MUST be INTEGER (0-999).
+            - Negative rank delta = improvement. Positive = penalty.
+            - If user states topic is out of syllabus, accept it and move on to next question with no remarks + Apologise heavily
+        `;
+
+        /* --- DOM ELEMENTS --- */
         const chatContainer = document.getElementById('chat-container');
         const welcomeScreen = document.getElementById('welcome-screen');
         const textInput = document.getElementById('text-input');
-        const numInput = document.getElementById('num-input');
         const settingsModal = document.getElementById('settings-modal');
         const apiKeyInput = document.getElementById('api-key-input');
         const rankDisplay = document.getElementById('rank-display');
         const rankDelta = document.getElementById('rank-delta');
-        const stressBar = document.getElementById('stress-bar');
-        const stressVal = document.getElementById('stress-val');
 
-        // --- INIT ---
+        /* --- INIT --- */
         apiKeyInput.value = apiKey;
-        updateUI();
+        updateRankDisplay(0);
 
-        // --- EVENTS ---
+        /* --- EVENTS --- */
         document.getElementById('settings-btn').addEventListener('click', () => settingsModal.classList.remove('hidden'));
         document.getElementById('close-settings').addEventListener('click', () => settingsModal.classList.add('hidden'));
         document.getElementById('save-settings').addEventListener('click', () => {
             apiKey = apiKeyInput.value.trim();
             localStorage.setItem('gemini_api_key', apiKey);
             settingsModal.classList.add('hidden');
-            if(apiKey) alert('UPLINK ESTABLISHED');
+            if(apiKey) alert('System Connected.');
         });
         document.getElementById('init-btn').addEventListener('click', () => {
-            if (!apiKey) return alert('ERROR: MISSING API KEY');
+            if (!apiKey) return alert('ACCESS DENIED: API Key Missing');
             welcomeScreen.classList.add('hidden');
             startSession();
         });
 
-        // --- CORE FUNCTIONS ---
-
-        function updateUI() {
-            // Rank
-            if (currentRank < 1) currentRank = 1;
-            rankDisplay.innerText = currentRank.toLocaleString();
-            
-            // Stress
-            if (stressLevel < 0) stressLevel = 0;
-            if (stressLevel > 100) stressLevel = 100;
-            stressBar.style.width = `${stressLevel}%`;
-            stressVal.innerText = `${stressLevel}%`;
-            
-            if (stressLevel > 80) {
-                stressBar.style.backgroundColor = 'red';
-                document.body.classList.add('shake-hard'); // Assuming class exists or add simpler visual
-            } else {
-                stressBar.style.backgroundColor = '#ff003c';
-            }
-        }
-
-        function handleDelta(delta) {
+        /* --- LOGIC --- */
+        function updateRankDisplay(delta) {
             currentRank += delta;
-            
-            if (delta < 0) {
-                // Good (Rank dropped numerically)
-                rankDelta.innerText = `▲ ${Math.abs(delta)} IMPROVEMENT`;
-                rankDelta.className = "text-[#00ff41] font-mono tracking-widest animate-pulse";
-                stressLevel -= 15;
-            } else if (delta > 0) {
-                // Bad (Rank rose numerically)
-                rankDelta.innerText = `▼ +${delta} PENALTY`;
-                rankDelta.className = "text-[#ff003c] font-mono tracking-widest animate-pulse";
-                stressLevel += 20;
-            } else {
-                rankDelta.innerText = "";
+            if (currentRank < 1) currentRank = 1;
+            if (currentRank > 1500000) currentRank = 1500000;
+            rankDisplay.innerText = currentRank.toLocaleString();
+
+            if (delta !== 0) {
+                const isGood = delta < 0;
+                rankDelta.innerText = delta > 0 ? `▼ +${delta}` : `▲ ${delta}`;
+                rankDelta.className = `text-xs font-bold font-mono transition-opacity duration-1000 ${isGood ? 'text-green-500' : 'text-red-500'} opacity-100`;
+                setTimeout(() => rankDelta.classList.replace('opacity-100', 'opacity-0'), 2000);
             }
-            
-            updateUI();
-            setTimeout(() => rankDelta.innerText = "", 3000);
         }
 
-        // --- GEMINI INTEGRATION ---
+        /* --- ROBUST JSON REPAIR & PARSE --- */
+        function parseBrokenJson(str) {
+            // 1. Strip Code Blocks
+            str = str.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim();
+            
+            // 2. Find outermost brackets
+            const start = str.indexOf('{');
+            const end = str.lastIndexOf('}');
+            if(start === -1 || end === -1) throw new Error("No JSON object found");
+            let jsonStr = str.substring(start, end+1);
 
-        const SYSTEM_PROMPT = `
-        You are the "Kota HOD" (Head of Department). A cynical, elitist gatekeeper of JEE Ranks.
-        TARGET EXAM: JEE MAIN 2026.
-        
-        **Objective:** Test user on Revised JEE Main 2026 Syllabus.
-        **Rules:**
-        1. Alternate between MCQ (4 options) and Numerical Value Questions.
-        2. ADAPTIVE DIFFICULTY: If user answers CORRECTLY, drastically increase complexity (Rank Decider). If WRONG, mock them.
-        3. NO JSON. Use the Custom Tag Protocol below for ALL responses.
+            // 3. Attempt Repair: Fix unescaped backslashes in math
+            jsonStr = jsonStr.replace(/\\(?!["\\/bfnrtu])/g, "\\\\");
 
-        **PROTOCOL (STRICTLY FOLLOW THIS FORMAT):**
-        
-        <<VERDICT: CORRECT | INCORRECT | NEUTRAL>>
-        <<RANK_DELTA: (integer, negative for improvement, positive for penalty)>>
-        
-        [Your Message Here in Markdown. Use LaTeX $...$ for math. Use **Bold** for emphasis. Structure with headers: Question, Options, Analysis.]
-        `;
+            try {
+                return JSON.parse(jsonStr);
+            } catch (e) {
+                console.error("Failed to parse even after repair:", jsonStr);
+                throw e;
+            }
+        }
 
+        /* --- API INTERACTION WITH BACKOFF --- */
         async function startSession() {
-            addLoader();
+            addLoadingIndicator();
             try {
                 const response = await callGemini("Initialize session. Demand a topic.");
                 processResponse(response);
-            } catch (e) {
-                removeLoader();
-                addMessage('system', "CONNECTION FAILED: " + e.message);
+            } catch (error) {
+                removeLoadingIndicator();
+                addSystemMessage('Connection Failure: ' + error.message);
             }
         }
 
-        async function callGemini(text) {
+        async function callGemini(userText) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-            
-            const contents = chatHistory.map(m => ({ role: m.role, parts: [{ text: m.text }] }));
-            contents.push({ role: 'user', parts: [{ text: text }] });
+            const contents = chatHistory.map(msg => ({
+                role: msg.role === 'model' ? 'model' : 'user',
+                parts: [{ text: msg.text }]
+            }));
+            contents.push({ role: 'user', parts: [{ text: userText }] });
 
             const payload = {
                 contents: contents,
-                systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }
+                systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+                generationConfig: { responseMimeType: "application/json" }
             };
 
-            const req = await fetch(url, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload)
-            });
+            // EXPONENTIAL BACKOFF LOGIC
+            let attempts = 0;
+            const maxAttempts = 5;
+            let delay = 2000; // Start with 2 seconds
 
-            if (!req.ok) throw new Error('API Error');
-            const data = await req.json();
-            return data.candidates[0].content.parts[0].text;
-        }
+            while (attempts < maxAttempts) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
 
-        function processResponse(rawText) {
-            removeLoader();
-            
-            // Extract Metadata using Regex
-            const verdictMatch = rawText.match(/<<VERDICT:\s*(.*?)>>/);
-            const deltaMatch = rawText.match(/<<RANK_DELTA:\s*(.*?)>>/);
-            
-            const verdict = verdictMatch ? verdictMatch[1].trim() : 'NEUTRAL';
-            const delta = deltaMatch ? parseInt(deltaMatch[1]) : 0;
-            
-            // Clean message for display (Remove tags)
-            let cleanMessage = rawText.replace(/<<.*?>>/g, '').trim();
-            
-            // Logic
-            if (verdict === 'CORRECT') {
-                // Ensure delta is negative for improvement
-                let d = delta > 0 ? -delta : delta; 
-                if (d === 0) d = -500;
-                handleDelta(d);
-            } else if (verdict === 'INCORRECT') {
-                // Ensure delta is positive for penalty
-                let d = delta < 0 ? -delta : delta;
-                if (d === 0) d = 2000;
-                handleDelta(d);
+                    // Handle Rate Limit specifically
+                    if (response.status === 429) {
+                        attempts++;
+                        const loader = document.getElementById('loading-indicator');
+                        if (loader) {
+                            loader.innerHTML = `<span class="text-yellow-500 font-bold animate-pulse">RATE LIMITED... COOLING DOWN (${attempts}/${maxAttempts})</span>`;
+                        }
+                        if (attempts >= maxAttempts) throw new Error("Server overloaded. Please try again later.");
+                        
+                        await new Promise(r => setTimeout(r, delay));
+                        delay *= 2; // Double the wait time
+                        continue;
+                    }
+
+                    if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                    
+                    const data = await response.json();
+                    return data.candidates[0].content.parts[0].text;
+
+                } catch (error) {
+                    if (attempts >= maxAttempts - 1) throw error;
+                    // Retrying fetch errors (network blips)
+                    attempts++;
+                    await new Promise(r => setTimeout(r, delay));
+                    delay *= 2; 
+                }
             }
-            
-            addMessage('model', cleanMessage);
-            chatHistory.push({ role: 'model', text: rawText });
         }
 
-        async function handleInteraction(text) {
-            addMessage('user', text);
-            chatHistory.push({ role: 'user', text: text });
-            addLoader();
-            
+        function processResponse(jsonString) {
+            removeLoadingIndicator();
             try {
-                const res = await callGemini(text);
-                processResponse(res);
+                const data = parseBrokenJson(jsonString);
+
+                // Update Game State
+                if (data.verdict === 'CORRECT') updateRankDisplay(data.rank_delta < 0 ? data.rank_delta : -500);
+                else if (data.verdict === 'INCORRECT') updateRankDisplay(data.rank_delta > 0 ? data.rank_delta : 1000);
+
+                // Render HOD Commentary
+                addMessage('model', data.commentary);
+
+                // Render Question Card
+                if (data.quiz_data) {
+                    addQuestionCard(data.quiz_data);
+                }
+
+                // Save clean JSON to history context
+                chatHistory.push({ role: 'model', text: JSON.stringify(data) });
+
             } catch (e) {
-                removeLoader();
-                addMessage('system', e.message);
+                console.error("Parsing Error", e);
+                // Fallback: If JSON fails, render text raw so user isn't stuck
+                addMessage('model', jsonString);
+                chatHistory.push({ role: 'model', text: jsonString });
             }
         }
 
-        // --- UI HELPERS ---
+        async function handleInteraction(userText) {
+            addMessage('user', userText);
+            chatHistory.push({ role: 'user', text: userText });
+            addLoadingIndicator();
+            try {
+                const response = await callGemini(userText);
+                processResponse(response);
+            } catch (error) {
+                removeLoadingIndicator();
+                addSystemMessage(error.message);
+            }
+        }
+
+        /* --- RENDERING --- */
+        function renderMarkdown(element, text) {
+            if(!text) return;
+            element.innerHTML = marked.parse(text);
+            
+            renderMathInElement(element, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false},
+                    {left: '\\(', right: '\\)', display: false},
+                    {left: '\\[', right: '\\]', display: true}
+                ],
+                throwOnError: false,
+                output: 'html', 
+                strict: false
+            });
+        }
 
         function addMessage(role, text) {
             const div = document.createElement('div');
-            const isModel = role === 'model';
-            div.className = `p-6 mb-4 max-w-3xl rounded-sm backdrop-blur-md relative ${
-                isModel ? 'hod-message mr-auto text-gray-100' : 
-                (role === 'system' ? 'bg-red-900/50 border border-red-500 text-center mx-auto' : 'user-message ml-auto text-[#00f3ff]')
+            div.className = `p-4 rounded-lg mb-4 max-w-3xl text-sm md:text-base leading-relaxed animate-in fade-in slide-in-from-bottom-2 duration-300 ${
+                role === 'model' ? 'hod-message mr-auto text-gray-200 shadow-md' : 'user-message text-blue-100 shadow-sm'
             }`;
+            renderMarkdown(div, text);
+            chatContainer.appendChild(div);
+            scrollToBottom();
+        }
 
-            if (role === 'system') {
-                div.innerText = text;
-            } else {
-                div.innerHTML = marked.parse(text);
-                renderMathInElement(div, {
-                    delimiters: [
-                        {left: '$$', right: '$$', display: true},
-                        {left: '$', right: '$', display: false}
-                    ],
-                    throwOnError: false
+        function addQuestionCard(quizData) {
+            const card = document.createElement('div');
+            card.className = 'question-card mb-6 animate-in fade-in zoom-in-95 duration-500';
+
+            // Question Text
+            const qText = document.createElement('div');
+            qText.className = 'p-5 border-b border-gray-800 bg-[#151d2e]';
+            qText.innerHTML = `<span class="text-xs text-blue-400 font-bold font-mono block mb-2 tracking-widest">RANK DECIDER // ${quizData.type}</span>`;
+            const contentDiv = document.createElement('div');
+            renderMarkdown(contentDiv, quizData.question_text);
+            qText.appendChild(contentDiv);
+            card.appendChild(qText);
+
+            // Actions Area
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'p-4 bg-[#0f172a]';
+
+            if (quizData.type === 'MCQ' && quizData.options && Array.isArray(quizData.options)) {
+                const grid = document.createElement('div');
+                grid.className = 'grid grid-cols-1 gap-2';
+                
+                quizData.options.forEach((opt, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn w-full p-3 rounded-lg flex items-center group';
+                    const letter = String.fromCharCode(65 + idx);
+                    
+                    // Create content spans
+                    const keySpan = document.createElement('span');
+                    keySpan.className = 'option-key group-hover:bg-blue-600 group-hover:text-white transition-colors';
+                    keySpan.innerText = letter;
+
+                    const textSpan = document.createElement('span');
+                    textSpan.className = 'flex-1';
+                    // Render markdown/math inside button
+                    renderMarkdown(textSpan, opt);
+                    
+                    // Fix: Marked wraps inline text in <p>, which breaks layout inside button. Unwrap it.
+                    const p = textSpan.querySelector('p');
+                    if(p) {
+                         textSpan.innerHTML = p.innerHTML;
+                    }
+
+                    btn.appendChild(keySpan);
+                    btn.appendChild(textSpan);
+                    
+                    btn.onclick = function() {
+                        const allBtns = grid.querySelectorAll('button');
+                        allBtns.forEach(b => b.disabled = true);
+                        btn.style.borderColor = '#3b82f6';
+                        btn.style.backgroundColor = '#1e3a8a';
+                        handleInteraction(`Option ${letter}`);
+                    };
+                    grid.appendChild(btn);
                 });
+                actionsDiv.appendChild(grid);
+            } else {
+                // Numerical Input
+                actionsDiv.innerHTML = `
+                    <div class="flex-1 text-gray-500 italic text-sm flex items-center justify-center border border-dashed border-gray-700 rounded p-4 bg-[#0a0a0a]">
+                        Type your integer answer (0-999) in the chat box below...
+                    </div>
+                `;
             }
-            chatContainer.appendChild(div);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            card.appendChild(actionsDiv);
+            chatContainer.appendChild(card);
+            scrollToBottom();
         }
 
-        function addLoader() {
+        function addSystemMessage(text) {
             const div = document.createElement('div');
-            div.id = 'loader';
-            div.className = 'flex items-center space-x-2 text-[#ff003c] p-4 animate-pulse font-mono text-sm';
-            div.innerHTML = `<span>HOD_PROCESSING</span><span class="text-xs">[///]</span>`;
+            div.className = 'bg-red-900/20 border border-red-500/50 text-red-400 text-center mx-auto w-full max-w-lg p-2 rounded mb-4 text-xs font-mono';
+            div.innerHTML = `[SYSTEM] ${text}`;
             chatContainer.appendChild(div);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            scrollToBottom();
         }
 
-        function removeLoader() {
-            const el = document.getElementById('loader');
-            if (el) el.remove();
+        function addLoadingIndicator() {
+            const div = document.createElement('div');
+            div.id = 'loading-indicator';
+            div.className = 'flex items-center space-x-2 p-4 text-red-500 font-mono text-xs';
+            div.innerHTML = `<span>EVALUATING</span><span class="animate-pulse">...</span>`;
+            chatContainer.appendChild(div);
+            scrollToBottom();
         }
 
-        // --- INPUTS ---
+        function removeLoadingIndicator() {
+            const loader = document.getElementById('loading-indicator');
+            if (loader) loader.remove();
+        }
+
+        function scrollToBottom() {
+            setTimeout(() => { chatContainer.scrollTop = chatContainer.scrollHeight; }, 50);
+        }
+
+        /* --- INPUT --- */
         function sendText() {
             const val = textInput.value.trim();
-            if(val) { handleInteraction(val); textInput.value = ''; }
+            if (val) {
+                handleInteraction(val);
+                textInput.value = '';
+            }
         }
-        function sendOption(opt) { handleInteraction(`Option ${opt}`); }
-        function sendNumeric() {
-            const val = numInput.value.trim();
-            if(val) { handleInteraction(val); numInput.value = ''; }
-        }
-        
-        textInput.addEventListener('keypress', e => { if(e.key === 'Enter') sendText(); });
-        numInput.addEventListener('keypress', e => { if(e.key === 'Enter') sendNumeric(); });
+        textInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendText(); });
 
     </script>
 </body>
