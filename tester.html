@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KOTA HOD: Rank Gatekeeper v2.4 (Adaptive)</title>
+    <title>KOTA HOD: Cyberpunk Protocol v3.0</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,288 +16,267 @@
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
-    <!-- Google Fonts: JetBrains Mono for numbers/code, Inter for readability -->
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Fonts: Orbitron for HUD, Rajdhani for text -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --bg-color: #0a0a0a; /* Slightly lighter black for comfort */
-            --terminal-green: #33ff00;
-            --terminal-red: #ff3333;
+            --neon-red: #ff003c;
+            --neon-blue: #00f3ff;
+            --neon-green: #00ff41;
+            --bg-dark: #050505;
+            --grid-color: rgba(0, 243, 255, 0.1);
         }
 
         body {
-            background-color: var(--bg-color);
-            color: #f3f4f6;
-            font-family: 'Inter', sans-serif; /* Readable font for text */
+            background-color: var(--bg-dark);
+            color: #e0f7fa;
+            font-family: 'Rajdhani', sans-serif;
             overflow: hidden;
-            line-height: 1.6;
+            height: 100vh;
         }
 
-        .font-mono {
-            font-family: 'JetBrains Mono', monospace; /* Maintain numeric aesthetic */
+        /* --- Cyberpunk Grid Background --- */
+        .cyber-grid {
+            position: fixed;
+            width: 200%;
+            height: 200%;
+            top: -50%;
+            left: -50%;
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 50px 50px;
+            transform: perspective(500px) rotateX(60deg);
+            animation: grid-move 20s linear infinite;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.5;
         }
 
-        /* --- CRT Effects (Subtler) --- */
+        @keyframes grid-move {
+            0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
+            100% { transform: perspective(500px) rotateX(60deg) translateY(50px); }
+        }
+
+        /* --- CRT Scanlines --- */
         .scanlines {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(
-                to bottom,
-                rgba(255,255,255,0),
-                rgba(255,255,255,0) 50%,
-                rgba(0,0,0,0.05) 50%, /* Much lighter opacity */
-                rgba(0,0,0,0.05)
-            );
-            background-size: 100% 4px;
-            pointer-events: none;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
             z-index: 50;
-        }
-        
-        .vignette {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, rgba(0,0,0,0) 70%, rgba(0,0,0,0.4) 100%); /* Softer vignette */
             pointer-events: none;
-            z-index: 49;
         }
 
-        /* --- Animations --- */
-        @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            50% { transform: translate(-1px, 2px) rotate(-1deg); }
-            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        /* --- HUD Elements --- */
+        .hud-border {
+            border: 1px solid var(--neon-blue);
+            box-shadow: 0 0 5px var(--neon-blue), inset 0 0 10px rgba(0, 243, 255, 0.2);
+            backdrop-filter: blur(5px);
+            background: rgba(5, 5, 5, 0.8);
         }
 
-        .shake-hard {
-            animation: shake 0.4s;
-            border: 2px solid rgba(239, 68, 68, 0.5);
+        .hud-text {
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
-        @keyframes flash-green {
-            0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4); }
-            100% { box-shadow: 0 0 0 20px rgba(74, 222, 128, 0); }
+        .hud-red {
+            border-color: var(--neon-red);
+            box-shadow: 0 0 5px var(--neon-red), inset 0 0 10px rgba(255, 0, 60, 0.2);
+            color: var(--neon-red);
         }
 
-        .flash-success {
-            animation: flash-green 0.8s;
-            border: 1px solid rgba(74, 222, 128, 0.5);
+        /* --- Glitch Effect --- */
+        .glitch {
+            position: relative;
+        }
+        .glitch::before, .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+        }
+        .glitch::before {
+            left: 2px; text-shadow: -1px 0 red; clip: rect(24px, 550px, 90px, 0);
+            animation: glitch-anim-2 3s infinite linear alternate-reverse;
+        }
+        .glitch::after {
+            left: -2px; text-shadow: -1px 0 blue; clip: rect(85px, 550px, 140px, 0);
+            animation: glitch-anim 2.5s infinite linear alternate-reverse;
+        }
+        @keyframes glitch-anim {
+            0% { clip: rect(11px, 9999px, 81px, 0); }
+            20% { clip: rect(68px, 9999px, 19px, 0); }
+            40% { clip: rect(10px, 9999px, 86px, 0); }
+            60% { clip: rect(44px, 9999px, 20px, 0); }
+            80% { clip: rect(18px, 9999px, 49px, 0); }
+            100% { clip: rect(98px, 9999px, 78px, 0); }
         }
 
-        /* --- Chat Styling --- */
+        /* --- Chat Bubbles --- */
         .hod-message {
-            border-left: 4px solid #ef4444;
-            background-color: #171717;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            border-left: 3px solid var(--neon-red);
+            background: rgba(20, 0, 0, 0.6);
+            clip-path: polygon(0 0, 100% 0, 100% 90%, 98% 100%, 0 100%);
         }
         .user-message {
-            border-right: 4px solid #3b82f6;
-            background-color: #1e293b;
+            border-right: 3px solid var(--neon-blue);
+            background: rgba(0, 20, 20, 0.6);
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 2% 100%, 0 90%);
             text-align: right;
             margin-left: auto;
         }
 
-        /* Markdown Styles within Chat */
-        .prose strong {
-            color: #fff;
-            font-weight: 700;
+        /* --- Markdown & Math --- */
+        .prose strong { color: var(--neon-blue); }
+        .prose ul { list-style: none; padding-left: 0; }
+        .prose li::before { content: "> "; color: var(--neon-red); }
+        .katex-display { margin: 1em 0; overflow-x: auto; }
+        
+        /* --- Inputs --- */
+        .cyber-input {
+            background: rgba(0,0,0,0.8);
+            border: 1px solid #333;
+            color: var(--neon-blue);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.1rem;
+            transition: all 0.3s;
         }
-        .prose ul {
-            list-style-type: disc;
-            padding-left: 1.5rem;
-            margin-top: 0.5rem;
-            margin-bottom: 0.5rem;
-        }
-        .prose li {
-            margin-bottom: 0.25rem;
-        }
-        .prose p {
-            margin-bottom: 0.75rem;
-        }
-        .prose p:last-child {
-            margin-bottom: 0;
-        }
-        .prose blockquote {
-            border-left: 3px solid #4b5563;
-            padding-left: 1rem;
-            color: #9ca3af;
-            font-style: italic;
-        }
-        .prose code {
-            background-color: #333;
-            padding: 0.2rem 0.4rem;
-            border-radius: 0.25rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.9em;
-        }
-
-        /* Math Styling */
-        .katex-display {
-            margin: 1em 0;
-            overflow-x: auto;
-            overflow-y: hidden;
-            padding: 0.5rem 0;
+        .cyber-input:focus {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+            outline: none;
         }
         
+        .cyber-btn {
+            background: rgba(0, 243, 255, 0.1);
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .cyber-btn:hover {
+            background: var(--neon-blue);
+            color: #000;
+            box-shadow: 0 0 20px var(--neon-blue);
+        }
+        .cyber-btn:active { transform: scale(0.98); }
+
         /* Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #0a0a0a; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #444; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: var(--neon-blue); }
     </style>
 </head>
-<body class="flex flex-col h-screen">
+<body class="flex flex-col relative">
 
-    <!-- Overlays -->
+    <div class="cyber-grid"></div>
     <div class="scanlines"></div>
-    <div class="vignette"></div>
 
-    <!-- HUD / Status Bar -->
-    <header class="bg-[#111] border-b border-gray-800 p-4 flex justify-between items-center z-10 shadow-md">
-        <div class="flex items-center space-x-6">
-            <div class="flex flex-col">
-                <span class="text-[10px] text-gray-500 uppercase tracking-widest font-mono">Target Exam</span>
-                <span class="text-red-500 font-bold tracking-wide text-sm md:text-base font-mono">JEE MAIN 2026</span>
+    <!-- HUD Header -->
+    <header class="p-4 z-20 flex justify-between items-end border-b border-[#333] bg-black/80 backdrop-blur">
+        <div class="flex flex-col">
+            <h1 class="hud-text text-2xl font-black text-white glitch" data-text="KOTA_HOD_OS">KOTA_HOD_OS</h1>
+            <div class="flex items-center space-x-2 mt-1">
+                <span class="text-xs text-gray-400">TARGET:</span>
+                <span class="text-xs text-[#ff003c] font-bold glow">JEE MAIN 2026</span>
             </div>
-            <div class="h-8 w-px bg-gray-800"></div>
-            <div class="flex flex-col">
-                <span class="text-[10px] text-gray-500 uppercase tracking-widest font-mono">Current Rank (AIR)</span>
-                <span id="rank-display" class="text-white font-bold text-xl tabular-nums font-mono">150,000</span>
+        </div>
+
+        <!-- Rank Display -->
+        <div class="hud-border px-6 py-2 flex flex-col items-center">
+            <span class="text-[10px] text-gray-400 tracking-widest">CURRENT RANK</span>
+            <div class="flex items-baseline space-x-2">
+                <span class="text-xl text-yellow-400 font-mono">AIR</span>
+                <span id="rank-display" class="text-3xl font-bold text-white font-mono glitch" data-text="150000">150,000</span>
             </div>
-            <div id="rank-delta" class="text-sm font-bold opacity-0 transition-opacity duration-500 font-mono"></div>
+            <div id="rank-delta" class="h-4 text-xs font-bold"></div>
+        </div>
+
+        <!-- Stress Meter -->
+        <div class="w-32">
+            <div class="flex justify-between text-[10px] text-gray-400 mb-1">
+                <span>STRESS</span>
+                <span id="stress-val">0%</span>
+            </div>
+            <div class="h-2 bg-gray-900 border border-gray-700 rounded-sm overflow-hidden">
+                <div id="stress-bar" class="h-full bg-[#ff003c] w-0 transition-all duration-500"></div>
+            </div>
         </div>
         
-        <div class="flex items-center space-x-6">
-             <div class="flex flex-col items-end">
-                <span class="text-[10px] text-gray-500 uppercase tracking-widest font-mono">Streak</span>
-                <div class="flex space-x-1" id="streak-container">
-                    <span class="w-2 h-2 bg-gray-800 rounded-full"></span>
-                    <span class="w-2 h-2 bg-gray-800 rounded-full"></span>
-                    <span class="w-2 h-2 bg-gray-800 rounded-full"></span>
-                </div>
-            </div>
-            <button id="settings-btn" class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition" title="Settings">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            </button>
-        </div>
+        <button id="settings-btn" class="cyber-btn p-2" title="Config">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </button>
     </header>
 
-    <!-- Chat Area -->
-    <main id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 relative z-10 scroll-smooth">
-        
-        <!-- Empty State -->
-        <div id="welcome-screen" class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 z-0">
-            <h1 class="text-5xl font-bold text-red-600 mb-2 tracking-tighter uppercase font-mono">Rank Gatekeeper</h1>
-            <p class="text-gray-400 mb-8 max-w-md text-lg">
-                14 Lakh aspirants. 10,000 Seats.<br>
-                <span class="text-sm text-gray-600">The clock is already ticking for 2026.</span>
-            </p>
-            <button id="init-btn" class="px-8 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded border-b-4 border-red-800 active:border-b-0 active:translate-y-1 transition-all uppercase tracking-widest text-sm font-mono shadow-lg">
-                Start Session
-            </button>
-            <p class="text-xs text-gray-600 mt-6 font-mono">Ensure API Key is configured in settings</p>
+    <!-- Main Chat -->
+    <main id="chat-container" class="flex-1 overflow-y-auto p-6 space-y-6 z-10 scroll-smooth pb-32">
+        <div id="welcome-screen" class="flex flex-col items-center justify-center h-full text-center opacity-80">
+            <div class="hud-border p-10 max-w-lg relative bg-black">
+                <div class="absolute top-0 left-0 w-2 h-2 bg-white"></div>
+                <div class="absolute top-0 right-0 w-2 h-2 bg-white"></div>
+                <div class="absolute bottom-0 left-0 w-2 h-2 bg-white"></div>
+                <div class="absolute bottom-0 right-0 w-2 h-2 bg-white"></div>
+                
+                <h2 class="text-4xl hud-text text-[#ff003c] mb-4">SYSTEM_OFFLINE</h2>
+                <p class="text-gray-400 mb-6">Connect API Key to initialize Rank Gatekeeper Protocol.</p>
+                <button id="init-btn" class="cyber-btn px-8 py-3 font-bold text-lg w-full">INITIALIZE</button>
+            </div>
         </div>
-
     </main>
 
-    <!-- Controls -->
-    <footer class="bg-[#111] border-t border-gray-800 p-4 pb-6 z-20">
-        <div class="max-w-4xl mx-auto space-y-3">
+    <!-- Input Deck -->
+    <footer class="absolute bottom-0 w-full p-4 bg-gradient-to-t from-black via-black to-transparent z-20">
+        <div class="max-w-5xl mx-auto space-y-3">
             
-            <!-- Quick Inputs -->
-            <div class="grid grid-cols-6 gap-3">
-                <button onclick="sendOption('A')" class="col-span-1 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-blue-500 text-blue-400 font-bold rounded transition transform active:scale-95 font-mono shadow-sm">A</button>
-                <button onclick="sendOption('B')" class="col-span-1 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-blue-500 text-blue-400 font-bold rounded transition transform active:scale-95 font-mono shadow-sm">B</button>
-                <button onclick="sendOption('C')" class="col-span-1 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-blue-500 text-blue-400 font-bold rounded transition transform active:scale-95 font-mono shadow-sm">C</button>
-                <button onclick="sendOption('D')" class="col-span-1 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-blue-500 text-blue-400 font-bold rounded transition transform active:scale-95 font-mono shadow-sm">D</button>
+            <!-- Quick Actions -->
+            <div class="grid grid-cols-6 gap-2">
+                <button onclick="sendOption('A')" class="cyber-btn col-span-1 py-3 text-lg font-bold">A</button>
+                <button onclick="sendOption('B')" class="cyber-btn col-span-1 py-3 text-lg font-bold">B</button>
+                <button onclick="sendOption('C')" class="cyber-btn col-span-1 py-3 text-lg font-bold">C</button>
+                <button onclick="sendOption('D')" class="cyber-btn col-span-1 py-3 text-lg font-bold">D</button>
                 
-                <div class="col-span-2 flex space-x-2">
-                    <input type="number" id="num-input" placeholder="12.5" class="w-full bg-[#0a0a0a] border border-gray-700 text-white px-3 rounded focus:outline-none focus:border-red-500 text-center font-mono placeholder-gray-700">
-                    <button onclick="sendNumeric()" class="px-4 bg-gray-800 border border-gray-700 text-green-500 hover:bg-gray-700 rounded transition transform active:scale-95 font-bold">↵</button>
+                <div class="col-span-2 flex space-x-1">
+                    <input type="number" id="num-input" placeholder="12.5" class="cyber-input w-full px-3 text-center font-mono">
+                    <button onclick="sendNumeric()" class="cyber-btn px-4 text-[#00ff41] border-[#00ff41]">↵</button>
                 </div>
             </div>
 
-            <!-- Main Input -->
-            <div class="flex space-x-3">
-                <div class="relative flex-1">
-                    <input type="text" id="text-input" placeholder="Explain your logic or pick a topic..." class="w-full bg-[#0a0a0a] border border-gray-700 text-white p-3 rounded focus:outline-none focus:border-red-500 transition font-sans placeholder-gray-600 shadow-inner">
-                </div>
-                <button onclick="sendText()" class="px-6 bg-red-600 hover:bg-red-700 text-white font-bold rounded transition shadow-lg border-b-4 border-red-800 active:border-b-0 active:translate-y-1 font-mono uppercase text-sm">SEND</button>
+            <!-- Text Input -->
+            <div class="flex space-x-2">
+                <input type="text" id="text-input" placeholder="Enter topic or explanation..." class="cyber-input w-full p-4">
+                <button onclick="sendText()" class="cyber-btn px-8 font-bold bg-[#ff003c] text-black border-[#ff003c] hover:text-white">SEND</button>
             </div>
         </div>
     </footer>
 
     <!-- Settings Modal -->
-    <div id="settings-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-[#111] border border-gray-800 p-8 rounded-lg max-w-md w-full shadow-2xl relative">
-            <h3 class="text-xl font-bold text-white mb-6 tracking-wide font-mono uppercase border-b border-gray-800 pb-2">System Config</h3>
-            
-            <label class="block text-gray-400 text-xs uppercase tracking-widest mb-2 font-mono">Gemini API Key</label>
-            <input type="password" id="api-key-input" class="w-full bg-black border border-gray-700 text-white p-3 rounded mb-6 focus:border-red-500 outline-none font-mono text-sm shadow-inner transition-colors">
-            
-            <div class="flex justify-end space-x-3">
-                <button id="close-settings" class="px-4 py-2 text-gray-400 hover:text-white uppercase text-xs font-bold tracking-wider font-mono">Cancel</button>
-                <button id="save-settings" class="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 uppercase text-xs font-bold tracking-wider shadow-lg font-mono">Connect</button>
+    <div id="settings-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center">
+        <div class="hud-border p-8 w-full max-w-md bg-black relative">
+            <h3 class="hud-text text-xl text-white mb-6 border-b border-gray-800 pb-2">SYSTEM CONFIG</h3>
+            <label class="block text-[#00f3ff] text-xs uppercase tracking-widest mb-2">Gemini API Key</label>
+            <input type="password" id="api-key-input" class="cyber-input w-full p-3 mb-6">
+            <div class="flex justify-end space-x-4">
+                <button id="close-settings" class="text-gray-500 hover:text-white uppercase text-xs font-bold tracking-wider">Cancel</button>
+                <button id="save-settings" class="cyber-btn px-6 py-2 text-xs font-bold">CONNECT</button>
             </div>
         </div>
     </div>
 
     <script>
-        /* --- GAMIFICATION LOGIC --- */
+        // --- GAME STATE ---
         let currentRank = 150000;
-        let streak = 0;
-        
-        // --- PERSONA PROMPT REFINED FOR READABILITY & JSON ---
-        const SYSTEM_INSTRUCTION = `
-            You are the "Kota HOD" (Head of Department). A cynical, extremely elitist gatekeeper of the JEE Rank.
-            
-            **Objective:** Test the user on the **Revised JEE Main 2026 Syllabus**. Be extremely passive agressive, compare user to other students in his elitist kota coaching institute who have been studying there since 6th.
-            
-            **Syllabus Rules:**
-            1. **Strict Adherence:** Stick to the reduced NTA syllabus for 2026.
-            2. **Deleted Topics:** ABSOLUTELY NO questions on Potentiometer, Rolling Motion (pure dynamics), Doppler Effect, Transistors, Communication Systems, Tangent Galvanometer, Quality Factor, etc.
-            3. **Focus:** Core concepts, Rank Decider problems, and tricky calculations.
-
-            **Question Protocol (Adaptive Difficulty):**
-            1. **Mix Formats:** Randomly alternate between **MCQ (Single Correct)** and **Numerical Value Type** (Integer/Decimal answer).
-            2. **Ramp Up Complexity:** - Start with "Standard" JEE Main questions.
-               - **If the user answers CORRECTLY:** Increase difficulty immediately. Introduce multi-concept problems (e.g., Electrostatics + SHM), tricky calculus, or trap options. Push them towards "Advanced" level concepts disguised as Main questions.
-               - **If INCORRECT:** Drop level slightly to basics, then mock them for not knowing fundamentals.
-            3. **Numerical Questions:** These should be calculation-intensive or require precise conceptual application.
-            
-            **Formatting Rules (IMPORTANT for Readability):**
-            Format the 'message' field in your JSON response using clear Markdown:
-            - Use bold headers: **Question**, **Type** (MCQ/Numerical), **Options** (if MCQ), **Verdict**, **Analysis**.
-            - Use bullet points for options.
-            - Use LaTeX for all math formulas ($...$ for inline, $$...$$ for block).
-            - Keep the "Question" distinct from the "Options".
-            
-            **CRITICAL OUTPUT RULE:**
-            You MUST output your response in valid JSON format ONLY.
-            Structure:
-            {
-                "verdict": "CORRECT" | "INCORRECT" | "NEUTRAL", 
-                "rank_delta": (integer), // Use negative (-) for improvement, positive (+) for penalty
-                "message": "(Markdown string)"
-            }
-
-            **Behavioral Guidelines:**
-            1. **Neutral (Start/Topic Selection):** Ask for a chapter. Warn them 2026 is closer than they think.
-            2. **Correct Answer:** "Adequate." Unimpressed. Small rank improvement. Next question immediately.
-            3. **Incorrect Answer:** Brutal. "Wrong." Big rank penalty. Explain the specific trap they fell into. Next question.
-            4. **Question Style:** Rank Deciders. Combining concepts.
-        `;
-
-        // --- STATE & API ---
+        let stressLevel = 0;
         let apiKey = localStorage.getItem('gemini_api_key') || '';
-        let chatHistory = []; 
-        
+        let chatHistory = [];
+
+        // --- DOM ---
         const chatContainer = document.getElementById('chat-container');
         const welcomeScreen = document.getElementById('welcome-screen');
         const textInput = document.getElementById('text-input');
@@ -306,12 +285,12 @@
         const apiKeyInput = document.getElementById('api-key-input');
         const rankDisplay = document.getElementById('rank-display');
         const rankDelta = document.getElementById('rank-delta');
-        const streakContainer = document.getElementById('streak-container');
+        const stressBar = document.getElementById('stress-bar');
+        const stressVal = document.getElementById('stress-val');
 
         // --- INIT ---
         apiKeyInput.value = apiKey;
-        updateRankDisplay(0);
-        updateStreakDisplay();
+        updateUI();
 
         // --- EVENTS ---
         document.getElementById('settings-btn').addEventListener('click', () => settingsModal.classList.remove('hidden'));
@@ -320,208 +299,171 @@
             apiKey = apiKeyInput.value.trim();
             localStorage.setItem('gemini_api_key', apiKey);
             settingsModal.classList.add('hidden');
-            if(apiKey) alert('System Connected.');
+            if(apiKey) alert('UPLINK ESTABLISHED');
         });
         document.getElementById('init-btn').addEventListener('click', () => {
-            if (!apiKey) return alert('ACCESS DENIED: API Key Missing');
+            if (!apiKey) return alert('ERROR: MISSING API KEY');
             welcomeScreen.classList.add('hidden');
             startSession();
         });
 
-        // --- GAMIFICATION FUNCTIONS ---
-        function updateRankDisplay(delta) {
-            currentRank += delta;
-            if (currentRank < 1) currentRank = 1; 
-            if (currentRank > 1500000) currentRank = 1500000; 
+        // --- CORE FUNCTIONS ---
 
+        function updateUI() {
+            // Rank
+            if (currentRank < 1) currentRank = 1;
             rankDisplay.innerText = currentRank.toLocaleString();
+            
+            // Stress
+            if (stressLevel < 0) stressLevel = 0;
+            if (stressLevel > 100) stressLevel = 100;
+            stressBar.style.width = `${stressLevel}%`;
+            stressVal.innerText = `${stressLevel}%`;
+            
+            if (stressLevel > 80) {
+                stressBar.style.backgroundColor = 'red';
+                document.body.classList.add('shake-hard'); // Assuming class exists or add simpler visual
+            } else {
+                stressBar.style.backgroundColor = '#ff003c';
+            }
+        }
 
-            if (delta !== 0) {
-                // In JEE, Negative delta = Green (Good), Positive delta = Red (Bad)
-                const isImprovement = delta < 0;
-                
-                // Show delta with correct sign and color
-                // If delta is -500 (improved), show "-500" in green
-                // If delta is +2000 (worse), show "+2000" in red
-                rankDelta.innerText = delta > 0 ? `▼ +${delta.toLocaleString()}` : `▲ ${delta.toLocaleString()}`;
-                rankDelta.className = `text-xs font-bold transition-opacity duration-1000 ${isImprovement ? 'text-green-500' : 'text-red-500'} opacity-100 font-mono`;
-                
-                setTimeout(() => {
-                    rankDelta.classList.remove('opacity-100');
-                    rankDelta.classList.add('opacity-0');
-                }, 2000);
+        function handleDelta(delta) {
+            currentRank += delta;
+            
+            if (delta < 0) {
+                // Good (Rank dropped numerically)
+                rankDelta.innerText = `▲ ${Math.abs(delta)} IMPROVEMENT`;
+                rankDelta.className = "text-[#00ff41] font-mono tracking-widest animate-pulse";
+                stressLevel -= 15;
+            } else if (delta > 0) {
+                // Bad (Rank rose numerically)
+                rankDelta.innerText = `▼ +${delta} PENALTY`;
+                rankDelta.className = "text-[#ff003c] font-mono tracking-widest animate-pulse";
+                stressLevel += 20;
+            } else {
+                rankDelta.innerText = "";
             }
             
-            if (delta > 0) {
-                // Rank got numerically larger (Worse) -> BAD
-                document.body.classList.add('shake-hard');
-                setTimeout(() => document.body.classList.remove('shake-hard'), 400);
-            } else if (delta < 0) {
-                // Rank got numerically smaller (Better) -> GOOD
-                chatContainer.classList.add('flash-success');
-                setTimeout(() => chatContainer.classList.remove('flash-success'), 800);
-            }
+            updateUI();
+            setTimeout(() => rankDelta.innerText = "", 3000);
         }
 
-        function updateStreak(isCorrect) {
-            if (isCorrect) streak++;
-            else streak = 0;
-            updateStreakDisplay();
-        }
+        // --- GEMINI INTEGRATION ---
 
-        function updateStreakDisplay() {
-            streakContainer.innerHTML = '';
-            for (let i = 0; i < 5; i++) {
-                const dot = document.createElement('span');
-                dot.className = `w-2 h-2 rounded-full ${i < streak ? 'bg-green-500 shadow-[0_0_8px_#4ade80]' : 'bg-gray-800'}`;
-                streakContainer.appendChild(dot);
-            }
-            if (streak > 5) {
-                const extra = document.createElement('span');
-                extra.className = 'text-xs text-green-500 font-bold ml-1 font-mono';
-                extra.innerText = `+${streak-5}`;
-                streakContainer.appendChild(extra);
-            }
-        }
+        const SYSTEM_PROMPT = `
+        You are the "Kota HOD" (Head of Department). A cynical, elitist gatekeeper of JEE Ranks.
+        TARGET EXAM: JEE MAIN 2026.
+        
+        **Objective:** Test user on Revised JEE Main 2026 Syllabus.
+        **Rules:**
+        1. Alternate between MCQ (4 options) and Numerical Value Questions.
+        2. ADAPTIVE DIFFICULTY: If user answers CORRECTLY, drastically increase complexity (Rank Decider). If WRONG, mock them.
+        3. NO JSON. Use the Custom Tag Protocol below for ALL responses.
 
-        // --- GEMINI LOGIC ---
+        **PROTOCOL (STRICTLY FOLLOW THIS FORMAT):**
+        
+        <<VERDICT: CORRECT | INCORRECT | NEUTRAL>>
+        <<RANK_DELTA: (integer, negative for improvement, positive for penalty)>>
+        
+        [Your Message Here in Markdown. Use LaTeX $...$ for math. Use **Bold** for emphasis. Structure with headers: Question, Options, Analysis.]
+        `;
+
         async function startSession() {
-            addLoadingIndicator();
+            addLoader();
             try {
                 const response = await callGemini("Initialize session. Demand a topic.");
                 processResponse(response);
-            } catch (error) {
-                removeLoadingIndicator();
-                addMessage('system', 'Connection Failure: ' + error.message);
+            } catch (e) {
+                removeLoader();
+                addMessage('system', "CONNECTION FAILED: " + e.message);
             }
         }
 
-        async function callGemini(userText) {
+        async function callGemini(text) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             
-            const contents = chatHistory.map(msg => ({
-                role: msg.role === 'model' ? 'model' : 'user',
-                parts: [{ text: msg.text }]
-            }));
-            
-            contents.push({ role: 'user', parts: [{ text: userText }] });
+            const contents = chatHistory.map(m => ({ role: m.role, parts: [{ text: m.text }] }));
+            contents.push({ role: 'user', parts: [{ text: text }] });
 
             const payload = {
                 contents: contents,
-                systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-                generationConfig: { responseMimeType: "application/json" }
+                systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }
             };
 
-            const response = await fetch(url, {
+            const req = await fetch(url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(payload)
             });
 
-            if (!response.ok) throw new Error('API Error');
-            const data = await response.json();
+            if (!req.ok) throw new Error('API Error');
+            const data = await req.json();
             return data.candidates[0].content.parts[0].text;
         }
 
-        function processResponse(jsonString) {
-            removeLoadingIndicator();
-            try {
-                // CLEAN UP: Remove code blocks if present
-                let cleanJson = jsonString.trim();
-                cleanJson = cleanJson.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '');
-                
-                const data = JSON.parse(cleanJson);
-                
-                if (data.verdict === 'CORRECT') {
-                    // Force delta to be negative for CORRECT answers (Improvement towards AIR 1)
-                    let delta = Math.abs(data.rank_delta) * -1;
-                    if (delta === 0) delta = -100; // Fallback
-                    
-                    updateRankDisplay(delta); 
-                    updateStreak(true);
-                } else if (data.verdict === 'INCORRECT') {
-                    // Force delta to be positive for INCORRECT answers (Worsening towards AIR 15L)
-                    let delta = Math.abs(data.rank_delta);
-                    if (delta === 0) delta = 5000; // Fallback
-
-                    updateRankDisplay(delta);
-                    updateStreak(false);
-                } else {
-                    updateRankDisplay(0);
-                }
-
-                addMessage('model', data.message);
-                chatHistory.push({ role: 'model', text: JSON.stringify(data) });
-
-            } catch (e) {
-                console.error("JSON Parse Error", e);
-                // Fallback: try to find valid JSON inside the string
-                try {
-                    const startIndex = jsonString.indexOf('{');
-                    const endIndex = jsonString.lastIndexOf('}');
-                    if(startIndex !== -1 && endIndex !== -1) {
-                         const clean = jsonString.substring(startIndex, endIndex + 1);
-                         const data = JSON.parse(clean);
-                         // Recurse manually with safe logic
-                         if (data.verdict === 'CORRECT') { 
-                            let delta = Math.abs(data.rank_delta) * -1;
-                            updateRankDisplay(delta); 
-                            updateStreak(true); 
-                         } else if (data.verdict === 'INCORRECT') { 
-                            let delta = Math.abs(data.rank_delta);
-                            updateRankDisplay(delta); 
-                            updateStreak(false); 
-                         } else { 
-                            updateRankDisplay(0); 
-                         }
-                         addMessage('model', data.message);
-                         chatHistory.push({ role: 'model', text: JSON.stringify(data) });
-                         return;
-                    }
-                } catch(e2) {
-                    // Ignore, fallback to raw
-                }
-                
-                // Absolute fallback
-                addMessage('model', jsonString);
-                chatHistory.push({ role: 'model', text: jsonString });
+        function processResponse(rawText) {
+            removeLoader();
+            
+            // Extract Metadata using Regex
+            const verdictMatch = rawText.match(/<<VERDICT:\s*(.*?)>>/);
+            const deltaMatch = rawText.match(/<<RANK_DELTA:\s*(.*?)>>/);
+            
+            const verdict = verdictMatch ? verdictMatch[1].trim() : 'NEUTRAL';
+            const delta = deltaMatch ? parseInt(deltaMatch[1]) : 0;
+            
+            // Clean message for display (Remove tags)
+            let cleanMessage = rawText.replace(/<<.*?>>/g, '').trim();
+            
+            // Logic
+            if (verdict === 'CORRECT') {
+                // Ensure delta is negative for improvement
+                let d = delta > 0 ? -delta : delta; 
+                if (d === 0) d = -500;
+                handleDelta(d);
+            } else if (verdict === 'INCORRECT') {
+                // Ensure delta is positive for penalty
+                let d = delta < 0 ? -delta : delta;
+                if (d === 0) d = 2000;
+                handleDelta(d);
             }
+            
+            addMessage('model', cleanMessage);
+            chatHistory.push({ role: 'model', text: rawText });
         }
 
-        async function handleInteraction(userText) {
-            addMessage('user', userText);
-            chatHistory.push({ role: 'user', text: userText });
+        async function handleInteraction(text) {
+            addMessage('user', text);
+            chatHistory.push({ role: 'user', text: text });
+            addLoader();
             
-            addLoadingIndicator();
             try {
-                const response = await callGemini(userText);
-                processResponse(response);
-            } catch (error) {
-                removeLoadingIndicator();
-                addMessage('system', error.message);
+                const res = await callGemini(text);
+                processResponse(res);
+            } catch (e) {
+                removeLoader();
+                addMessage('system', e.message);
             }
         }
 
         // --- UI HELPERS ---
+
         function addMessage(role, text) {
             const div = document.createElement('div');
-            // Enhanced message styling for readability
-            div.className = `p-5 rounded-lg mb-6 max-w-3xl text-[15px] md:text-base leading-relaxed prose prose-invert ${
-                role === 'model' ? 'hod-message mr-auto text-gray-200' : 
-                (role === 'system' ? 'bg-red-900/20 border border-red-500 text-red-400 text-center mx-auto w-full' : 'user-message text-blue-100')
+            const isModel = role === 'model';
+            div.className = `p-6 mb-4 max-w-3xl rounded-sm backdrop-blur-md relative ${
+                isModel ? 'hod-message mr-auto text-gray-100' : 
+                (role === 'system' ? 'bg-red-900/50 border border-red-500 text-center mx-auto' : 'user-message ml-auto text-[#00f3ff]')
             }`;
-            
+
             if (role === 'system') {
-                div.innerHTML = `<span class="font-bold font-mono">SYSTEM:</span> ${text}`;
+                div.innerText = text;
             } else {
-                const rawHtml = marked.parse(text);
-                div.innerHTML = rawHtml;
+                div.innerHTML = marked.parse(text);
                 renderMathInElement(div, {
                     delimiters: [
                         {left: '$$', right: '$$', display: true},
-                        {left: '$', right: '$', display: false},
-                        {left: '\\(', right: '\\)', display: false},
-                        {left: '\\[', right: '\\]', display: true}
+                        {left: '$', right: '$', display: false}
                     ],
                     throwOnError: false
                 });
@@ -530,56 +472,33 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
-        function addLoadingIndicator() {
+        function addLoader() {
             const div = document.createElement('div');
-            div.id = 'loading-indicator';
-            div.className = 'flex items-center space-x-2 p-4 text-red-500 font-mono text-xs';
-            div.innerHTML = `
-                <span class="animate-pulse">EVALUATING</span>
-                <div class="flex space-x-1">
-                    <span class="w-1.5 h-1.5 bg-red-500 rounded-full typing-dot"></span>
-                    <span class="w-1.5 h-1.5 bg-red-500 rounded-full typing-dot"></span>
-                    <span class="w-1.5 h-1.5 bg-red-500 rounded-full typing-dot"></span>
-                </div>
-            `;
+            div.id = 'loader';
+            div.className = 'flex items-center space-x-2 text-[#ff003c] p-4 animate-pulse font-mono text-sm';
+            div.innerHTML = `<span>HOD_PROCESSING</span><span class="text-xs">[///]</span>`;
             chatContainer.appendChild(div);
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
-        function removeLoadingIndicator() {
-            const loader = document.getElementById('loading-indicator');
-            if (loader) loader.remove();
+        function removeLoader() {
+            const el = document.getElementById('loader');
+            if (el) el.remove();
         }
 
-        // --- INPUT HANDLERS ---
+        // --- INPUTS ---
         function sendText() {
             const val = textInput.value.trim();
-            if (val) {
-                handleInteraction(val);
-                textInput.value = '';
-            }
+            if(val) { handleInteraction(val); textInput.value = ''; }
         }
         function sendOption(opt) { handleInteraction(`Option ${opt}`); }
         function sendNumeric() {
             const val = numInput.value.trim();
-            if (val) {
-                handleInteraction(val);
-                numInput.value = '';
-            }
+            if(val) { handleInteraction(val); numInput.value = ''; }
         }
         
-        textInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendText(); });
-        numInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendNumeric(); });
-
-        // Animation for typing dots
-        const style = document.createElement('style');
-        style.innerHTML = `
-            .typing-dot { animation: blink 1.4s infinite both; }
-            .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-            .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-            @keyframes blink { 0% { opacity: 0.2; } 20% { opacity: 1; } 100% { opacity: 0.2; } }
-        `;
-        document.head.appendChild(style);
+        textInput.addEventListener('keypress', e => { if(e.key === 'Enter') sendText(); });
+        numInput.addEventListener('keypress', e => { if(e.key === 'Enter') sendNumeric(); });
 
     </script>
 </body>
