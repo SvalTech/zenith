@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Application</title>
+    <title>HOD GATEKEEPER - JEE MAIN</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -62,6 +62,21 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #050505; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+        /* Loading Dots */
+        .dot-flashing {
+            position: relative; width: 6px; height: 6px; border-radius: 5px;
+            background-color: #ef4444; color: #ef4444; animation: dot-flashing 1s infinite linear alternate;
+            animation-delay: 0.5s;
+        }
+        .dot-flashing::before, .dot-flashing::after {
+            content: ""; display: inline-block; position: absolute; top: 0;
+            width: 6px; height: 6px; border-radius: 5px; background-color: #ef4444; color: #ef4444;
+            animation: dot-flashing 1s infinite alternate;
+        }
+        .dot-flashing::before { left: -10px; animation-delay: 0s; }
+        .dot-flashing::after { left: 10px; animation-delay: 1s; }
+        @keyframes dot-flashing { 0% { background-color: #ef4444; } 50%, 100% { background-color: #330000; } }
     </style>
 </head>
 <body class="flex flex-col h-screen">
@@ -132,32 +147,48 @@
         let chatHistory = []; 
 
         /* --- PROMPT --- */
+        // UPDATED: We use a custom separator structure instead of raw JSON to prevent errors.
         const SYSTEM_INSTRUCTION = `
-            You are the "Kota HOD" (Head of Department) for JEE Advanced Physics/Maths/Chemistry.
-            **Persona:** Cynical, brutal, elitist. You believe only the top 0.1% matter.
+            You are the "Kota HOD" (Head of Department) for JEE Main Physics/Maths/Chemistry.
+            **Persona:** Cynical, brutal, elitist. You believe only the top 0.1% matter. You roast students who give wrong answers or ask stupid questions.
             
-            **CRITICAL FORMATTING RULES:**
-            1. You MUST return ONLY a JSON object. No intro text, no markdown block wrapping.
-            2. **MATH LATEX SAFETY:** You MUST escape backslashes in JSON strings excessively. 
-               - BAD: "\\frac{1}{2}" (Will fail JSON parsing)
-               - GOOD: "\\\\frac{1}{2}" (Correct)
+            **INSTRUCTIONS:**
+            1. Respond naturally in Markdown to the user. Explain concepts if they ask, or roast them if they are wrong.
+            2. IF AND ONLY IF you want to update the rank or pose a new question, you must append a special hidden data block at the very end of your response.
+            3. Do NOT output raw JSON by itself. Always start with text commentary.
+            4. Keep mind of JEE Syllabus, if user claims something is out of syllabus, apologise and move on to next question.
+            5. Answer of numerical type should be integral (0-999)
             
-            **JSON STRUCTURE:**
+            **DATA BLOCK FORMAT:**
+            At the end of your response, wrap the game data in <DATA> tags.
+            
+            <DATA>
             {
-                "verdict": "CORRECT" | "INCORRECT" | "NEUTRAL",
-                "rank_delta": (integer),
-                "commentary": "(String) Markdown. Roast/Praise + Explanation.",
-                "quiz_data": { 
-                    "question_text": "(String) Markdown/LaTeX.",
-                    "type": "MCQ" | "NUMERICAL",
-                    "options": [ "A) ...", "B) ...", "C) ...", "D) ..." ]
-                }
+              "rank_delta": (integer, negative for good, positive for bad),
+              "quiz_data": { 
+                  "question_text": "Markdown/LaTeX Question string",
+                  "type": "MCQ" | "NUMERICAL",
+                  "options": ["A) ...", "B) ..."] (Optional for Numerical)
+              }
             }
+            </DATA>
 
-            **PROTOCOL:**
-            - **NUMERICAL QUESTIONS:** Answer MUST be INTEGER (0-999).
-            - Negative rank delta = improvement. Positive = penalty.
-            - If user states topic is out of syllabus, accept it and move on to next question with no remarks + Apologise heavily
+            **IMPORTANT LATEX RULE:**
+            Inside the <DATA> JSON block, you MUST double-escape backslashes. 
+            Example: Write "\\\\frac{1}{2}" instead of "\\frac{1}{2}".
+            In the main text commentary, normal LaTeX (single backslash) is fine.
+            
+            **EXAMPLE RESPONSE:**
+            You absolute buffoon. That formula is for kinematics, not dynamics.
+            <DATA>
+            {
+              "rank_delta": 500,
+              "quiz_data": {
+                "question_text": "Calculate the work done by a variable force $F=3x^2$ from $x=0$ to $x=2$.",
+                "type": "NUMERICAL"
+              }
+            }
+            </DATA>
         `;
 
         /* --- DOM ELEMENTS --- */
@@ -203,34 +234,52 @@
             }
         }
 
-        /* --- ROBUST JSON REPAIR & PARSE --- */
-        function parseBrokenJson(str) {
-            // 1. Strip Code Blocks
-            str = str.replace(/^```json/, '').replace(/^```/, '').replace(/```$/, '').trim();
-            
-            // 2. Find outermost brackets
-            const start = str.indexOf('{');
-            const end = str.lastIndexOf('}');
-            if(start === -1 || end === -1) throw new Error("No JSON object found");
-            let jsonStr = str.substring(start, end+1);
+        /* --- HYBRID PARSER --- */
+        function processHybridResponse(fullText) {
+            // 1. Separate Visible Text from Hidden Data
+            const dataRegex = /<DATA>([\s\S]*?)<\/DATA>/;
+            const match = fullText.match(dataRegex);
 
-            // 3. Attempt Repair: Fix unescaped backslashes in math
-            jsonStr = jsonStr.replace(/\\(?!["\\/bfnrtu])/g, "\\\\");
+            let visibleText = fullText;
+            let hiddenData = null;
 
-            try {
-                return JSON.parse(jsonStr);
-            } catch (e) {
-                console.error("Failed to parse even after repair:", jsonStr);
-                throw e;
+            if (match) {
+                visibleText = fullText.replace(match[0], '').trim();
+                const jsonString = match[1];
+                try {
+                    // Attempt to clean basic JSON issues before parsing
+                    // This regex attempts to double escape backslashes that look like LaTeX commands inside quotes
+                    // It's a heuristic, not perfect, but helps with model errors.
+                    const cleanedJson = jsonString.replace(/\\(?![/u"bfnrt\\])/g, "\\\\");
+                    hiddenData = JSON.parse(cleanedJson);
+                } catch (e) {
+                    console.error("Data Parse Failed:", e);
+                    // We simply don't process the data update, but we DO show the text.
+                    // This prevents the "Raw JSON in chat" error.
+                }
             }
+
+            // 2. Render Text
+            if (visibleText) {
+                addMessage('model', visibleText);
+            }
+
+            // 3. Process Data (if valid)
+            if (hiddenData) {
+                if (hiddenData.rank_delta) updateRankDisplay(hiddenData.rank_delta);
+                if (hiddenData.quiz_data) addQuestionCard(hiddenData.quiz_data);
+            }
+
+            // 4. Save to history (we save the full raw text so the model has context of its own data)
+            chatHistory.push({ role: 'model', text: fullText });
         }
 
-        /* --- API INTERACTION WITH BACKOFF --- */
+        /* --- API INTERACTION --- */
         async function startSession() {
             addLoadingIndicator();
             try {
-                const response = await callGemini("Initialize session. Demand a topic.");
-                processResponse(response);
+                const response = await callGemini("Initialize session. Give me a hard question immediately.");
+                processHybridResponse(response);
             } catch (error) {
                 removeLoadingIndicator();
                 addSystemMessage('Connection Failure: ' + error.message);
@@ -239,6 +288,7 @@
 
         async function callGemini(userText) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            
             const contents = chatHistory.map(msg => ({
                 role: msg.role === 'model' ? 'model' : 'user',
                 parts: [{ text: msg.text }]
@@ -247,14 +297,13 @@
 
             const payload = {
                 contents: contents,
-                systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-                generationConfig: { responseMimeType: "application/json" }
+                systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] }
+                // Note: removed responseMimeType: "application/json" to allow free text
             };
 
-            // EXPONENTIAL BACKOFF LOGIC
             let attempts = 0;
-            const maxAttempts = 5;
-            let delay = 2000; // Start with 2 seconds
+            const maxAttempts = 3;
+            let delay = 2000;
 
             while (attempts < maxAttempts) {
                 try {
@@ -264,60 +313,25 @@
                         body: JSON.stringify(payload)
                     });
 
-                    // Handle Rate Limit specifically
                     if (response.status === 429) {
                         attempts++;
-                        const loader = document.getElementById('loading-indicator');
-                        if (loader) {
-                            loader.innerHTML = `<span class="text-yellow-500 font-bold animate-pulse">RATE LIMITED... COOLING DOWN (${attempts}/${maxAttempts})</span>`;
-                        }
-                        if (attempts >= maxAttempts) throw new Error("Server overloaded. Please try again later.");
-                        
                         await new Promise(r => setTimeout(r, delay));
-                        delay *= 2; // Double the wait time
+                        delay *= 2;
                         continue;
                     }
 
                     if (!response.ok) throw new Error(`API Error: ${response.status}`);
                     
                     const data = await response.json();
+                    if (!data.candidates || !data.candidates[0].content) throw new Error("Empty response from AI");
+                    
                     return data.candidates[0].content.parts[0].text;
 
                 } catch (error) {
                     if (attempts >= maxAttempts - 1) throw error;
-                    // Retrying fetch errors (network blips)
                     attempts++;
                     await new Promise(r => setTimeout(r, delay));
-                    delay *= 2; 
                 }
-            }
-        }
-
-        function processResponse(jsonString) {
-            removeLoadingIndicator();
-            try {
-                const data = parseBrokenJson(jsonString);
-
-                // Update Game State
-                if (data.verdict === 'CORRECT') updateRankDisplay(data.rank_delta < 0 ? data.rank_delta : -500);
-                else if (data.verdict === 'INCORRECT') updateRankDisplay(data.rank_delta > 0 ? data.rank_delta : 1000);
-
-                // Render HOD Commentary
-                addMessage('model', data.commentary);
-
-                // Render Question Card
-                if (data.quiz_data) {
-                    addQuestionCard(data.quiz_data);
-                }
-
-                // Save clean JSON to history context
-                chatHistory.push({ role: 'model', text: JSON.stringify(data) });
-
-            } catch (e) {
-                console.error("Parsing Error", e);
-                // Fallback: If JSON fails, render text raw so user isn't stuck
-                addMessage('model', jsonString);
-                chatHistory.push({ role: 'model', text: jsonString });
             }
         }
 
@@ -325,9 +339,10 @@
             addMessage('user', userText);
             chatHistory.push({ role: 'user', text: userText });
             addLoadingIndicator();
+            
             try {
                 const response = await callGemini(userText);
-                processResponse(response);
+                processHybridResponse(response);
             } catch (error) {
                 removeLoadingIndicator();
                 addSystemMessage(error.message);
@@ -337,8 +352,10 @@
         /* --- RENDERING --- */
         function renderMarkdown(element, text) {
             if(!text) return;
+            // Parse Markdown
             element.innerHTML = marked.parse(text);
             
+            // Parse Math (KaTeX)
             renderMathInElement(element, {
                 delimiters: [
                     {left: '$$', right: '$$', display: true},
@@ -353,6 +370,9 @@
         }
 
         function addMessage(role, text) {
+            // Remove loading indicator if it exists
+            removeLoadingIndicator();
+            
             const div = document.createElement('div');
             div.className = `p-4 rounded-lg mb-4 max-w-3xl text-sm md:text-base leading-relaxed animate-in fade-in slide-in-from-bottom-2 duration-300 ${
                 role === 'model' ? 'hod-message mr-auto text-gray-200 shadow-md' : 'user-message text-blue-100 shadow-sm'
@@ -388,7 +408,6 @@
                     btn.className = 'option-btn w-full p-3 rounded-lg flex items-center group';
                     const letter = String.fromCharCode(65 + idx);
                     
-                    // Create content spans
                     const keySpan = document.createElement('span');
                     keySpan.className = 'option-key group-hover:bg-blue-600 group-hover:text-white transition-colors';
                     keySpan.innerText = letter;
@@ -398,11 +417,9 @@
                     // Render markdown/math inside button
                     renderMarkdown(textSpan, opt);
                     
-                    // Fix: Marked wraps inline text in <p>, which breaks layout inside button. Unwrap it.
+                    // Cleanup P tags inside buttons
                     const p = textSpan.querySelector('p');
-                    if(p) {
-                         textSpan.innerHTML = p.innerHTML;
-                    }
+                    if(p) textSpan.innerHTML = p.innerHTML;
 
                     btn.appendChild(keySpan);
                     btn.appendChild(textSpan);
@@ -412,7 +429,7 @@
                         allBtns.forEach(b => b.disabled = true);
                         btn.style.borderColor = '#3b82f6';
                         btn.style.backgroundColor = '#1e3a8a';
-                        handleInteraction(`Option ${letter}`);
+                        handleInteraction(`I choose Option ${letter}`);
                     };
                     grid.appendChild(btn);
                 });
@@ -421,7 +438,7 @@
                 // Numerical Input
                 actionsDiv.innerHTML = `
                     <div class="flex-1 text-gray-500 italic text-sm flex items-center justify-center border border-dashed border-gray-700 rounded p-4 bg-[#0a0a0a]">
-                        Type your integer answer (0-999) in the chat box below...
+                        Type your numerical answer in the chat box below...
                     </div>
                 `;
             }
@@ -440,10 +457,13 @@
         }
 
         function addLoadingIndicator() {
+            // Check if already exists
+            if(document.getElementById('loading-indicator')) return;
+            
             const div = document.createElement('div');
             div.id = 'loading-indicator';
-            div.className = 'flex items-center space-x-2 p-4 text-red-500 font-mono text-xs';
-            div.innerHTML = `<span>EVALUATING</span><span class="animate-pulse">...</span>`;
+            div.className = 'flex items-center space-x-2 p-4 text-red-500 font-mono text-xs ml-2';
+            div.innerHTML = `<span>EVALUATING</span><div class="dot-flashing ml-3"></div>`;
             chatContainer.appendChild(div);
             scrollToBottom();
         }
@@ -461,8 +481,8 @@
         function sendText() {
             const val = textInput.value.trim();
             if (val) {
-                handleInteraction(val);
                 textInput.value = '';
+                handleInteraction(val);
             }
         }
         textInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendText(); });
