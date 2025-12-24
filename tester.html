@@ -48,6 +48,7 @@
             display: flex; align-items: stretch; /* Ensure full height alignment */
             min-height: 56px;
         }
+        .option-btn p { margin: 0; } /* FIX: Reset margins for markdown paragraphs inside buttons */
         .option-btn:hover:not(:disabled) { background-color: #1e293b; border-color: #3b82f6; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); }
         .option-btn:disabled { opacity: 0.6; cursor: not-allowed; filter: grayscale(0.8); transform: none; box-shadow: none; }
         
@@ -147,8 +148,20 @@
     <script>
         /* --- STATE --- */
         let currentRank = 150000;
-        let apiKey = localStorage.getItem('gemini_api_key') || '';
+        let apiKey = '';
         let chatHistory = []; 
+
+        /* --- SAFE LOAD --- */
+        try {
+            apiKey = localStorage.getItem('gemini_api_key') || '';
+            const storedRank = localStorage.getItem('hod_rank');
+            if (storedRank) {
+                const parsed = parseInt(storedRank);
+                if (!isNaN(parsed)) currentRank = parsed;
+            }
+        } catch(e) {
+            console.warn('Local Storage access denied or failed:', e);
+        }
 
         /* --- PROMPT --- */
         const SYSTEM_INSTRUCTION = `
@@ -162,17 +175,18 @@
             4. Keep mind of JEE Syllabus, if user claims something is out of syllabus, apologise and move on to next question.
             5. Answer of numerical type should be integral (0-999)
             6. ALTERNATE BETWEEN MCQ AND NUMERICAL (IMPORTANT)
+            7. **RANK SWINGS MUST BE SIGNIFICANT:** Correct answers decrease rank by 2,000 to 10,000. Wrong answers increase rank by 5,000 to 20,000. Be ruthless.
             
             **DATA BLOCK FORMAT:**
             At the end of your response, wrap the game data in <DATA> tags.
             
             <DATA>
             {
-              "rank_delta": (integer, negative for good, positive for bad),
+              "rank_delta": (integer, e.g. -5000 for good, +15000 for bad),
               "quiz_data": { 
                   "question_text": "Markdown/LaTeX Question string",
                   "type": "MCQ" | "NUMERICAL",
-                  "options": ["Content of A", "Content of B", "Content of C", "Content of D"] (REQUIRED for MCQ. Do NOT include 'A)' prefix.)
+                  "options": ["Content of A (Wrap Math in $)", "Content of B", "Content of C", "Content of D"] (REQUIRED for MCQ. Do NOT include 'A)' prefix.)
               }
             }
             </DATA>
@@ -183,10 +197,10 @@
             In the main text commentary, normal LaTeX (single backslash) is fine.
             
             **EXAMPLE RESPONSE:**
-            You absolute buffoon. That formula is for kinematics, not dynamics.
+            You absolute buffoon. That formula is for kinematics, not dynamics. You dropped 15,000 ranks instantly.
             <DATA>
             {
-              "rank_delta": 500,
+              "rank_delta": 15000,
               "quiz_data": {
                 "question_text": "Calculate the work done by a variable force $F=3x^2$ from $x=0$ to $x=2$.",
                 "type": "NUMERICAL"
@@ -213,7 +227,9 @@
         document.getElementById('close-settings').addEventListener('click', () => settingsModal.classList.add('hidden'));
         document.getElementById('save-settings').addEventListener('click', () => {
             apiKey = apiKeyInput.value.trim();
-            localStorage.setItem('gemini_api_key', apiKey);
+            try {
+                localStorage.setItem('gemini_api_key', apiKey);
+            } catch(e) {}
             settingsModal.classList.add('hidden');
             if(apiKey) alert('System Connected.');
         });
@@ -231,6 +247,13 @@
             currentRank += numericDelta;
             if (currentRank < 1) currentRank = 1;
             if (currentRank > 1500000) currentRank = 1500000;
+            
+            // Persist
+            try {
+                localStorage.setItem('hod_rank', currentRank);
+            } catch(e) {}
+            
+            // Update UI
             rankDisplay.innerText = currentRank.toLocaleString();
 
             if (numericDelta !== 0) {
@@ -241,7 +264,7 @@
                 rankDelta.classList.remove('opacity-0', 'opacity-100', 'text-green-500', 'text-red-500');
                 void rankDelta.offsetWidth; // Trigger reflow
 
-                rankDelta.innerText = isGood ? `▲ ${absDelta}` : `▼ ${absDelta}`;
+                rankDelta.innerText = isGood ? `▲ ${absDelta.toLocaleString()}` : `▼ ${absDelta.toLocaleString()}`;
                 rankDelta.className = `text-xs font-bold font-mono transition-opacity duration-1000 ${isGood ? 'text-green-500' : 'text-red-500'} opacity-100`;
                 
                 // Clear previous timeout if exists
@@ -276,16 +299,30 @@
                 addMessage('model', visibleText);
             }
 
-            // 3. Process Data (if valid)
+            // 3. Process Data (if valid) or Fallback
+            let deltaUpdated = false;
+            
             if (hiddenData) {
-                // Explicitly check for undefined/null because delta can be 0 (though unlikely to trigger update then)
+                // Explicitly check for undefined/null because delta can be 0
                 if (hiddenData.rank_delta !== undefined && hiddenData.rank_delta !== null) {
                     updateRankDisplay(hiddenData.rank_delta);
+                    deltaUpdated = true;
                 }
                 if (hiddenData.quiz_data) addQuestionCard(hiddenData.quiz_data);
             }
+            
+            // 4. Fallback: If JSON parsing failed OR rank_delta was missing/0 in JSON but potentially present in text
+            if (!deltaUpdated) {
+                // Heuristic: Look for the specific pattern in the raw response text
+                // This covers cases where JSON was malformed but the key:value pair exists
+                const fallbackMatch = fullText.match(/"rank_delta"\s*:\s*(-?\d+)/);
+                if (fallbackMatch) {
+                    console.log("Using fallback rank update");
+                    updateRankDisplay(parseInt(fallbackMatch[1]));
+                }
+            }
 
-            // 4. Save to history (we save the full raw text so the model has context of its own data)
+            // 5. Save to history
             chatHistory.push({ role: 'model', text: fullText });
         }
 
@@ -293,8 +330,9 @@
         async function startSession() {
             addLoadingIndicator();
             try {
-                // We send this initial prompt, but we handle history carefully in callGemini
-                const response = await callGemini("Initialize session. Give me a hard question immediately.");
+                // Inject current rank into the initial prompt so the persona knows
+                const prompt = `Initialize session. Current Student Rank: ${currentRank}. Give me a hard question immediately.`;
+                const response = await callGemini(prompt);
                 processHybridResponse(response);
             } catch (error) {
                 removeLoadingIndicator();
@@ -312,9 +350,6 @@
             }));
 
             // FIX: Only append userText if it is NOT already the last message in chatHistory
-            // This handles two cases:
-            // 1. startSession (history is empty, we must send "Initialize...") -> Appends
-            // 2. handleInteraction (history already has "4", userText is "4") -> Skips append (prevents "44" bug)
             const lastMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1] : null;
             if (userText && (!lastMsg || lastMsg.text !== userText)) {
                 contents.push({ role: 'user', parts: [{ text: userText }] });
@@ -449,9 +484,8 @@
                     const cleanOpt = opt.replace(/^[A-D][).]\s*/i, '');
                     renderMarkdown(textSpan, cleanOpt);
                     
-                    // Cleanup P tags inside buttons
-                    const p = textSpan.querySelector('p');
-                    if(p) textSpan.innerHTML = p.innerHTML;
+                    // REMOVED: The manual <p> tag cleanup which was breaking complex math/HTML structures.
+                    // The CSS rule .option-btn p { margin: 0; } handles the layout now.
 
                     btn.appendChild(keySpan);
                     btn.appendChild(textSpan);
