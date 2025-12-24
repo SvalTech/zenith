@@ -45,15 +45,19 @@
         .option-btn {
             text-align: left; transition: all 0.2s; position: relative; overflow: hidden;
             border: 1px solid #374151; background: #1a2336;
+            display: flex; align-items: stretch; /* Ensure full height alignment */
+            min-height: 56px;
         }
-        .option-btn:hover:not(:disabled) { background-color: #1e293b; border-color: #3b82f6; transform: translateX(4px); }
-        .option-btn:disabled { opacity: 0.6; cursor: not-allowed; filter: grayscale(0.8); }
+        .option-btn:hover:not(:disabled) { background-color: #1e293b; border-color: #3b82f6; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); }
+        .option-btn:disabled { opacity: 0.6; cursor: not-allowed; filter: grayscale(0.8); transform: none; box-shadow: none; }
         
         .option-key {
-            font-family: 'JetBrains Mono', monospace; background: rgba(255,255,255,0.05);
-            width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;
-            border-radius: 4px; margin-right: 12px; font-size: 12px; font-weight: bold; flex-shrink: 0;
+            font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.3);
+            width: 48px; display: flex; align-items: center; justify-content: center;
+            border-right: 1px solid #374151; font-size: 16px; font-weight: bold; flex-shrink: 0;
+            color: #9ca3af; transition: all 0.2s;
         }
+        .option-btn:hover:not(:disabled) .option-key { color: white; background: rgba(59, 130, 246, 0.2); border-color: #3b82f6; }
 
         /* Markdown & Math Tweaks */
         .prose p { margin-bottom: 0.5rem; }
@@ -168,7 +172,7 @@
               "quiz_data": { 
                   "question_text": "Markdown/LaTeX Question string",
                   "type": "MCQ" | "NUMERICAL",
-                  "options": ["A) ...", "B) ..."] (Optional for Numerical)
+                  "options": ["Content of A", "Content of B", "Content of C", "Content of D"] (REQUIRED for MCQ. Do NOT include 'A)' prefix.)
               }
             }
             </DATA>
@@ -221,16 +225,28 @@
 
         /* --- LOGIC --- */
         function updateRankDisplay(delta) {
-            currentRank += delta;
+            const numericDelta = parseInt(delta);
+            if (isNaN(numericDelta)) return;
+
+            currentRank += numericDelta;
             if (currentRank < 1) currentRank = 1;
             if (currentRank > 1500000) currentRank = 1500000;
             rankDisplay.innerText = currentRank.toLocaleString();
 
-            if (delta !== 0) {
-                const isGood = delta < 0;
-                rankDelta.innerText = delta > 0 ? `▼ +${delta}` : `▲ ${delta}`;
+            if (numericDelta !== 0) {
+                const isGood = numericDelta < 0; // Lower rank is better
+                const absDelta = Math.abs(numericDelta);
+                
+                // Reset animation
+                rankDelta.classList.remove('opacity-0', 'opacity-100', 'text-green-500', 'text-red-500');
+                void rankDelta.offsetWidth; // Trigger reflow
+
+                rankDelta.innerText = isGood ? `▲ ${absDelta}` : `▼ ${absDelta}`;
                 rankDelta.className = `text-xs font-bold font-mono transition-opacity duration-1000 ${isGood ? 'text-green-500' : 'text-red-500'} opacity-100`;
-                setTimeout(() => rankDelta.classList.replace('opacity-100', 'opacity-0'), 2000);
+                
+                // Clear previous timeout if exists
+                if (window.rankTimeout) clearTimeout(window.rankTimeout);
+                window.rankTimeout = setTimeout(() => rankDelta.classList.add('opacity-0'), 2000);
             }
         }
 
@@ -262,7 +278,10 @@
 
             // 3. Process Data (if valid)
             if (hiddenData) {
-                if (hiddenData.rank_delta) updateRankDisplay(hiddenData.rank_delta);
+                // Explicitly check for undefined/null because delta can be 0 (though unlikely to trigger update then)
+                if (hiddenData.rank_delta !== undefined && hiddenData.rank_delta !== null) {
+                    updateRankDisplay(hiddenData.rank_delta);
+                }
                 if (hiddenData.quiz_data) addQuestionCard(hiddenData.quiz_data);
             }
 
@@ -405,23 +424,30 @@
             const actionsDiv = document.createElement('div');
             actionsDiv.className = 'p-4 bg-[#0f172a]';
 
-            if (quizData.type === 'MCQ' && quizData.options && Array.isArray(quizData.options)) {
+            if (quizData.type === 'MCQ') {
                 const grid = document.createElement('div');
-                grid.className = 'grid grid-cols-1 gap-2';
+                grid.className = 'grid grid-cols-1 md:grid-cols-2 gap-3';
                 
-                quizData.options.forEach((opt, idx) => {
+                // Fallback options in case the API forgets to send them
+                const optionsToRender = (quizData.options && Array.isArray(quizData.options) && quizData.options.length > 0) 
+                    ? quizData.options 
+                    : ["Option A", "Option B", "Option C", "Option D"];
+
+                optionsToRender.forEach((opt, idx) => {
                     const btn = document.createElement('button');
-                    btn.className = 'option-btn w-full p-3 rounded-lg flex items-center group';
+                    btn.className = 'option-btn w-full rounded-lg group'; 
                     const letter = String.fromCharCode(65 + idx);
                     
                     const keySpan = document.createElement('span');
-                    keySpan.className = 'option-key group-hover:bg-blue-600 group-hover:text-white transition-colors';
+                    keySpan.className = 'option-key';
                     keySpan.innerText = letter;
 
                     const textSpan = document.createElement('span');
-                    textSpan.className = 'flex-1';
-                    // Render markdown/math inside button
-                    renderMarkdown(textSpan, opt);
+                    textSpan.className = 'flex-1 p-3 text-sm md:text-base flex items-center';
+                    
+                    // Regex to clean "A) ", "A. " if model includes them
+                    const cleanOpt = opt.replace(/^[A-D][).]\s*/i, '');
+                    renderMarkdown(textSpan, cleanOpt);
                     
                     // Cleanup P tags inside buttons
                     const p = textSpan.querySelector('p');
@@ -432,9 +458,18 @@
                     
                     btn.onclick = function() {
                         const allBtns = grid.querySelectorAll('button');
-                        allBtns.forEach(b => b.disabled = true);
+                        allBtns.forEach(b => {
+                            b.disabled = true;
+                            b.style.opacity = '0.5';
+                        });
+                        btn.style.opacity = '1';
                         btn.style.borderColor = '#3b82f6';
                         btn.style.backgroundColor = '#1e3a8a';
+                        
+                        // Visual selection highlight
+                        keySpan.style.background = '#3b82f6';
+                        keySpan.style.color = 'white';
+
                         handleInteraction(`I choose Option ${letter}`);
                     };
                     grid.appendChild(btn);
