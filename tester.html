@@ -147,7 +147,6 @@
         let chatHistory = []; 
 
         /* --- PROMPT --- */
-        // UPDATED: We use a custom separator structure instead of raw JSON to prevent errors.
         const SYSTEM_INSTRUCTION = `
             You are the "Kota HOD" (Head of Department) for JEE Main Physics/Maths/Chemistry.
             **Persona:** Cynical, brutal, elitist. You believe only the top 0.1% matter. You roast students who give wrong answers or ask stupid questions.
@@ -158,6 +157,7 @@
             3. Do NOT output raw JSON by itself. Always start with text commentary.
             4. Keep mind of JEE Syllabus, if user claims something is out of syllabus, apologise and move on to next question.
             5. Answer of numerical type should be integral (0-999)
+            6. ALTERNATE BETWEEN MCQ AND NUMERICAL (IMPORTANT)
             
             **DATA BLOCK FORMAT:**
             At the end of your response, wrap the game data in <DATA> tags.
@@ -248,14 +248,10 @@
                 const jsonString = match[1];
                 try {
                     // Attempt to clean basic JSON issues before parsing
-                    // This regex attempts to double escape backslashes that look like LaTeX commands inside quotes
-                    // It's a heuristic, not perfect, but helps with model errors.
                     const cleanedJson = jsonString.replace(/\\(?![/u"bfnrt\\])/g, "\\\\");
                     hiddenData = JSON.parse(cleanedJson);
                 } catch (e) {
                     console.error("Data Parse Failed:", e);
-                    // We simply don't process the data update, but we DO show the text.
-                    // This prevents the "Raw JSON in chat" error.
                 }
             }
 
@@ -278,6 +274,7 @@
         async function startSession() {
             addLoadingIndicator();
             try {
+                // We send this initial prompt, but we handle history carefully in callGemini
                 const response = await callGemini("Initialize session. Give me a hard question immediately.");
                 processHybridResponse(response);
             } catch (error) {
@@ -289,16 +286,24 @@
         async function callGemini(userText) {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             
+            // Build contents from history
             const contents = chatHistory.map(msg => ({
                 role: msg.role === 'model' ? 'model' : 'user',
                 parts: [{ text: msg.text }]
             }));
-            contents.push({ role: 'user', parts: [{ text: userText }] });
+
+            // FIX: Only append userText if it is NOT already the last message in chatHistory
+            // This handles two cases:
+            // 1. startSession (history is empty, we must send "Initialize...") -> Appends
+            // 2. handleInteraction (history already has "4", userText is "4") -> Skips append (prevents "44" bug)
+            const lastMsg = chatHistory.length > 0 ? chatHistory[chatHistory.length - 1] : null;
+            if (userText && (!lastMsg || lastMsg.text !== userText)) {
+                contents.push({ role: 'user', parts: [{ text: userText }] });
+            }
 
             const payload = {
                 contents: contents,
                 systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] }
-                // Note: removed responseMimeType: "application/json" to allow free text
             };
 
             let attempts = 0;
@@ -337,10 +342,12 @@
 
         async function handleInteraction(userText) {
             addMessage('user', userText);
+            // We add to history immediately for UI/State consistency
             chatHistory.push({ role: 'user', text: userText });
             addLoadingIndicator();
             
             try {
+                // Pass userText, but callGemini will smartly decide whether to append it to payload
                 const response = await callGemini(userText);
                 processHybridResponse(response);
             } catch (error) {
@@ -370,7 +377,6 @@
         }
 
         function addMessage(role, text) {
-            // Remove loading indicator if it exists
             removeLoadingIndicator();
             
             const div = document.createElement('div');
@@ -457,7 +463,6 @@
         }
 
         function addLoadingIndicator() {
-            // Check if already exists
             if(document.getElementById('loading-indicator')) return;
             
             const div = document.createElement('div');
