@@ -679,7 +679,7 @@
 
     <!-- Add Task Modal (Bottom Sheet on Mobile, Centered on Desktop) -->
     <div id="add-task-modal" class="fixed inset-0 z-[100] flex items-end md:items-center justify-center modal-backdrop hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-white dark:bg-slate-900 w-full md:w-[450px] md:rounded-[2rem] mobile-sheet md:transform md:scale-95 transition-transform duration-300 shadow-2xl h-[75vh] md:h-auto md:max-h-[85vh] border-t md:border border-slate-200 dark:border-slate-800 flex flex-col relative">
+        <div class="bg-white dark:bg-slate-900 w-full md:w-[450px] md:rounded-[2rem] mobile-sheet md:transform md:scale-95 transition-transform duration-300 shadow-2xl h-[75vh] md:h-[80vh] border-t md:border border-slate-200 dark:border-slate-800 flex flex-col relative">
             <div class="md:hidden pt-3 pb-1" id="add-task-drag-handle">
                 <div class="drag-handle"></div>
             </div>
@@ -735,12 +735,12 @@
             <div class="md:hidden pt-3 pb-1" id="day-view-drag-handle">
                 <div class="drag-handle"></div>
             </div>
-            <div class="p-6 md:p-8 flex flex-col h-full">
+            <div class="p-6 md:p-8 flex flex-col h-full overflow-hidden">
                 <div class="flex justify-between items-start mb-6">
                     <div><h2 id="day-view-date" class="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">--</h2><p class="text-sm text-slate-500 font-medium">Your daily focus</p></div>
                     <button onclick="closeDayView()" class="p-2 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-400 hover:text-rose-500 transition-colors"><i data-lucide="x" class="w-6 h-6"></i></button>
                 </div>
-                <div id="day-view-tasks" class="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-10 min-h-0 touch-pan-y"></div>
+                <div id="day-view-tasks" class="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1 min-h-0 touch-pan-y"></div>
                 <button onclick="addTaskFromDayView()" class="w-full py-4 mt-4 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-bold rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform border border-indigo-100 dark:border-indigo-900/50">
                     <i data-lucide="plus" class="w-5 h-5"></i> Add Task for this Day
                 </button>
