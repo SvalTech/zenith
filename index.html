@@ -87,17 +87,20 @@
             border: 1px solid rgba(255, 255, 255, 0.5);
         }
         .dark .glass {
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            /* Lighter background for nav/sheets */
+            background: rgba(15, 23, 42, 0.8); /* Slate-900 at 80% opacity */
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08); /* Subtle white border */
         }
-        
-        .glass-card {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+
+        .dark .glass-card {
+            /* Lighter than body (slate-950) to appear elevated */
+            background: rgba(30, 41, 59, 0.4); /* Slate-800 at 40% opacity */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08); /* Crisp, thin border */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5); /* Heavier shadow for depth */
         }
         .dark .glass-card {
             background: rgba(30, 41, 59, 0.7);
@@ -286,29 +289,304 @@
 
   gtag('config', 'G-TCK0S6VC58');
 </script>
-<body class="h-screen flex flex-col md:flex-row overflow-hidden text-slate-800 bg-slate-50 dark:bg-slate-900 dark:text-slate-100 transition-colors duration-500 selection:bg-indigo-500 selection:text-white">
+<body class="h-screen flex flex-col md:flex-row overflow-hidden text-slate-800 bg-slate-50 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-500 selection:bg-indigo-500 selection:text-white">
 
     <!-- Dynamic Background -->
     <div id="app-background"></div>
 
     <!-- Login Screen -->
-    <div id="login-screen" class="fixed inset-0 z-[70] bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-6 hidden">
-        <div class="max-w-md w-full fade-in bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-2xl border border-slate-200 dark:border-slate-700 relative overflow-hidden">
-             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
-             <div class="text-center mb-8 mt-2">
-                <div class="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">🎯</div>
-                <h1 class="text-4xl font-black text-slate-900 dark:text-white tracking-tighter mb-2 flex flex-col items-center">
-                    Zenith 
-                    <span class="text-sm font-medium text-slate-400 dark:text-slate-500 mt-1">by <a href="https://sval.tech" target="_blank" class="hover:text-indigo-500 underline decoration-indigo-500/30">sval.tech</a></span>
-                </h1>
-                <p class="text-slate-500 dark:text-slate-400 mb-6">Your workspace for success.</p>
+    <div id="login-screen" class="fixed inset-0 z-[70] bg-slate-50 dark:bg-slate-900 overflow-y-auto overflow-x-hidden custom-scrollbar transition-opacity duration-300 hidden">
+        
+        <div class="fixed inset-0 overflow-hidden pointer-events-none">
+            <!-- <div class="absolute top-0 left-0 w-full h-[800px] bg-gradient-to-b from-indigo-50/80 via-purple-50/40 to-transparent dark:from-indigo-950/40 dark:via-slate-900 dark:to-transparent"></div> -->
+            <div class="absolute -top-[10%] -right-[10%] w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[80px] animate-pulse-slow"></div>
+            <div class="absolute top-[10%] -left-[10%] w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[80px] animate-float"></div>
+        </div>
+
+        <nav class="sticky top-0 z-50 glass border-b border-slate-200/50 dark:border-slate-800/50 px-6 py-3 backdrop-blur-xl">
+            <div class="max-w-7xl mx-auto flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center text-white text-lg shadow-lg shadow-indigo-500/20">🎯</div>
+                    <span class="text-xl font-black text-slate-900 dark:text-white tracking-tight">Zenith</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button onclick="signInWithGoogle()" class="px-5 py-2 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold hover:scale-105 active:scale-95 transition-all shadow-xl shadow-slate-200 dark:shadow-none">
+                        Sign In
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <header class="max-w-7xl mx-auto px-6 pt-6 pb-20 md:pt-12 md:pb-32 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center relative">
+            
+            <div class="space-y-6 relative z-10 animate-slide-up text-center lg:text-left mt-4 lg:mt-0">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-sm backdrop-blur-md">
+                    <span class="relative flex h-2 w-2">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                    </span>
+                    <span class="text-[10px] uppercase font-bold text-slate-600 dark:text-slate-300 tracking-wide">For All Aspirants</span>
+                </div>
                 
-                <button onclick="signInWithGoogle()" class="w-full flex items-center justify-center gap-3 bg-slate-900 dark:bg-white hover:opacity-90 text-white dark:text-slate-900 font-bold py-4 px-4 rounded-2xl transition-all shadow-xl shadow-slate-200 dark:shadow-none transform active:scale-95 group">
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5" alt="Google">
-                    <span>Start Your Journey</span>
+                <h1 class="text-5xl md:text-7xl font-black text-slate-900 dark:text-white tracking-tighter leading-[1.1]">
+                    Master your <br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600">Daily Chaos.</span>
+                </h1>
+                
+                <p class="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium">
+                    The all-in-one workspace designed for high-performance aspirants. Track your syllabus, analyze mock scores, and <strong>win every single day.</strong>
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-2">
+                    <button onclick="signInWithGoogle()" class="px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg shadow-lg shadow-indigo-600/20 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 group">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5 bg-white rounded-full p-0.5" alt="Google">
+                        <span>Get Started Free</span>
+                        <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="relative lg:h-[600px] flex items-center justify-center perspective-1000 hidden md:flex">
+                <div class="absolute inset-0 bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 blur-[60px] rounded-full transform rotate-12 pointer-events-none"></div>
+                
+                <div class="relative w-full max-w-[500px] aspect-square bg-white dark:bg-slate-950 rounded-[2rem] border-[6px] border-white/50 dark:border-slate-800 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 overflow-hidden transform rotate-y-[-6deg] rotate-x-[4deg] hover:rotate-y-0 hover:rotate-x-0 transition-transform duration-700 ease-out group">
+                    
+                    <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-white/20 to-transparent pointer-events-none z-20"></div>
+
+                    <div class="h-8 bg-slate-50 dark:bg-slate-900/50 flex items-center px-4 border-b border-slate-100 dark:border-slate-800">
+                        <div class="flex gap-1.5">
+                            <div class="w-2.5 h-2.5 rounded-full bg-rose-400"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-green-400"></div>
+                        </div>
+                    </div>
+
+                    <div class="flex h-full bg-slate-50/50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans p-3 gap-3">
+                        <div class="w-14 flex flex-col items-center py-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 gap-4 shadow-sm">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-sm">🎯</div>
+                            <div class="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400 flex items-center justify-center hover:bg-indigo-50 hover:text-indigo-600 transition-colors"><i data-lucide="calendar" class="w-4 h-4"></i></div>
+                            <div class="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400 flex items-center justify-center hover:bg-indigo-50 hover:text-indigo-600 transition-colors"><i data-lucide="bar-chart-2" class="w-4 h-4"></i></div>
+                            <div class="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-400 flex items-center justify-center hover:bg-indigo-50 hover:text-indigo-600 transition-colors"><i data-lucide="timer" class="w-4 h-4"></i></div>
+                        </div>
+                        
+                        <div class="flex-1 flex flex-col gap-3">
+                            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 rounded-xl text-white shadow-md relative overflow-hidden">
+                                <div class="relative z-10 flex justify-between items-end">
+                                    <div>
+                                        <div class="text-[10px] font-bold opacity-70 uppercase tracking-wider">Exam Countdown</div>
+                                        <div class="text-2xl font-black tracking-tight">142 Days</div>
+                                    </div>
+                                    <!-- <div class="text-[10px] bg-white/20 px-2 py-1 rounded font-medium backdrop-blur-sm">Target: IIT Bombay</div> -->
+                                </div>
+                                <i data-lucide="hourglass" class="absolute -right-2 -bottom-2 w-16 h-16 text-white opacity-10"></i>
+                            </div>
+
+                            <div class="flex-1 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3 shadow-sm flex flex-col gap-2">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase">Today's Plan</span>
+                                    <span class="text-[10px] font-bold text-indigo-500">2/4 Done</span>
+                                </div>
+                                
+                                <div class="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">
+                                    <div class="w-4 h-4 rounded border-2 border-slate-300 dark:border-slate-600"></div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-[10px] font-bold truncate">Rotational Motion PYQs</div>
+                                        <div class="text-[8px] text-rose-500 font-bold">Physics</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 opacity-60">
+                                    <div class="w-4 h-4 rounded bg-green-500 flex items-center justify-center"><i data-lucide="check" class="w-2.5 h-2.5 text-white"></i></div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-[10px] font-bold line-through truncate">Coordination Compounds</div>
+                                        <div class="text-[8px] text-amber-500 font-bold">Chemistry</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">
+                                    <div class="w-4 h-4 rounded border-2 border-slate-300 dark:border-slate-600"></div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-[10px] font-bold truncate">Definite Integration Level 2</div>
+                                        <div class="text-[8px] text-blue-500 font-bold">Maths</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="h-24 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3 shadow-sm flex flex-col justify-end">
+                                <div class="text-[10px] font-bold text-slate-400 mb-2">Weekly Consistency</div>
+                                <div class="flex items-end gap-1 h-10">
+                                    <div class="flex-1 bg-slate-100 dark:bg-slate-800 rounded-t-sm h-[40%]"></div>
+                                    <div class="flex-1 bg-slate-100 dark:bg-slate-800 rounded-t-sm h-[60%]"></div>
+                                    <div class="flex-1 bg-slate-100 dark:bg-slate-800 rounded-t-sm h-[30%]"></div>
+                                    <div class="flex-1 bg-slate-100 dark:bg-slate-800 rounded-t-sm h-[80%]"></div>
+                                    <div class="flex-1 bg-indigo-500 rounded-t-sm h-[90%]"></div>
+                                    <div class="flex-1 bg-slate-100 dark:bg-slate-800 rounded-t-sm h-[50%] opacity-50"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <section class="py-24 bg-white dark:bg-slate-950 border-y border-slate-200 dark:border-slate-900">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="flex flex-col lg:flex-row items-center gap-16">
+                    
+                    <div class="flex-1 w-full order-2 lg:order-1 relative">
+                        <div class="absolute inset-0 bg-gradient-to-r from-rose-500/20 to-orange-500/20 blur-[50px] rounded-full pointer-events-none"></div>
+                        <div class="relative bg-white dark:bg-slate-900 rounded-[2rem] p-6 border border-slate-200 dark:border-slate-800 shadow-2xl rotate-[-2deg] hover:rotate-0 transition-transform duration-500 group">
+                            <div class="flex justify-between items-start mb-6">
+                                <div>
+                                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block">Today</span>
+                                    <div class="text-3xl font-black text-slate-900 dark:text-white">Wednesday</div>
+                                </div>
+                                <div class="text-xs font-bold bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full">1/3 Done</div>
+                            </div>
+                            
+                            <div class="space-y-3">
+                                <div class="flex items-center gap-4 p-4 rounded-xl bg-green-50/50 dark:bg-green-900/10 border border-green-200 dark:border-green-900/50 transition-all">
+                                    <div class="w-6 h-6 rounded-lg bg-green-500 flex items-center justify-center shrink-0">
+                                        <i data-lucide="check" class="w-4 h-4 text-white"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-bold text-slate-500 line-through">Electrostatics Revision</div>
+                                        <div class="text-[10px] text-green-600 font-bold">Physics • Completed</div>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-4 p-4 rounded-xl bg-white dark:bg-slate-800 border-2 border-indigo-500 shadow-lg shadow-indigo-500/10 scale-[1.02]">
+                                    <div class="w-6 h-6 rounded-lg border-2 border-indigo-500 shrink-0"></div>
+                                    <div>
+                                        <div class="text-sm font-bold text-slate-900 dark:text-white">Solve 50 PYQs (Chemical Bonding)</div>
+                                        <div class="text-[10px] text-indigo-500 font-bold">Chemistry • High Priority</div>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">
+                                    <div class="w-6 h-6 rounded-lg border-2 border-slate-300 dark:border-slate-600 shrink-0"></div>
+                                    <div>
+                                        <div class="text-sm font-bold text-slate-700 dark:text-slate-300">NCERT Reading (Evolution)</div>
+                                        <div class="text-[10px] text-slate-400 font-bold">Biology</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 order-1 lg:order-2 space-y-6">
+                        <div class="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-900/20 text-rose-600 flex items-center justify-center">
+                            <i data-lucide="check-square" class="w-6 h-6"></i>
+                        </div>
+                        <h2 class="text-4xl font-black text-slate-900 dark:text-white">Win the Day.<br>Every Single Day.</h2>
+                        <p class="text-lg text-slate-500 dark:text-slate-400 leading-relaxed">
+                            Success isn't about one big exam; it's about hundreds of small victories. Zenith helps you plan your day with surgical precision.
+                        </p>
+                        <ul class="space-y-4">
+                            <li class="flex items-center gap-3">
+                                <div class="w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0"><i data-lucide="check" class="w-3 h-3"></i></div>
+                                <span class="font-medium text-slate-700 dark:text-slate-300">Drag & Drop rescheduling</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <div class="w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0"><i data-lucide="check" class="w-3 h-3"></i></div>
+                                <span class="font-medium text-slate-700 dark:text-slate-300">Subject-wise color coding</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <div class="w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0"><i data-lucide="check" class="w-3 h-3"></i></div>
+                                <span class="font-medium text-slate-700 dark:text-slate-300">Mock Test score tracking</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="py-20 bg-slate-50/50 dark:bg-slate-900/30">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 transition-colors">
+                        <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 flex items-center justify-center mb-4">
+                            <i data-lucide="book-open" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Syllabus Tracker</h3>
+                        <p class="text-slate-500 text-sm">Granular tracking. Know exactly what % of the syllabus you have mastered vs what is pending.</p>
+                    </div>
+                    <div class="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-purple-500/50 transition-colors">
+                        <div class="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 flex items-center justify-center mb-4">
+                            <i data-lucide="bar-chart-2" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Detailed Analytics</h3>
+                        <p class="text-slate-500 text-sm">Visualise your Mock Test trends. Identify weak subjects and fix them before the real exam.</p>
+                    </div>
+                    <div class="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-amber-500/50 transition-colors">
+                        <div class="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 flex items-center justify-center mb-4">
+                            <i data-lucide="crosshair" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Weekly Targets</h3>
+                        <p class="text-slate-500 text-sm">Zoom out from the daily grind. Set broad targets for the week and stay accountable.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="py-24 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-900">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="text-center mb-12">
+                    <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400 tracking-widest uppercase mb-2 block">The Ecosystem</span>
+                    <h2 class="text-3xl font-black text-slate-900 dark:text-white">More tools by <a href="https://sval.tech" target="_blank" class="underline decoration-indigo-500 decoration-2 underline-offset-4">sval.tech</a></h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                    <a href="https://sval.tech/studylocus/" target="_blank" class="group relative overflow-hidden rounded-[2rem] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 hover:-translate-y-1 transition-transform">
+                        <div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <i data-lucide="map-pin" class="w-32 h-32"></i>
+                        </div>
+                        <div class="relative z-10">
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
+                                    <i data-lucide="map" class="w-5 h-5"></i>
+                                </div>
+                                <h3 class="text-2xl font-bold text-slate-900 dark:text-white">StudyLocus</h3>
+                            </div>
+                            <p class="text-slate-500 mb-6">A customizable dashboard for students preparing for JEE, NEET, and other competitive exams.</p>
+                            <span class="text-sm font-bold text-indigo-600 flex items-center gap-2">Visit Website <i data-lucide="external-link" class="w-4 h-4"></i></span>
+                        </div>
+                    </a>
+
+                    <a href="https://sval.tech/syllabustracker/" target="_blank" class="group relative overflow-hidden rounded-[2rem] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 hover:-translate-y-1 transition-transform">
+                        <div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <i data-lucide="list-checks" class="w-32 h-32"></i>
+                        </div>
+                        <div class="relative z-10">
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                                    <i data-lucide="check-square" class="w-5 h-5"></i>
+                                </div>
+                                <h3 class="text-2xl font-bold text-slate-900 dark:text-white">Syllabus Tracker</h3>
+                            </div>
+                            <p class="text-slate-500 mb-6">The original dedicated tracker. A lightweight tool focused purely on syllabus completion.</p>
+                            <span class="text-sm font-bold text-indigo-600 flex items-center gap-2">Visit Website <i data-lucide="external-link" class="w-4 h-4"></i></span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section class="py-24 px-6 bg-slate-900 dark:bg-black text-white relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+            <div class="max-w-4xl mx-auto text-center relative z-10">
+                <h2 class="text-4xl md:text-6xl font-black mb-8 tracking-tighter">
+                    Your Dream College <br> <span class="text-indigo-500">Awaits.</span>
+                </h2>
+                <button onclick="signInWithGoogle()" class="px-12 py-5 rounded-full bg-white text-slate-900 font-black text-xl hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-white/20">
+                    Get Started Now - It's Free
                 </button>
             </div>
-        </div>
+        </section>
+
+        <footer class="py-8 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-900 text-center">
+            
+            <p class="text-xs font-bold text-slate-400">© 2026 Zenith by <a href="https://sval.tech" class="hover:text-indigo-500 transition-colors">sval.tech</a>. All rights reserved.</p>
+        </footer>
+
     </div>
 
     <!-- Loading Overlay -->
@@ -840,11 +1118,15 @@
             </div>
 
             <!-- Sticky Footer for Save Action -->
-            <div class="p-6 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0 mb-safe">
-                <div id="unsaved-changes-indicator" class="hidden flex items-center gap-2 mb-3 text-amber-500 dark:text-amber-400 text-xs font-bold justify-center animate-bounce-slight">
-                    <i data-lucide="alert-circle" class="w-3 h-3"></i> Unsaved Changes
-                </div>
-                <button id="save-settings-btn" onclick="saveSettings()" class="w-full bg-slate-900 dark:bg-slate-700 text-white dark:text-slate-200 font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95">Save Changes</button>
+            <div class="p-6 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0 mb-safe">
+                    <div id="unsaved-changes-indicator" class="hidden flex items-center gap-2 mb-3 text-amber-600 dark:text-amber-400 text-xs font-bold justify-center animate-bounce-slight">
+                        <i data-lucide="alert-circle" class="w-3 h-3"></i> Unsaved Changes
+                    </div>
+                    
+                    <button id="save-settings-btn" onclick="saveSettings()" 
+                        class="w-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none transition-all active:scale-95">
+                        Save Changes
+                    </button>
             </div>
         </div>
     </div>
@@ -979,15 +1261,19 @@
         async function initAuth() {
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
             onAuthStateChanged(auth, (user) => {
+                // Hide loading overlay regardless of state once auth is determined
+                document.getElementById('loading-overlay').classList.add('opacity-0', 'pointer-events-none');
+
                 if (user) { 
                     currentUser = user; 
                     updateProfileUI(user);
                     setupListeners(user); 
                     toggleAppVisibility(true);
+                    // Ensure login screen is hidden
                     document.getElementById('login-screen').classList.add('hidden');
                 } else { 
+                    // NO USER: Now we show the login screen
                     toggleAppVisibility(false);
-                    document.getElementById('loading-overlay').classList.add('opacity-0', 'pointer-events-none');
                     document.getElementById('login-screen').classList.remove('hidden'); 
                 }
             });
@@ -1908,7 +2194,7 @@
                 
                 const card = document.createElement('div');
                 // Updated Card classes for mobile responsiveness
-                card.className = `day-card group relative p-3 md:p-4 rounded-2xl md:rounded-3xl flex md:flex-col min-h-[60px] md:min-h-[160px] h-auto border transition-all items-center md:items-stretch gap-3 md:gap-0 ${isToday ? 'bg-white dark:bg-slate-800 border-indigo-500 shadow-glow-sm ring-1 ring-indigo-500/50' : 'bg-white/80 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 md:hover:border-indigo-300 md:dark:hover:border-slate-600'}`;
+                card.className = `day-card group relative p-3 md:p-4 rounded-2xl md:rounded-3xl flex md:flex-col min-h-[60px] md:min-h-[160px] h-auto border transition-all items-center md:items-stretch gap-3 md:gap-0 ${isToday ? 'bg-white dark:bg-slate-800 border-indigo-500 ...' : 'bg-white/80 dark:bg-slate-900 border-slate-200 dark:border-slate-800 md:dark:hover:border-slate-600'}`;
                 if(isToday) card.id = 'today-card';
 
                 card.setAttribute('ondragover', 'handleDragOver(event)');
