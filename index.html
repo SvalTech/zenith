@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <!-- Emoji Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>">
-    <title>Zenith - sval.tech</title>
+    <title>NEET APEX </title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -1368,36 +1368,47 @@
         
         // --- TIMER LOGIC ---
         
-        window.toggleTimer = function() {
-            if(isTimerRunning) {
-                // Pause
-                clearInterval(timerInterval);
-                isTimerRunning = false;
-                document.getElementById('btn-timer-toggle').innerHTML = `<i data-lucide="play" class="w-8 h-8 fill-current"></i>`;
-                document.getElementById('btn-timer-stop').disabled = false;
-                document.getElementById('timer-active-ring').classList.remove('opacity-100', 'animate-spin-slow');
-                document.getElementById('timer-active-ring').classList.add('opacity-0');
-            } else {
-                // Start
-                isTimerRunning = true;
-                timerInterval = setInterval(() => {
-                    timerSeconds++;
-                    updateTimerDisplay();
-                }, 1000);
-                document.getElementById('btn-timer-toggle').innerHTML = `<i data-lucide="pause" class="w-8 h-8 fill-current"></i>`;
-                document.getElementById('btn-timer-stop').disabled = false;
-                document.getElementById('timer-active-ring').classList.remove('opacity-0');
-                document.getElementById('timer-active-ring').classList.add('opacity-100', 'animate-spin-slow');
-            }
-            lucide.createIcons();
-        }
-        
-        window.stopTimer = async function() {
-            if(timerSeconds < 60) {
-                if(!confirm("Less than 1 minute logged. Discard session?")) return;
-                resetTimer();
-                return;
-            }
+        let timerStartTime = null; // Add this
+let timerElapsedBeforePause = 0;
+
+window.toggleTimer = function() {
+    const now = Date.now();
+    if(isTimerRunning) {
+        // Pause
+        clearInterval(timerInterval);
+        isTimerRunning = false;
+        timerElapsedBeforePause += (now - timerStartTime); // store elapsed
+        document.getElementById('btn-timer-toggle').innerHTML = `<i data-lucide="play" class="w-8 h-8 fill-current"></i>`;
+        document.getElementById('btn-timer-stop').disabled = false;
+        document.getElementById('timer-active-ring').classList.remove('opacity-100', 'animate-spin-slow');
+        document.getElementById('timer-active-ring').classList.add('opacity-0');
+    } else {
+        // Start
+        isTimerRunning = true;
+        timerStartTime = now; // store start timestamp
+        timerInterval = setInterval(() => {
+            const elapsed = Date.now() - timerStartTime + timerElapsedBeforePause;
+            timerSeconds = Math.floor(elapsed / 1000); // calculate seconds reliably
+            updateTimerDisplay();
+        }, 1000);
+        document.getElementById('btn-timer-toggle').innerHTML = `<i data-lucide="pause" class="w-8 h-8 fill-current"></i>`;
+        document.getElementById('btn-timer-stop').disabled = false;
+        document.getElementById('timer-active-ring').classList.remove('opacity-0');
+        document.getElementById('timer-active-ring').classList.add('opacity-100', 'animate-spin-slow');
+    }
+    lucide.createIcons();
+}
+
+window.stopTimer = async function() {
+    if(timerSeconds < 60) {
+        if(!confirm("Less than 1 minute logged. Discard session?")) return;
+        resetTimer();
+        timerElapsedBeforePause = 0; // reset stored time
+        return;
+    }
+    timerElapsedBeforePause = 0; // reset after stop
+    resetTimer();
+}
             
             // Save log
             const duration = Math.round(timerSeconds / 60);
