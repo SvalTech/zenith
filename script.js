@@ -34,7 +34,7 @@ let state = {
     tasks: [], targets: [], studyLogs: [], errorLogs: [], questionLogs: [],
     viewDate: new Date(), weeklyViewDate: new Date(), timerChartWeekDate: new Date(),
     currentView: 'calendar',
-    settings: { examType: 'JEE Main', session: 'Jan', targetYear: 2026, targetDate: '2026-01-21', customSubjects: [], subjectColors: {}, theme: 'light', bgUrl: '', showCountdown: true, dailyQuestionTarget: 50, liteMode: false },
+    settings: { examType: 'JEE Main', session: 'Jan', targetYear: 2026, targetDate: '2026-01-21', customSubjects: [], subjectColors: {}, theme: 'light', bgUrl: '', showCountdown: true, dailyQuestionTarget: 50, liteMode: true },
     syllabusData: { status: {}, meta: {} }, syllabusOpenStates: {}
 };
 let tempSettings = {};
