@@ -786,11 +786,11 @@
 
     <!-- Focus Radio Widget -->
     <div id="music-widget"
-        class="fixed bottom-24 md:bottom-8 right-4 md:right-8 z-[50] flex flex-col items-end gap-3 transition-all duration-300">
+        class="fixed bottom-24 md:bottom-8 right-4 md:right-8 z-[50] flex flex-col items-end gap-3 transition-all duration-300 pointer-events-none">
     
         <!-- The Player Card (Hidden by default) -->
         <div id="music-player-card"
-            class="glass-card p-4 rounded-[2rem] w-64 translate-x-[120%] transition-transform duration-300 shadow-2xl origin-bottom-right">
+            class="glass-card p-4 rounded-[2rem] w-64 translate-x-[120%] transition-transform duration-300 shadow-2xl origin-bottom-right pointer-events-auto">
             <div class="flex justify-between items-center mb-4">
                 <div class="flex items-center gap-2">
                     <div class="flex gap-0.5 items-end h-4" id="visualizer">
@@ -829,7 +829,8 @@
         </div>
     
         <!-- Toggle Button -->
-        <button id="music-toggle-btn" onclick="toggleMusicWidget()" class="relative w-14 h-14 bg-white dark:bg-[#18181b] rounded-full shadow-floating dark:shadow-floating-dark border border-zinc-200/50 dark:border-zinc-800 flex items-center justify-center text-zinc-800 dark:text-white hover:scale-110 active:scale-95 transition-all group overflow-hidden">
+        <button id="music-toggle-btn" onclick="toggleMusicWidget()"
+            class="relative w-14 h-14 bg-white dark:bg-[#18181b] rounded-full shadow-floating dark:shadow-floating-dark border border-zinc-200/50 dark:border-zinc-800 flex items-center justify-center text-zinc-800 dark:text-white hover:scale-110 active:scale-95 transition-all group overflow-hidden pointer-events-auto">
             
             <!-- Default Hover Background -->
             <span class="absolute inset-0 rounded-full bg-brand-500/10 dark:bg-brand-500/20 scale-0 group-hover:scale-100 transition-transform duration-300"></span>
