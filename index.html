@@ -73,65 +73,102 @@
 
     <div id="app-background"></div>
 
-    <!-- Enhanced Login Screen -->
     <div id="login-screen"
-        class="fixed inset-0 z-[70] bg-zinc-50 dark:bg-[#09090b] overflow-y-auto overflow-x-hidden custom-scrollbar transition-opacity duration-500 hidden">
-        <div class="fixed inset-0 overflow-hidden pointer-events-none">
-            <div
-                class="absolute -top-[20%] -right-[10%] w-[800px] h-[800px] bg-brand-500/10 rounded-full blur-[120px] animate-pulse-slow">
-            </div>
-            <div
-                class="absolute top-[20%] -left-[10%] w-[600px] h-[600px] bg-fuchsia-500/10 rounded-full blur-[100px] animate-float">
-            </div>
+        class="fixed inset-0 z-[70] bg-[#FFFDF9] dark:bg-[#080808] overflow-y-auto custom-scrollbar transition-opacity duration-500 hidden selection:bg-[#E03A3A] selection:text-white font-sans">
+    
+        <div class="fixed inset-0 z-0 opacity-[0.04] dark:opacity-[0.06] pointer-events-none"
+            style="background-image: linear-gradient(#111 1px, transparent 1px), linear-gradient(90deg, #111 1px, transparent 1px); background-size: 40px 40px;">
         </div>
-
-        <nav class="sticky top-0 z-50 glass border-b border-zinc-200/50 dark:border-zinc-800/50 px-6 py-4">
+    
+        <nav
+            class="sticky top-0 z-50 bg-[#FFFDF9]/90 dark:bg-[#080808]/90 backdrop-blur-sm border-b-2 border-[#1a1a1a] dark:border-zinc-800 px-6 py-4">
             <div class="max-w-7xl mx-auto flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <div
                         class="w-10 h-10 bg-gradient-to-br from-brand-500 to-fuchsia-600 rounded-xl flex items-center justify-center text-white text-xl shadow-md shrink-0">
-                        🎯</div>
+                        🎯
+                    </div>
                     <div class="flex flex-col justify-center">
-                        <h1 class="text-2xl font-black text-zinc-900 dark:text-white tracking-tight leading-none">Zenith</h1>
-                        <span class="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mt-0.5">by
+                        <h1 class="text-2xl font-black text-zinc-900 dark:text-white tracking-tight leading-none uppercase">
+                            Zenith</h1>
+                        <span
+                            class="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mt-0.5">by
                             sval.tech</span>
                     </div>
                 </div>
-                <div class="flex items-center gap-4">
-                    <button onclick="signInWithGoogle()"
-                        class="px-6 py-2.5 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-sm font-bold hover:scale-105 active:scale-95 transition-all shadow-xl">
-                        Sign In
-                    </button>
-                </div>
+                <button onclick="signInWithGoogle()"
+                    class="px-6 py-2 border-2 border-zinc-900 dark:border-white font-bold text-xs uppercase tracking-widest hover:bg-zinc-900 hover:text-white dark:hover:bg-white dark:hover:text-zinc-900 transition-all">
+                    Sign In
+                </button>
             </div>
         </nav>
-
-        <header class="max-w-7xl mx-auto px-6 min-h-[calc(100vh-100px)] flex flex-col justify-center items-center relative">
-            <div class="space-y-8 relative z-10 animate-slide-up text-center lg:text-left mt-4 lg:mt-0">
-                <h1
-                    class="text-6xl md:text-7xl lg:text-8xl font-black text-zinc-900 dark:text-white tracking-tighter leading-[1.05]">
-                    Master your <br>
-                    <span
-                        class="text-transparent bg-clip-text bg-gradient-to-r from-brand-500 via-fuchsia-500 to-pink-500">Daily
-                        Chaos.</span>
-                </h1>
-                <p
-                    class="text-lg md:text-xl text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium">
-                    Designed for high-performance JEE & NEET aspirants. Plan your day, track deep work, analyze mocks,
-                    and <strong class="text-zinc-900 dark:text-white">win consistently.</strong>
-                </p>
-                <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
-                    <button onclick="signInWithGoogle()"
-                        class="px-8 py-4 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-lg shadow-xl hover:-translate-y-1 transition-all flex items-center justify-center gap-3">
-                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                            class="w-6 h-6 bg-white rounded-full p-0.5" alt="Google">
-                        <span>Continue with Google</span>
-                    </button>
+    
+        <header class="max-w-7xl mx-auto px-6 min-h-[calc(100vh-80px)] flex items-center relative z-10">
+            <div class="grid lg:grid-cols-2 gap-12 lg:gap-24 w-full py-12">
+    
+                <div class="flex flex-col justify-center text-left">
+                    <div
+                        class="inline-flex items-center border-2 border-zinc-900 dark:border-zinc-800 bg-white dark:bg-[#111] mb-8 self-start shadow-[4px_4px_0px_0px_#E03A3A]">
+                        <span
+                            class="text-[11px] font-black uppercase tracking-[0.15em] text-zinc-900 dark:text-zinc-100 px-4 py-1.5">
+                            1,800+ Students Winning Daily
+                        </span>
+                    </div>
+                    <h1
+                        class="text-7xl md:text-8xl lg:text-[100px] font-black text-zinc-900 dark:text-white tracking-tighter leading-[0.85] uppercase">
+                        Master <br>
+                        Your <br>
+                        <span class="text-[#E03A3A]">Daily <br> Chaos.</span>
+                    </h1>
                 </div>
+    
+                <div
+                    class="flex flex-col justify-center space-y-8 lg:border-l-2 lg:border-zinc-200 dark:lg:border-zinc-800 lg:pl-20">
+                    <p class="text-2xl md:text-3xl text-zinc-600 dark:text-zinc-400 leading-tight font-medium">
+                        The tracking tool for <strong class="text-zinc-900 dark:text-white">JEE, NEET and competitive aspirants.</strong>
+                        Meticulously built for students who are tired of "AI slop" and need a system that actually works.
+                    </p>
+    
+                    <div class="flex flex-wrap gap-2">
+                        <span
+                            class="px-3 py-1 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[10px] font-bold uppercase tracking-widest">Real
+                            Community</span>
+                        <span
+                            class="px-3 py-1 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-[10px] font-bold uppercase tracking-widest">Topper
+                            Logic</span>
+                        <span
+                            class="px-3 py-1 border-2 border-zinc-900 dark:border-zinc-700 text-zinc-900 dark:text-zinc-300 text-[10px] font-bold uppercase tracking-widest">Zero
+                            Trash</span>
+                    </div>
+    
+                    <div class="pt-4">
+                        <button onclick="signInWithGoogle()"
+                            class="h-20 w-full sm:w-auto px-12 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-black text-2xl flex items-center justify-center gap-4 hover:shadow-[10px_10px_0px_0px_#E03A3A] transition-all active:translate-y-1 active:shadow-none border-2 border-zinc-900 dark:border-white uppercase">
+                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                                class="w-7 h-7 bg-white rounded-full p-0.5" alt="">
+                            Start Tracking
+                        </button>
+                        <p class="mt-4 text-xs font-mono text-zinc-400 uppercase tracking-widest">Free to use. Built for
+                            Results.</p>
+                    </div>
+                </div>
+    
             </div>
         </header>
+    
+        <footer
+            class="max-w-7xl mx-auto px-6 py-12 border-t-2 border-zinc-200 dark:border-zinc-800 flex flex-col md:flex-row justify-between items-center gap-4 relative z-10">
+            <div class="text-sm font-bold text-zinc-500 dark:text-zinc-400 tracking-widest uppercase">
+                © 2026 SVAL.TECH — ALL RIGHTS RESERVED
+            </div>
+            <div class="flex items-center gap-6">
+                <a href="https://sval.tech/studylocus/privacypolicy.html"
+                    class="text-xs font-bold text-zinc-400 hover:text-[#E03A3A] transition-colors uppercase tracking-widest">Privacy</a>
+                <a href="https://sval.tech/studylocus/termsandconditions.html"
+                    class="text-xs font-bold text-zinc-400 hover:text-[#E03A3A] transition-colors uppercase tracking-widest">Terms</a>
+            </div>
+        </footer>
     </div>
-
     <!-- Loading Overlay -->
     <div id="loading-overlay"
         class="fixed inset-0 z-[100] bg-zinc-50 dark:bg-[#09090b] flex items-center justify-center transition-opacity duration-500">
@@ -169,8 +206,8 @@
             </div>
 
             <!-- Enhanced Countdown Card -->
-            <div id="desktop-countdown-card"
-                class="bg-gradient-to-br from-white to-zinc-50 dark:from-zinc-900 dark:to-[#18181b] border border-zinc-200/80 dark:border-zinc-800 rounded-[2rem] p-6 shadow-soft relative overflow-hidden group mb-8 transition-all duration-300">
+            <div id="desktop-countdown-card" onclick="openRealityCheck()"
+                class="cursor-pointer bg-gradient-to-br from-white to-zinc-50 dark:from-zinc-900 dark:to-[#18181b] border border-zinc-200/80 dark:border-zinc-800 rounded-[2rem] p-6 shadow-soft relative overflow-hidden group mb-8 transition-all duration-300 hover:border-brand-500/50 hover:shadow-glow-sm">
                 <div
                     class="absolute -right-4 -top-4 w-32 h-32 bg-brand-500/10 rounded-full blur-2xl group-hover:bg-brand-500/20 transition-colors">
                 </div>
@@ -297,8 +334,8 @@
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <div id="mobile-countdown-pill"
-                    class="hidden px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center gap-1.5">
+                <div id="mobile-countdown-pill" onclick="openRealityCheck()"
+                    class="hidden px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center gap-1.5 active:scale-95 transition-transform">
                     <span id="days-left-mobile"
                         class="text-[10px] font-black uppercase tracking-wide text-zinc-700 dark:text-zinc-300">-- days</span>
                 </div>
@@ -743,51 +780,70 @@
             </div>
         </div>
 
-        <!-- Mobile Stats Menu -->
-        <div id="mobile-stats-menu"
-            class="md:hidden fixed bottom-24 right-4 bg-white/95 dark:bg-[#18181b]/95 backdrop-blur-xl rounded-[2rem] shadow-floating dark:shadow-floating-dark border border-zinc-200/80 dark:border-zinc-800 flex flex-col hidden opacity-0 transition-all duration-300 z-50 overflow-hidden scale-90 origin-bottom-right">
-            <button onclick="switchView('stats-mocks'); closeMobileStatsMenu()"
-                class="px-6 py-4 text-sm font-bold text-zinc-700 dark:text-zinc-300 border-b border-zinc-100 dark:border-zinc-800/50 text-left flex items-center gap-3 active:bg-zinc-100 dark:active:bg-zinc-800"><i
-                    data-lucide="bar-chart" class="w-5 h-5 text-brand-500"></i> Mocks Data</button>
-            <button onclick="switchView('stats-errors'); closeMobileStatsMenu()"
-                class="px-6 py-4 text-sm font-bold text-zinc-700 dark:text-zinc-300 border-b border-zinc-100 dark:border-zinc-800/50 text-left flex items-center gap-3 active:bg-zinc-100 dark:active:bg-zinc-800"><i
-                    data-lucide="alert-triangle" class="w-5 h-5 text-rose-500"></i> Error Tracking</button>
-            <button onclick="switchView('stats-questions'); closeMobileStatsMenu()"
-                class="px-6 py-4 text-sm font-bold text-zinc-700 dark:text-zinc-300 text-left flex items-center gap-3 active:bg-zinc-100 dark:active:bg-zinc-800"><i
-                    data-lucide="check-square" class="w-5 h-5 text-emerald-500"></i> Daily Questions</button>
-        </div>
-
-        <!-- Floating Mobile Dock (iOS Style) -->
-        <div id="mobile-bottom-nav"
-            class="md:hidden fixed bottom-6 left-4 right-4 z-50 transition-transform duration-300">
-            <div
-                class="glass rounded-[2rem] shadow-floating dark:shadow-floating-dark flex justify-around items-center h-[72px] px-2 border border-white/20 dark:border-white/10">
-                <button onclick="switchView('calendar')" id="nav-mobile-calendar"
-                    class="flex flex-col items-center justify-center w-full h-full text-brand-600 dark:text-brand-400 transition-colors">
-                    <i data-lucide="calendar" class="w-6 h-6"></i>
-                </button>
-                <button onclick="switchView('weekly')" id="nav-mobile-weekly"
-                    class="flex flex-col items-center justify-center w-full h-full text-zinc-400 dark:text-zinc-500 transition-colors">
-                    <i data-lucide="crosshair" class="w-6 h-6"></i>
-                </button>
-                <!-- Elevated Main FAB -->
-                <div class="relative -top-6">
-                    <button onclick="openAddTaskModal()"
-                        class="w-16 h-16 bg-zinc-900 dark:bg-white rounded-full text-white dark:text-zinc-900 shadow-2xl shadow-zinc-900/40 dark:shadow-black/50 flex items-center justify-center active:scale-90 transition-transform ring-4 ring-white/40 dark:ring-black/40 backdrop-blur-md">
-                        <i data-lucide="plus" class="w-8 h-8"></i>
-                    </button>
-                </div>
-                <button onclick="switchView('timer')" id="nav-mobile-timer"
-                    class="flex flex-col items-center justify-center w-full h-full text-zinc-400 dark:text-zinc-500 transition-colors">
-                    <i data-lucide="timer" class="w-6 h-6"></i>
-                </button>
-                <button onclick="toggleMobileStatsMenu()" id="nav-mobile-stats"
-                    class="flex flex-col items-center justify-center w-full h-full text-zinc-400 dark:text-zinc-500 transition-colors"><i
-                        data-lucide="bar-chart-2" class="w-6 h-6"></i></button>
-            </div>
-        </div>
+    
 
     </main>
+
+    <!-- Focus Radio Widget -->
+    <div id="music-widget"
+        class="fixed bottom-24 md:bottom-8 right-4 md:right-8 z-[50] flex flex-col items-end gap-3 transition-all duration-300">
+    
+        <!-- The Player Card (Hidden by default) -->
+        <div id="music-player-card"
+            class="glass-card p-4 rounded-[2rem] w-64 translate-x-[120%] transition-transform duration-300 shadow-2xl origin-bottom-right">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="flex gap-0.5 items-end h-4" id="visualizer">
+                        <div class="w-1 bg-brand-500 rounded-full h-2 animate-bounce-slight" style="animation-delay: 0ms">
+                        </div>
+                        <div class="w-1 bg-fuchsia-500 rounded-full h-4 animate-bounce-slight"
+                            style="animation-delay: 100ms"></div>
+                        <div class="w-1 bg-brand-500 rounded-full h-3 animate-bounce-slight" style="animation-delay: 200ms">
+                        </div>
+                    </div>
+                    <span class="text-xs font-bold text-zinc-500 uppercase tracking-widest">Focus Radio</span>
+                </div>
+                <div id="youtube-status" class="w-2 h-2 rounded-full bg-red-500"></div>
+            </div>
+    
+            <div class="mb-4 text-center">
+                <h4 id="station-name" class="text-sm font-black text-zinc-900 dark:text-white truncate">Lofi Girl</h4>
+                <p id="track-status" class="text-[10px] text-zinc-400 font-mono">Paused</p>
+            </div>
+    
+            <div class="flex justify-between items-center bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl p-2 mb-3">
+                <button onclick="changeStation('prev')"
+                    class="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"><i
+                        data-lucide="skip-back" class="w-4 h-4"></i></button>
+                <button onclick="toggleMusic()" id="btn-music-play"
+                    class="w-10 h-10 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl flex items-center justify-center shadow-lg active:scale-95 transition-transform">
+                    <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+                </button>
+                <button onclick="changeStation('next')"
+                    class="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"><i
+                        data-lucide="skip-forward" class="w-4 h-4"></i></button>
+            </div>
+    
+            <!-- Hidden YouTube Iframe Container -->
+            <div id="yt-player-container" class="hidden w-0 h-0 overflow-hidden"></div>
+        </div>
+    
+        <!-- Toggle Button -->
+        <button id="music-toggle-btn" onclick="toggleMusicWidget()" class="relative w-14 h-14 bg-white dark:bg-[#18181b] rounded-full shadow-floating dark:shadow-floating-dark border border-zinc-200/50 dark:border-zinc-800 flex items-center justify-center text-zinc-800 dark:text-white hover:scale-110 active:scale-95 transition-all group overflow-hidden">
+            
+            <!-- Default Hover Background -->
+            <span class="absolute inset-0 rounded-full bg-brand-500/10 dark:bg-brand-500/20 scale-0 group-hover:scale-100 transition-transform duration-300"></span>
+            
+            <!-- ACTIVE PLAYING VISUALS (Hidden by default) -->
+            <!-- 1. Spinning Ring -->
+            <div id="music-active-ring" class="absolute inset-0 rounded-full border-[3px] border-transparent border-t-brand-500 border-l-brand-500/30 animate-spin opacity-0 transition-opacity duration-500 pointer-events-none"></div>
+            <!-- 2. Subtle Background Glow -->
+            <div id="music-active-glow" class="absolute inset-0 rounded-full bg-brand-500/10 dark:bg-brand-500/20 opacity-0 transition-opacity duration-500 pointer-events-none animate-pulse"></div>
+
+            <!-- The Icon itself -->
+            <i id="music-btn-icon" data-lucide="music" class="w-6 h-6 relative z-10 transition-colors duration-300"></i>
+        </button>
+    </div>
 
     <!-- Modals -->
 
@@ -968,6 +1024,7 @@
                                 class="absolute left-1 top-1 w-5 h-5 bg-white rounded-full transition-transform shadow-sm"></div>
                         </button>
                     </div>
+
                     <div
                         class="p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-2xl flex items-center justify-between border border-zinc-100 dark:border-zinc-800">
                         <span class="font-bold text-sm text-zinc-700 dark:text-zinc-200">Show Countdown</span>
@@ -978,6 +1035,64 @@
                             </div>
                         </button>
                     </div>
+
+                    <div
+                        class="p-4 bg-zinc-50 dark:bg-zinc-900/50 rounded-2xl flex items-center justify-between border border-zinc-100 dark:border-zinc-800">
+                        <div>
+                            <span class="font-bold text-sm text-zinc-700 dark:text-zinc-200 block">Focus Radio</span>
+                            <span class="text-[10px] text-zinc-500 font-medium">Show music player widget</span>
+                        </div>
+                        <button id="music-toggle" onclick="toggleMusicSetting()"
+                            class="relative w-12 h-7 bg-zinc-200 dark:bg-zinc-700 rounded-full transition-all duration-300">
+                            <div id="music-knob" class="absolute left-1 top-1 w-5 h-5 bg-white rounded-full transition-transform shadow-sm">
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Exam
+                        Target</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="setExamType('JEE Main')" id="btn-jee"
+                            class="p-3 rounded-xl text-xs font-bold border border-zinc-200 dark:border-zinc-700 transition-colors">JEE
+                            Main</button>
+                        <button onclick="setExamType('NEET')" id="btn-neet"
+                            class="p-3 rounded-xl text-xs font-bold border border-zinc-200 dark:border-zinc-700 transition-colors">NEET</button>
+                        <button onclick="setExamType('JEE Advanced')" id="btn-jeeadv"
+                            class="p-3 rounded-xl text-xs font-bold border border-zinc-200 dark:border-zinc-700 transition-colors">JEE
+                            Adv</button>
+                        <button onclick="setExamType('Custom')" id="btn-custom"
+                            class="p-3 rounded-xl text-xs font-bold border border-zinc-200 dark:border-zinc-700 transition-colors">Custom</button>
+                    </div>
+                
+                    <div id="jee-session-container"
+                        class="hidden bg-brand-50 dark:bg-brand-900/10 p-4 rounded-2xl border border-brand-100 dark:border-brand-900/30 animate-slide-up">
+                        <label
+                            class="block text-[10px] font-bold text-brand-700 dark:text-brand-300 uppercase tracking-widest mb-3">Target
+                            Session</label>
+                        <div class="flex gap-2">
+                            <button onclick="setSession('Jan')" id="btn-session-jan"
+                                class="flex-1 py-2 rounded-xl text-xs font-bold border border-brand-200 dark:border-brand-700 transition-colors bg-white dark:bg-zinc-800">Jan</button>
+                            <button onclick="setSession('Apr')" id="btn-session-apr"
+                                class="flex-1 py-2 rounded-xl text-xs font-bold border border-brand-200 dark:border-brand-700 transition-colors bg-white dark:bg-zinc-800">April</button>
+                        </div>
+                    </div>
+                
+                    <div id="custom-date-container"
+                        class="hidden bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-2xl border border-zinc-200/50 dark:border-zinc-800 animate-slide-up">
+                        <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Manual
+                            Target Date</label>
+                        <input type="date" id="settings-custom-date" onchange="markSettingsDirty()"
+                            class="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm outline-none dark:text-white font-medium">
+                    </div>
+                
+                    <select id="settings-year" onchange="updateTargetDateConfig(); markSettingsDirty()"
+                        class="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-xl px-4 py-3.5 text-sm outline-none dark:text-white appearance-none font-bold">
+                        <option value="2026">Target Year: 2026</option>
+                        <option value="2027">Target Year: 2027</option>
+                        <option value="2028">Target Year: 2028</option>
+                    </select>
                 </div>
 
                 <div class="space-y-3">
@@ -1006,50 +1121,7 @@
                         class="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm outline-none dark:text-white appearance-none font-medium">
                 </div>
 
-                <div class="space-y-4">
-                    <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Exam
-                        Target</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="setExamType('JEE Main')" id="btn-jee"
-                            class="p-3 rounded-xl text-xs font-bold border border-zinc-200 dark:border-zinc-700 transition-colors">JEE
-                            Main</button>
-                        <button onclick="setExamType('NEET')" id="btn-neet"
-                            class="p-3 rounded-xl text-xs font-bold border border-zinc-200 dark:border-zinc-700 transition-colors">NEET</button>
-                        <button onclick="setExamType('JEE Advanced')" id="btn-jeeadv"
-                            class="p-3 rounded-xl text-xs font-bold border border-zinc-200 dark:border-zinc-700 transition-colors">JEE
-                            Adv</button>
-                        <button onclick="setExamType('Custom')" id="btn-custom"
-                            class="p-3 rounded-xl text-xs font-bold border border-zinc-200 dark:border-zinc-700 transition-colors">Custom</button>
-                    </div>
-
-                    <div id="jee-session-container"
-                        class="hidden bg-brand-50 dark:bg-brand-900/10 p-4 rounded-2xl border border-brand-100 dark:border-brand-900/30 animate-slide-up">
-                        <label
-                            class="block text-[10px] font-bold text-brand-700 dark:text-brand-300 uppercase tracking-widest mb-3">Target
-                            Session</label>
-                        <div class="flex gap-2">
-                            <button onclick="setSession('Jan')" id="btn-session-jan"
-                                class="flex-1 py-2 rounded-xl text-xs font-bold border border-brand-200 dark:border-brand-700 transition-colors bg-white dark:bg-zinc-800">Jan</button>
-                            <button onclick="setSession('Apr')" id="btn-session-apr"
-                                class="flex-1 py-2 rounded-xl text-xs font-bold border border-brand-200 dark:border-brand-700 transition-colors bg-white dark:bg-zinc-800">April</button>
-                        </div>
-                    </div>
-
-                    <div id="custom-date-container"
-                        class="hidden bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-2xl border border-zinc-200/50 dark:border-zinc-800 animate-slide-up">
-                        <label class="block text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">Manual
-                            Target Date</label>
-                        <input type="date" id="settings-custom-date" onchange="markSettingsDirty()"
-                            class="w-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm outline-none dark:text-white font-medium">
-                    </div>
-
-                    <select id="settings-year" onchange="updateTargetDateConfig(); markSettingsDirty()"
-                        class="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 rounded-xl px-4 py-3.5 text-sm outline-none dark:text-white appearance-none font-bold">
-                        <option value="2026">Target Year: 2026</option>
-                        <option value="2027">Target Year: 2027</option>
-                        <option value="2028">Target Year: 2028</option>
-                    </select>
-                </div>
+                
 
                 <div class="space-y-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
                     <label class="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Data Management</label>
@@ -1131,6 +1203,126 @@
                 <button onclick="saveMockBreakdown()"
                     class="px-6 py-2.5 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold text-sm shadow-md transition-all active:scale-95">Update</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Reality Check Modal -->
+    <!-- Reality Check Modal (Brutal Version) -->
+    <div id="reality-check-modal"
+        class="fixed inset-0 z-[140] flex items-center justify-center modal-backdrop hidden opacity-0 transition-opacity duration-300 px-4">
+        <div
+            class="bg-white dark:bg-[#09090b] rounded-[2.5rem] shadow-2xl w-full max-w-md transform scale-95 transition-transform duration-300 border border-zinc-200 dark:border-zinc-800 relative overflow-hidden">
+    
+            <!-- Dynamic Background -->
+            <div class="absolute inset-0 bg-gradient-to-b from-rose-500/5 to-transparent pointer-events-none"></div>
+    
+            <div class="relative z-10 p-6 md:p-8">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <h2 class="text-3xl font-black text-zinc-900 dark:text-white tracking-tighter leading-none mb-1">
+                            Reality Check</h2>
+                        <p class="text-[10px] font-bold text-rose-500 uppercase tracking-widest">No Excuses.</p>
+                    </div>
+                    <button onclick="closeRealityCheck()"
+                        class="p-2 bg-zinc-100 dark:bg-zinc-800/50 rounded-full text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"><i
+                            data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+    
+                <!-- Main Countdown -->
+                <div class="flex items-baseline gap-2 mb-8">
+                    <div class="text-7xl font-black text-zinc-900 dark:text-white tracking-tighter leading-none"
+                        id="rc-days">0</div>
+                    <div class="flex flex-col">
+                        <span class="text-xl font-bold text-zinc-400 dark:text-zinc-600">Days</span>
+                        <span class="text-xs font-bold text-rose-500 uppercase tracking-widest">Remaining</span>
+                    </div>
+                </div>
+    
+                <!-- Brutal Grid -->
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <div
+                        class="bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-2xl border border-zinc-200/50 dark:border-zinc-800">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i data-lucide="calendar-off" class="w-4 h-4 text-zinc-400"></i>
+                            <span class="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Sundays Left</span>
+                        </div>
+                        <div class="text-2xl font-black text-zinc-900 dark:text-white" id="rc-sundays">0</div>
+                    </div>
+                    <div
+                        class="bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-2xl border border-zinc-200/50 dark:border-zinc-800">
+                        <div class="flex items-center gap-2 mb-2">
+                            <i data-lucide="moon" class="w-4 h-4 text-zinc-400"></i>
+                            <span class="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Sleeps Left</span>
+                        </div>
+                        <div class="text-2xl font-black text-zinc-900 dark:text-white" id="rc-sleeps">0</div>
+                    </div>
+                </div>
+    
+                <!-- Wasted Potential Warning -->
+                <div
+                    class="bg-rose-50 dark:bg-rose-900/10 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/30 mb-8 flex items-center gap-4">
+                    <div
+                        class="shrink-0 w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-500/20 flex items-center justify-center text-rose-600 dark:text-rose-400 font-bold">
+                        <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-bold text-rose-400 uppercase tracking-widest mb-0.5">If you waste
+                            2h/day...</div>
+                        <div class="text-sm font-medium text-rose-800 dark:text-rose-200">You will lose <strong
+                                id="rc-wasted">0 hours</strong> of prep time before the exam. In <strong id="days-remaining">0</strong> days, you will either be relieved or regretful. Choose now.</div>
+                    </div>
+                </div>
+    
+    
+                <!-- Footer Quote -->
+                <div class="text-center">
+                    <p id="rc-quote" class="text-xs font-mono text-zinc-500 dark:text-zinc-400 leading-relaxed"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Mobile Stats Menu -->
+    <div id="mobile-stats-menu"
+        class="md:hidden fixed bottom-24 right-4 bg-white/95 dark:bg-[#18181b]/95 backdrop-blur-xl rounded-[2rem] shadow-floating dark:shadow-floating-dark border border-zinc-200/80 dark:border-zinc-800 flex flex-col hidden opacity-0 transition-all duration-300 z-[60] overflow-hidden scale-90 origin-bottom-right">
+        <button onclick="switchView('stats-mocks'); closeMobileStatsMenu()"
+            class="px-6 py-4 text-sm font-bold text-zinc-700 dark:text-zinc-300 border-b border-zinc-100 dark:border-zinc-800/50 text-left flex items-center gap-3 active:bg-zinc-100 dark:active:bg-zinc-800"><i
+                data-lucide="bar-chart" class="w-5 h-5 text-brand-500"></i> Mocks Data</button>
+        <button onclick="switchView('stats-errors'); closeMobileStatsMenu()"
+            class="px-6 py-4 text-sm font-bold text-zinc-700 dark:text-zinc-300 border-b border-zinc-100 dark:border-zinc-800/50 text-left flex items-center gap-3 active:bg-zinc-100 dark:active:bg-zinc-800"><i
+                data-lucide="alert-triangle" class="w-5 h-5 text-rose-500"></i> Error Tracking</button>
+        <button onclick="switchView('stats-questions'); closeMobileStatsMenu()"
+            class="px-6 py-4 text-sm font-bold text-zinc-700 dark:text-zinc-300 text-left flex items-center gap-3 active:bg-zinc-100 dark:active:bg-zinc-800"><i
+                data-lucide="check-square" class="w-5 h-5 text-emerald-500"></i> Daily Questions</button>
+    </div>
+    
+    <!-- Floating Mobile Dock (iOS Style) -->
+    <div id="mobile-bottom-nav" class="md:hidden fixed bottom-6 left-4 right-4 z-[60] transition-transform duration-300">
+        <div
+            class="glass rounded-[2rem] shadow-floating dark:shadow-floating-dark flex justify-around items-center h-[72px] px-2 border border-white/20 dark:border-white/10">
+            <button onclick="switchView('calendar')" id="nav-mobile-calendar"
+                class="flex flex-col items-center justify-center w-full h-full text-brand-600 dark:text-brand-400 transition-colors">
+                <i data-lucide="calendar" class="w-6 h-6"></i>
+            </button>
+            <button onclick="switchView('weekly')" id="nav-mobile-weekly"
+                class="flex flex-col items-center justify-center w-full h-full text-zinc-400 dark:text-zinc-500 transition-colors">
+                <i data-lucide="crosshair" class="w-6 h-6"></i>
+            </button>
+            <!-- Elevated Main FAB -->
+            <div class="relative -top-6">
+                <button onclick="openAddTaskModal()"
+                    class="w-16 h-16 bg-zinc-900 dark:bg-white rounded-full text-white dark:text-zinc-900 shadow-2xl shadow-zinc-900/40 dark:shadow-black/50 flex items-center justify-center active:scale-90 transition-transform ring-4 ring-white/40 dark:ring-black/40 backdrop-blur-md">
+                    <i data-lucide="plus" class="w-8 h-8"></i>
+                </button>
+            </div>
+            <button onclick="switchView('timer')" id="nav-mobile-timer"
+                class="flex flex-col items-center justify-center w-full h-full text-zinc-400 dark:text-zinc-500 transition-colors">
+                <i data-lucide="timer" class="w-6 h-6"></i>
+            </button>
+            <button onclick="toggleMobileStatsMenu()" id="nav-mobile-stats"
+                class="flex flex-col items-center justify-center w-full h-full text-zinc-400 dark:text-zinc-500 transition-colors"><i
+                    data-lucide="bar-chart-2" class="w-6 h-6"></i></button>
         </div>
     </div>
     <script type="module" src="script.js"></script>

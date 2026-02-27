@@ -1668,5 +1668,289 @@ window.renderQuestionsChart = function () {
         }
     });
 }
+// ==========================================
+// FOCUS RADIO INTEGRATION (Fixed for Modules)
+// ==========================================
+let musicPlayer = null; // Renamed to avoid conflicts
+let isMusicPlayerReady = false;
+let isMusicPlaying = false;
+let currentStationIdx = 0;
+
+const musicStations = [
+    { name: "Lofi Girl", id: "jfKfPfyJRdk" },
+    { name: "Synthwave Boy", id: "4xDzrJKXOOY" },
+    { name: "Classical Focus", id: "mIYzp5rcTvU" },
+    { name: "Rain Sounds", id: "mPZkdNFkNps" },
+    { name: "Electronic (Anjunadeep)", id: "D4MdHQOILdw" }
+];
+
+// 1. Make functions global so HTML onclick="" can see them
+window.toggleMusicWidget = function () {
+    const card = document.getElementById('music-player-card');
+    const isHidden = card.classList.contains('translate-x-[120%]');
+
+    if (isHidden) {
+        card.classList.remove('translate-x-[120%]');
+        // Initialize YouTube API only on first open to save data
+        if (!musicPlayer) initYouTubePlayer();
+    } else {
+        card.classList.add('translate-x-[120%]');
+    }
+};
+
+window.toggleMusic = function () {
+    if (!isMusicPlayerReady || !musicPlayer) return;
+
+    if (isMusicPlaying) {
+        musicPlayer.pauseVideo();
+    } else {
+        musicPlayer.playVideo();
+    }
+};
+
+window.changeStation = function (dir) {
+    if (dir === 'next') {
+        currentStationIdx = (currentStationIdx + 1) % musicStations.length;
+    } else {
+        currentStationIdx = (currentStationIdx - 1 + musicStations.length) % musicStations.length;
+    }
+
+    // Update UI immediately
+    document.getElementById('station-name').innerText = musicStations[currentStationIdx].name;
+
+    if (musicPlayer && isMusicPlayerReady) {
+        musicPlayer.loadVideoById(musicStations[currentStationIdx].id);
+    }
+};
+
+// 2. YouTube API Setup
+function initYouTubePlayer() {
+    if (document.getElementById('www-widgetapi-script')) return;
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+}
+
+// Global callback required by YouTube API
+window.onYouTubeIframeAPIReady = function () {
+    musicPlayer = new YT.Player('yt-player-container', {
+        height: '0',
+        width: '0',
+        videoId: musicStations[0].id,
+        playerVars: {
+            'playsinline': 1,
+            'controls': 0,
+            'disablekb': 1,
+            'fs': 0
+        },
+        events: {
+            'onReady': onPlayerReady,
+            'onStateChange': onPlayerStateChange
+        }
+    });
+};
+
+function onPlayerReady(event) {
+    isMusicPlayerReady = true;
+    const statusDot = document.getElementById('youtube-status');
+    if (statusDot) {
+        statusDot.classList.remove('bg-red-500');
+        statusDot.classList.add('bg-emerald-500');
+    }
+}
+function onPlayerStateChange(event) {
+    // YT.PlayerState.PLAYING is 1
+    if (event.data === 1) {
+        isMusicPlaying = true;
+        updatePlayButtonUI(true);
+        document.getElementById('track-status').innerText = "Streaming Live";
+        document.getElementById('visualizer').classList.remove('opacity-50');
+
+        // TURN ON Collapsed Button Visuals
+        const ring = document.getElementById('music-active-ring');
+        const glow = document.getElementById('music-active-glow');
+        const icon = document.getElementById('music-btn-icon');
+        if (ring) ring.classList.remove('opacity-0');
+        if (glow) glow.classList.remove('opacity-0');
+        if (icon) icon.classList.add('text-brand-600', 'dark:text-brand-400');
+
+    } else {
+        isMusicPlaying = false;
+        updatePlayButtonUI(false);
+        document.getElementById('track-status').innerText = "Paused";
+        document.getElementById('visualizer').classList.add('opacity-50');
+
+        // TURN OFF Collapsed Button Visuals
+        const ring = document.getElementById('music-active-ring');
+        const glow = document.getElementById('music-active-glow');
+        const icon = document.getElementById('music-btn-icon');
+        if (ring) ring.classList.add('opacity-0');
+        if (glow) glow.classList.add('opacity-0');
+        if (icon) icon.classList.remove('text-brand-600', 'dark:text-brand-400');
+    }
+}
+
+function updatePlayButtonUI(isPlaying) {
+    const btn = document.getElementById('btn-music-play');
+    if (isPlaying) {
+        btn.innerHTML = `<i data-lucide="pause" class="w-4 h-4 fill-current"></i>`;
+    } else {
+        btn.innerHTML = `<i data-lucide="play" class="w-4 h-4 fill-current"></i>`;
+    }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+
+// ==========================================
+// MUSIC SETTINGS TOGGLE LOGIC
+// ==========================================
+
+// 1. Logic to show/hide the widget based on setting
+window.applyMusicSetting = function (show) {
+    const widget = document.getElementById('music-widget');
+    if (!widget) return;
+
+    if (show) {
+        widget.classList.remove('hidden');
+        // Small delay to allow transition if needed, though hidden removes it from layout
+        setTimeout(() => widget.style.opacity = '1', 10);
+    } else {
+        widget.classList.add('hidden');
+        widget.style.opacity = '0';
+        // If music is playing, pause it when disabling the widget
+        if (window.musicPlayer && typeof window.musicPlayer.pauseVideo === 'function') {
+            window.musicPlayer.pauseVideo();
+        }
+    }
+}
+
+// 2. Logic for clicking the toggle in Settings
+window.toggleMusicSetting = function () {
+    // Initialize if undefined
+    if (tempSettings.showMusic === undefined) tempSettings.showMusic = true;
+
+    tempSettings.showMusic = !tempSettings.showMusic;
+    updateMusicToggleUI(tempSettings.showMusic);
+    markSettingsDirty(); // Enable the "Save" button
+}
+
+// 3. Update the visual toggle switch
+window.updateMusicToggleUI = function (isShow) {
+    const knob = document.getElementById('music-knob');
+    const toggle = document.getElementById('music-toggle');
+    if (!knob || !toggle) return;
+
+    if (isShow) {
+        knob.style.transform = 'translateX(20px)';
+        toggle.className = "relative w-12 h-7 bg-brand-500 rounded-full transition-all duration-300";
+    } else {
+        knob.style.transform = 'translateX(0)';
+        toggle.className = "relative w-12 h-7 bg-zinc-200 dark:bg-zinc-700 rounded-full transition-all duration-300";
+    }
+}
+
+// 4. Hook into the existing settings loading logic
+// We override the openSettings function to update the UI when opening modal
+const originalOpenSettings = window.openSettings;
+window.openSettings = function () {
+    originalOpenSettings(); // Call the original function first
+
+    // Set default if missing
+    if (tempSettings.showMusic === undefined) tempSettings.showMusic = (state.settings.showMusic !== false);
+
+    updateMusicToggleUI(tempSettings.showMusic);
+}
+
+// 5. Hook into the data loading logic to apply the setting on app load
+// We look for the ApplyTheme call in setupListeners and piggyback on it via an interval check 
+// (Simplest way without editing the big setupListeners block manually)
+const musicInitInterval = setInterval(() => {
+    if (state && state.settings) {
+        if (state.settings.showMusic === undefined) state.settings.showMusic = true;
+        applyMusicSetting(state.settings.showMusic);
+        // We don't clear interval immediately as settings might load slightly later via firebase
+    }
+}, 500);
+
+// Clear interval after 10 seconds to save resources
+setTimeout(() => clearInterval(musicInitInterval), 10000);
+
+// ==========================================
+// REALITY CHECK LOGIC (FIXED & BRUTAL)
+// ==========================================
+
+window.openRealityCheck = function () {
+    const targetDateStr = state.settings.targetDate;
+    if (!targetDateStr) { showToast("Set a target date in settings!"); return; }
+
+    // 1. Normalize Dates (Strip time to fix off-by-one errors)
+    const now = new Date();
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    // Parse target date string specifically to avoid timezone shifts
+    const [y, m, d] = targetDateStr.split('-').map(Number);
+    const targetMidnight = new Date(y, m - 1, d); // Month is 0-indexed
+
+    const diffTime = targetMidnight - todayMidnight;
+    const daysLeft = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    // Update Sidebar to match (Consistency check)
+    if (document.getElementById('days-left-desktop')) {
+        document.getElementById('days-left-desktop').innerText = daysLeft > 0 ? daysLeft : 0;
+    }
+
+    if (daysLeft < 0) {
+        document.getElementById('rc-days').innerText = "0";
+        document.getElementById('rc-quote').innerText = "Game over. Did you win?";
+    } else {
+        // A. Main Countdown
+        document.getElementById('rc-days').innerText = daysLeft;
+
+        // B. Sundays Calculation
+        let sundays = 0;
+        let tempDate = new Date(todayMidnight);
+        while (tempDate <= targetMidnight) {
+            if (tempDate.getDay() === 0) sundays++;
+            tempDate.setDate(tempDate.getDate() + 1);
+        }
+        document.getElementById('rc-sundays').innerText = sundays;
+        document.getElementById('rc-sleeps').innerText = daysLeft; // Sleeps = Nights
+
+        // C. Wasted Potential (2 hours a day)
+        const wastedHours = daysLeft * 2;
+        document.getElementById('rc-wasted').innerText = `${wastedHours} hours`;
+
+        document.getElementById('days-remaining').innerText = `${daysLeft}`;
+
+        // E. Brutal Quotes
+        const quotes = [
+            "Time is non-refundable. Use it with intention.",
+            "You are either getting better or getting worse. There is no staying the same.",
+            "Discipline is doing what needs to be done, even if you don't want to.",
+            "Your future self is watching you right now through memories.",
+            "Don't trade what you want most for what you want now.",
+            "Every hour you waste is a victory for your competition.",
+            "If it was easy, everyone would do it."
+        ];
+        document.getElementById('rc-quote').innerText = quotes[Math.floor(Math.random() * quotes.length)];
+    }
+
+    const modal = document.getElementById('reality-check-modal');
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.querySelector('div').classList.remove('scale-95');
+        modal.querySelector('div').classList.add('scale-100');
+    }, 10);
+}
+
+window.closeRealityCheck = function () {
+    const modal = document.getElementById('reality-check-modal');
+    modal.classList.add('opacity-0');
+    modal.querySelector('div').classList.remove('scale-100');
+    modal.querySelector('div').classList.add('scale-95');
+    setTimeout(() => modal.classList.add('hidden'), 300);
+}
 
 initAuth(); lucide.createIcons();

@@ -472,6 +472,8 @@ button:hover i[data-lucide="chevron-left"] {
 }
 
 /* 2. Kill expensive shadow rendering */
+/* 2. Kill expensive shadow rendering without breaking Tailwind Rings */
+/* 2. Kill expensive shadow rendering without breaking Tailwind Rings */
 .lite-mode .shadow-sm,
 .lite-mode .shadow-md,
 .lite-mode .shadow-lg,
@@ -482,9 +484,13 @@ button:hover i[data-lucide="chevron-left"] {
 .lite-mode .shadow-floating,
 .lite-mode .shadow-floating-dark,
 .lite-mode .shadow-soft {
-  box-shadow: none !important;
+  /* Set the shadow to transparent rather than setting box-shadow to none */
+  --tw-shadow: 0 0 #0000 !important;
+  --tw-shadow-colored: 0 0 #0000 !important;
+  
+  /* Reconstruct the box-shadow property so rings can still render */
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow) !important;
 }
-
 /* Add solid borders back so elements don't blend together without shadows */
 .lite-mode .glass-card {
   border: 1px solid #e4e4e7 !important;
