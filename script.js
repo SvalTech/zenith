@@ -1431,91 +1431,205 @@ window.importData = async function (event) {
 }
 
 // --- Error Tracking ---
+let errorChartInstance = null;
+let currentErrorSubjectFilter = 'All';
+let currentErrorTypeFilter = 'All';
+
 window.updateErrorSubjects = function () {
     const select = document.getElementById('error-subject'); const type = state.settings.examType;
     let subjects = (type === 'NEET') ? ['Physics', 'Chemistry', 'Biology'] : ['Physics', 'Chemistry', 'Maths'];
     subjects = [...subjects, ...(state.settings.customSubjects || [])];
     select.innerHTML = subjects.map(s => `<option value="${s}">${s}</option>`).join('');
+    window.updateErrorChapters();
 }
 
-window.setErrorFilter = function (filter) {
-    currentErrorFilter = filter;
-    renderErrorLogs();
+window.updateErrorChapters = function () {
+    const subject = document.getElementById('error-subject').value;
+    const chapterSelect = document.getElementById('error-chapter');
+
+    let chapters = [];
+    const searchSubject = subject === 'Maths' ? 'Mathematics' : subject; // Fix syllabus name mismatch
+    const subjData = syllabus.find(s => s.subject === searchSubject);
+
+    if (subjData) {
+        chapters = subjData.units.flatMap(u => u.chapters.map(c => c.name));
+    }
+
+    let html = chapters.map(ch => `<option value="${ch}">${ch}</option>`).join('');
+    html += `<option value="custom" class="font-bold text-brand-600">+ Add Custom Chapter...</option>`;
+    chapterSelect.innerHTML = html || `<option value="custom">+ Add Custom Chapter...</option>`;
+
+    window.toggleCustomChapterInput();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
+
+window.toggleCustomChapterInput = function () {
+    const select = document.getElementById('error-chapter');
+    const customInput = document.getElementById('error-custom-chapter');
+    if (select.value === 'custom') {
+        customInput.classList.remove('hidden'); customInput.focus();
+    } else {
+        customInput.classList.add('hidden'); customInput.value = '';
+    }
+}
+
+window.setErrorSubjectFilter = function (filter) { currentErrorSubjectFilter = filter; window.renderErrorLogs(); }
+window.setErrorTypeFilter = function (filter) { currentErrorTypeFilter = filter; window.renderErrorLogs(); }
 
 window.saveErrorLog = async function () {
     const subject = document.getElementById('error-subject').value;
-    const topic = document.getElementById('error-topic').value.trim();
+    const chapterSelect = document.getElementById('error-chapter').value;
+    const customChapter = document.getElementById('error-custom-chapter').value.trim();
+    const chapter = chapterSelect === 'custom' ? customChapter : chapterSelect;
+
+    const errorTypeNode = document.querySelector('input[name="errorType"]:checked');
+    const errorType = errorTypeNode ? errorTypeNode.value : 'Conceptual';
+
     const desc = document.getElementById('error-desc').value.trim();
-    if (!topic || !desc) { showToast("Fill all fields"); return; }
+    if (!chapter || !desc) { showToast("Fill all fields"); return; }
+
     try {
         await setDoc(doc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'errorLogs')), {
-            subject, topic, desc, date: getLocalISODate(new Date()), timestamp: new Date().toISOString()
+            subject, topic: chapter, errorType, desc, date: getLocalISODate(new Date()), timestamp: new Date().toISOString()
         });
-        document.getElementById('error-topic').value = ''; document.getElementById('error-desc').value = '';
+        document.getElementById('error-custom-chapter').value = '';
+        document.getElementById('error-desc').value = '';
+        window.toggleCustomChapterInput();
         showToast("Mistake Logged");
     } catch (e) { console.error(e); }
 }
+window.renderErrorDashboard = function (filteredLogs) {
+    const emptyState = document.getElementById('error-chart-empty');
+    const chartWrapper = document.getElementById('error-chart-wrapper');
+    const ctx = document.getElementById('errorTypeChart');
+
+    // Destroy existing chart to prevent glitching
+    if (errorChartInstance) errorChartInstance.destroy();
+
+    // Show Empty State if no data
+    if (filteredLogs.length === 0) {
+        emptyState.classList.remove('hidden');
+        chartWrapper.classList.add('opacity-0'); // Hide canvas gently
+        return;
+    }
+
+    // Otherwise, show chart
+    emptyState.classList.add('hidden');
+    chartWrapper.classList.remove('opacity-0');
+
+    // 1. Process Chart Data
+    const counts = { 'Conceptual': 0, 'Calculative': 0, 'Silly Mistake': 0, 'Formula': 0 };
+    filteredLogs.forEach(l => {
+        const type = l.errorType || 'Conceptual';
+        if (counts[type] !== undefined) counts[type]++;
+    });
+
+    // 2. Render Doughnut Chart
+    const borderColor = state.settings.theme === 'dark' ? '#18181b' : '#ffffff';
+
+    errorChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Conceptual', 'Calculative', 'Silly', 'Formula'],
+            datasets: [{
+                data: [counts['Conceptual'], counts['Calculative'], counts['Silly Mistake'], counts['Formula']],
+                backgroundColor: ['#f43f5e', '#3b82f6', '#f59e0b', '#a855f7'],
+                borderWidth: 4,
+                borderColor: borderColor,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            cutout: '75%', // Made slightly thinner to look more elegant
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: state.settings.theme === 'dark' ? '#18181b' : '#ffffff',
+                    titleColor: state.settings.theme === 'dark' ? '#fff' : '#000',
+                    bodyColor: state.settings.theme === 'dark' ? '#a1a1aa' : '#52525b',
+                    borderColor: state.settings.theme === 'dark' ? '#27272a' : '#e4e4e7',
+                    borderWidth: 1, padding: 12, cornerRadius: 12
+                }
+            }
+        }
+    });
+}
+
 
 window.renderErrorLogs = function () {
     const list = document.getElementById('error-logs-list');
-    const filterContainer = document.getElementById('error-filters');
-    
-    // 1. Render Filters
-    if (filterContainer) {
-        const type = state.settings.examType;
-        let subjects = (type === 'NEET') ? ['Physics', 'Chemistry', 'Biology'] : ['Physics', 'Chemistry', 'Maths'];
-        subjects = [...subjects, ...(state.settings.customSubjects || [])];
+    const subjFilterContainer = document.getElementById('error-subject-filters');
+    const typeFilterContainer = document.getElementById('error-type-filters');
 
-        let filterHtml = `<button onclick="setErrorFilter('All')" class="whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm ${currentErrorFilter === 'All' ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-transparent' : 'bg-white dark:bg-[#18181b] text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-800 active:scale-95'}">All</button>`;
-        
+    // 1. Build Filters UI
+    const type = state.settings.examType;
+    let subjects = (type === 'NEET') ? ['Physics', 'Chemistry', 'Biology'] : ['Physics', 'Chemistry', 'Maths'];
+    subjects = [...subjects, ...(state.settings.customSubjects || [])];
+
+    if (subjFilterContainer) {
+        let fHtml = `<button onclick="window.setErrorSubjectFilter('All')" class="whitespace-nowrap px-4 py-2 rounded-xl text-[11px] font-bold transition-all shadow-sm ${currentErrorSubjectFilter === 'All' ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900' : 'bg-white dark:bg-[#18181b] text-zinc-500 hover:bg-zinc-50 border border-zinc-200/80 dark:border-zinc-800'}">All Subjects</button>`;
         subjects.forEach(sub => {
             const colors = getSubjectColor(sub);
-            const isActive = currentErrorFilter === sub;
-            filterHtml += `<button onclick="setErrorFilter('${sub}')" class="whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm border flex items-center gap-2 active:scale-95 ${isActive ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-transparent' : 'bg-white dark:bg-[#18181b] text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 border-zinc-200/80 dark:border-zinc-800'}"><span class="w-2.5 h-2.5 rounded-full" style="background-color: ${colors.hex}"></span>${sub}</button>`;
+            fHtml += `<button onclick="window.setErrorSubjectFilter('${sub}')" class="whitespace-nowrap px-3 py-2 rounded-xl text-[11px] font-bold transition-all shadow-sm border flex items-center gap-1.5 ${currentErrorSubjectFilter === sub ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-transparent' : 'bg-white dark:bg-[#18181b] text-zinc-500 border-zinc-200/80 dark:border-zinc-800'}"><span class="w-2 h-2 rounded-full" style="background-color: ${colors.hex}"></span>${sub}</button>`;
         });
-        filterContainer.innerHTML = filterHtml;
+        subjFilterContainer.innerHTML = fHtml;
     }
 
-    list.innerHTML = '';
-    
-    // 2. Filter the Logs
+    if (typeFilterContainer) {
+        const types = ['Conceptual', 'Calculative', 'Silly Mistake', 'Formula'];
+        let tHtml = `<button onclick="window.setErrorTypeFilter('All')" class="whitespace-nowrap px-4 py-2 rounded-xl text-[11px] font-bold transition-all shadow-sm ${currentErrorTypeFilter === 'All' ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900' : 'bg-white dark:bg-[#18181b] text-zinc-500 border border-zinc-200/80 dark:border-zinc-800'}">All Types</button>`;
+        types.forEach(t => {
+            tHtml += `<button onclick="window.setErrorTypeFilter('${t}')" class="whitespace-nowrap px-3 py-2 rounded-xl text-[11px] font-bold transition-all shadow-sm border ${currentErrorTypeFilter === t ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 border-transparent' : 'bg-white dark:bg-[#18181b] text-zinc-500 border-zinc-200/80 dark:border-zinc-800'}">${t}</button>`;
+        });
+        typeFilterContainer.innerHTML = tHtml;
+    }
+
+    // 2. Filter Data
     let filteredLogs = state.errorLogs;
-    if (currentErrorFilter !== 'All') {
-        filteredLogs = filteredLogs.filter(l => l.subject === currentErrorFilter);
-    }
+    if (currentErrorSubjectFilter !== 'All') filteredLogs = filteredLogs.filter(l => l.subject === currentErrorSubjectFilter);
+    if (currentErrorTypeFilter !== 'All') filteredLogs = filteredLogs.filter(l => (l.errorType || 'Conceptual') === currentErrorTypeFilter);
 
-    // 3. Render Empty State or Grid
-    if (filteredLogs.length === 0) { 
-        list.innerHTML = `<div class="col-span-full text-center py-16 text-zinc-400 italic text-sm bg-white/40 dark:bg-[#18181b]/40 backdrop-blur-md rounded-[2rem] border border-zinc-200/50 dark:border-zinc-800/50">No errors logged for this filter. Doing great!</div>`; 
-        return; 
+    // 3. Render Dashboard
+    window.renderErrorDashboard(filteredLogs);
+
+    // 4. Render List
+    list.innerHTML = '';
+    if (filteredLogs.length === 0) {
+        list.innerHTML = `<div class="col-span-full text-center py-16 text-zinc-400 italic text-sm bg-white/40 dark:bg-[#18181b]/40 backdrop-blur-md rounded-[2rem] border border-zinc-200/50 dark:border-zinc-800/50">No errors found for this filter combination.</div>`;
+        return;
     }
 
     [...filteredLogs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).forEach((log, index) => {
-        const el = document.createElement('div'); 
-        
-        // Using stagger-item, flex-col, and h-full so grid cards stretch evenly
-        el.className = "stagger-item flex flex-col h-full p-5 md:p-6 bg-white/80 dark:bg-[#18181b]/80 backdrop-blur-xl rounded-[2rem] border border-rose-100/50 dark:border-rose-900/20 shadow-sm relative group hover:-translate-y-1 transition-transform duration-300";
+        const el = document.createElement('div');
+        el.className = "stagger-item flex flex-col h-full p-5 md:p-6 bg-white/80 dark:bg-[#18181b]/80 backdrop-blur-xl rounded-[2rem] border border-zinc-200/80 dark:border-zinc-800/80 shadow-sm relative group hover:-translate-y-1 transition-transform duration-300";
         el.style.animationDelay = `${index * 50}ms`;
-        
-        const colors = getSubjectColor(log.subject); 
+
+        const colors = getSubjectColor(log.subject);
         const badgeClass = state.settings.theme === 'dark' ? colors.dark : colors.light;
-        
+
+        const eType = log.errorType || 'Conceptual';
+        let typeClasses = 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700';
+        if (eType === 'Conceptual') typeClasses = 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400 border-rose-200 dark:border-rose-900/50';
+        if (eType === 'Calculative') typeClasses = 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border-blue-200 dark:border-blue-900/50';
+        if (eType === 'Silly Mistake') typeClasses = 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border-amber-200 dark:border-amber-900/50';
+        if (eType === 'Formula') typeClasses = 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400 border-purple-200 dark:border-purple-900/50';
+
         el.innerHTML = `
-            <div class="flex justify-between items-start mb-3">
-                <div class="flex items-center gap-2">
+            <div class="flex justify-between items-start mb-4">
+                <div class="flex items-center flex-wrap gap-2">
                     <span class="text-[9px] font-black px-2.5 py-1 rounded-lg ${badgeClass} uppercase tracking-widest shadow-sm">${log.subject}</span>
+                    <span class="text-[9px] font-black px-2.5 py-1 rounded-lg border ${typeClasses} uppercase tracking-widest shadow-sm">${eType}</span>
                 </div>
                 <button onclick="requestDelete('errorLog', '${log.id}')" class="text-zinc-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-colors opacity-100 md:opacity-0 group-hover:opacity-100 -mr-2 -mt-2 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
             <h4 class="text-base md:text-lg font-black text-zinc-900 dark:text-zinc-100 tracking-tight mb-2">${log.topic}</h4>
             <p class="text-sm text-zinc-600 dark:text-zinc-400 font-medium leading-relaxed flex-1">${log.desc}</p>
             <div class="text-[10px] text-zinc-400 dark:text-zinc-500 font-bold mt-5 uppercase tracking-widest pt-4 border-t border-zinc-100 dark:border-zinc-800/50 flex items-center gap-1.5"><i data-lucide="calendar" class="w-3 h-3"></i> ${formatDate(log.date)}</div>
-        `; 
+        `;
         list.appendChild(el);
-    }); 
-    
-    lucide.createIcons();
+    });
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 // --- Daily Questions ---
 window.changeQuestionDate = function (delta) { questionsDate.setDate(questionsDate.getDate() + delta); renderQuestionsView(); }
