@@ -735,6 +735,87 @@
                 <div id="error-logs-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 pb-12"></div>
             </div>
         </div>
+
+        <!-- VIEW: Daily Questions -->
+        <div id="view-container-stats-questions"
+            class="view-section hidden flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar no-scrollbar">
+            <div class="max-w-4xl mx-auto pb-32">
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 px-2 gap-4">
+                    <h2
+                        class="text-3xl md:text-4xl font-black text-zinc-900 dark:text-white tracking-tighter flex items-center gap-3">
+                        <i data-lucide="check-square" class="w-8 h-8 text-emerald-500"></i> Daily Questions
+                    </h2>
+                    <div
+                        class="flex items-center gap-2 bg-white/80 dark:bg-[#18181b]/80 backdrop-blur-md p-1.5 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-700">
+                        <button onclick="changeQuestionDate(-1)"
+                            class="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors active:scale-95 text-zinc-600 dark:text-zinc-400"><i
+                                data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                        <div id="questions-date-display"
+                            class="text-xs font-bold text-zinc-800 dark:text-zinc-200 min-w-[100px] text-center">Today</div>
+                        <button onclick="changeQuestionDate(1)"
+                            class="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition-colors active:scale-95 text-zinc-600 dark:text-zinc-400"><i
+                                data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+        
+                <!-- Stats Row (Streak & Target) -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <!-- Streak Card -->
+                    <div
+                        class="glass-card p-5 md:p-6 rounded-[2rem] flex flex-col md:flex-row items-center md:items-start gap-4 text-center md:text-left border-t-2 border-t-orange-500">
+                        <div
+                            class="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-500/20 shrink-0 mx-auto md:mx-0">
+                            <i data-lucide="flame" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 mt-1 md:mt-0">Streak
+                            </div>
+                            <div class="text-3xl md:text-2xl font-black text-zinc-900 dark:text-white"><span
+                                    id="q-streak-count">0</span> <span class="text-sm font-bold text-zinc-400">Days</span></div>
+                        </div>
+                    </div>
+                    <!-- Target Card -->
+                    <div
+                        class="glass-card p-5 md:p-6 rounded-[2rem] flex flex-col md:flex-row justify-between items-center gap-4 border-t-2 border-t-brand-500">
+                        <div class="text-center md:text-left flex-1">
+                            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 mt-1 md:mt-0">Daily
+                                Target</div>
+                            <div class="flex items-center justify-center md:justify-start gap-1">
+                                <input type="number" id="q-target-input" value="50" onchange="saveQuestionTarget(this.value)"
+                                    class="w-16 bg-transparent text-3xl md:text-2xl font-black text-zinc-900 dark:text-white outline-none border-b-2 border-dashed border-zinc-300 dark:border-zinc-700 focus:border-brand-500 p-0 text-center transition-colors shadow-none hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg">
+                                <span class="text-sm font-bold text-zinc-400 pb-1">Qs</span>
+                            </div>
+                        </div>
+                        <div
+                            class="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/20 shrink-0 hidden md:flex">
+                            <i data-lucide="target" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+                </div>
+        
+                <div class="glass-card p-6 md:p-8 rounded-[2rem] mb-8">
+                    <div id="questions-inputs" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div>
+                    <div class="flex justify-between items-center border-t border-zinc-100 dark:border-zinc-800 pt-6">
+                        <div>
+                            <div class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Total Solved</div>
+                            <div id="questions-total-display"
+                                class="text-4xl font-black text-zinc-900 dark:text-white tracking-tighter mt-1">
+                                0 <span class="text-xl text-zinc-400 dark:text-zinc-500 font-bold">/ 50</span>
+                            </div>
+                        </div>
+                        <button onclick="saveQuestionsLog()"
+                            class="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold py-3 px-8 rounded-xl shadow-md transition-all active:scale-95">Save
+                            Update</button>
+                    </div>
+                </div>
+        
+                <h3 class="text-xl font-black text-zinc-900 dark:text-white tracking-tight mb-4 px-2">Last 7 Days Trend</h3>
+                <div class="glass-card p-5 rounded-[2rem] w-full min-h-[200px]">
+                    <canvas id="questionsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
         
         <!-- VIEW: Syllabus -->
         <div id="view-container-syllabus" class="view-section hidden flex-1 flex flex-col h-full overflow-hidden">
